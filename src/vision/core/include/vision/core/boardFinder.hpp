@@ -16,5 +16,6 @@ struct WarpResult {
 //! \note       In the resulting warped image, it is not defined what exactly the border is. This is done in the second step (rectifyImage).
 WarpResult warpToBoard(const cv::Mat& image, DebugVisualizer* debugger = nullptr);
 
+bool isValidBoard(const WarpResult& board);
 
 } // namespace tengen::vision::core
