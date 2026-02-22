@@ -1,7 +1,7 @@
 #pragma once
 
 #include "vision/core/debugVisualizer.hpp"
-#include "vision/core/rectifier.hpp"
+#include "vision/core/gridFinder.hpp"
 
 #include <opencv2/core/mat.hpp>
 #include <vector>

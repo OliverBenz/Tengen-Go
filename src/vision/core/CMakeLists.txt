@@ -5,18 +5,18 @@ find_package(OpenCV REQUIRED)
 # Get files to build
 set(headers
     "${CMAKE_CURRENT_LIST_DIR}/statistics.hpp"
-    "${CMAKE_CURRENT_LIST_DIR}/gridFinder.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/gridLatticeFinder.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/include/vision/core/debugVisualizer.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/include/vision/core/boardFinder.hpp"
-    "${CMAKE_CURRENT_LIST_DIR}/include/vision/core/rectifier.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/include/vision/core/gridFinder.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/include/vision/core/stoneFinder.hpp"
 )
 set(sources
     "${CMAKE_CURRENT_LIST_DIR}/statistics.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/debugVisualizer.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/boardFinder.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/gridLatticeFinder.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/gridFinder.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/rectifier.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/stoneFinder.cpp"
 )
 
