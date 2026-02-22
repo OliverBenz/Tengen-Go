@@ -19,7 +19,7 @@ static BoardGeometry makeSyntheticBoard(unsigned N, double spacingPx, const cv::
 	const int span   = static_cast<int>(std::lround(spacingPx * static_cast<double>(N - 1)));
 	const int w      = 2 * margin + span;
 	const int h      = 2 * margin + span;
-	g.image          = cv::Mat(h, w, CV_8UC3, woodBgr);
+	g.imageB         = cv::Mat(h, w, CV_8UC3, woodBgr);
 
 	g.intersections.reserve(static_cast<std::size_t>(N) * static_cast<std::size_t>(N));
 	for (unsigned gx = 0; gx < N; ++gx) {
@@ -35,7 +35,7 @@ static BoardGeometry makeSyntheticBoard(unsigned N, double spacingPx, const cv::
 
 //! Draw a filled stone at a given grid coordinate (gx,gy).
 static void drawStone(BoardGeometry& g, unsigned gx, unsigned gy, StoneState s) {
-	ASSERT_FALSE(g.image.empty());
+	ASSERT_FALSE(g.imageB.empty());
 	ASSERT_GT(g.boardSize, 0u);
 	ASSERT_EQ(g.intersections.size(), g.boardSize * g.boardSize);
 
@@ -44,7 +44,7 @@ static void drawStone(BoardGeometry& g, unsigned gx, unsigned gy, StoneState s) 
 
 	const int r          = static_cast<int>(std::lround(g.spacing * 0.40)); //!< < 0.5*spacing to avoid overlap
 	const cv::Scalar col = (s == StoneState::Black) ? cv::Scalar(0, 0, 0) : cv::Scalar(255, 255, 255);
-	cv::circle(g.image, g.intersections[idx], r, col, cv::FILLED, cv::LINE_AA);
+	cv::circle(g.imageB, g.intersections[idx], r, col, cv::FILLED, cv::LINE_AA);
 }
 
 //! Count occurrences of a given state.
@@ -106,7 +106,7 @@ TEST(StoneFinderUnit, BlackStone_WithMildGlare_NotWhite) {
 
 	// Add a small bright highlight inside the black stone (simulates mild glare/reflection).
 	const cv::Point2f c = g.intersections[4u * 9u + 4u];
-	cv::circle(g.image, c + cv::Point2f(10.0f, -10.0f), 6, cv::Scalar(255, 255, 255), cv::FILLED, cv::LINE_AA);
+	cv::circle(g.imageB, c + cv::Point2f(10.0f, -10.0f), 6, cv::Scalar(255, 255, 255), cv::FILLED, cv::LINE_AA);
 
 	const StoneResult r = analyseBoard(g);
 	ASSERT_TRUE(r.success);

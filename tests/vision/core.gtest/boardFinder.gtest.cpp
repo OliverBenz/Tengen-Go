@@ -21,11 +21,11 @@ void runTest(const std::string& testSetName) {
 		ASSERT_FALSE(image.empty());
 
 		const auto warpResult = warpToBoard(image);
-		EXPECT_FALSE(warpResult.image.empty());
-		EXPECT_FALSE(warpResult.H.empty());
+		EXPECT_FALSE(warpResult.imageB0.empty());
+		EXPECT_FALSE(warpResult.H0.empty());
 
 		const auto geometry = rectifyImage(image, warpResult);
-		EXPECT_FALSE(geometry.image.empty());
+		EXPECT_FALSE(geometry.imageB.empty());
 		EXPECT_FALSE(geometry.H.empty());
 		EXPECT_EQ(geometry.intersections.size(), BOARD_SIZE * BOARD_SIZE);
 		EXPECT_EQ(geometry.boardSize, BOARD_SIZE);
