@@ -1118,7 +1118,7 @@ static void classifyAll(const std::vector<cv::Point2f>& intersections, const std
 } // namespace
 
 StoneResult analyseBoardV2(const BoardGeometry& geometry, DebugVisualizer* debugger, const StoneDetectionConfig& config) {
-	if (geometry.image.empty()) {
+	if (geometry.imageB.empty()) {
 		std::cerr << "Stone detection failed: input image is empty\n";
 		return {false, {}, {}};
 	}
@@ -1129,14 +1129,14 @@ StoneResult analyseBoardV2(const BoardGeometry& geometry, DebugVisualizer* debug
 
 	if (debugger) {
 		debugger->beginStage("Stone Detection v2");
-		debugger->add("Input", geometry.image);
+		debugger->add("Input", geometry.imageB);
 	}
 
 	const Radii radii     = GeometrySampling::chooseRadii(geometry.spacing, config.geometry);
 	const Offsets offsets = GeometrySampling::precomputeOffsets(radii);
 
 	LabBlur blurredLab{};
-	if (!FeatureExtraction::prepareLabBlur(geometry.image, radii, config.geometry, blurredLab)) {
+	if (!FeatureExtraction::prepareLabBlur(geometry.imageB, radii, config.geometry, blurredLab)) {
 		if (debugger) {
 			debugger->endStage();
 		}
@@ -1173,7 +1173,7 @@ StoneResult analyseBoardV2(const BoardGeometry& geometry, DebugVisualizer* debug
 	                            collectRuntimeDebug ? &rejectionReasons : nullptr);
 
 	if (debugger) {
-		debugger->add("Stone Overlay", Debugging::drawOverlay(geometry.image, geometry.intersections, states, radii.innerRadius));
+		debugger->add("Stone Overlay", Debugging::drawOverlay(geometry.imageB, geometry.intersections, states, radii.innerRadius));
 		debugger->add("Stone Stats", Debugging::renderStatsTile(model, stats));
 		debugger->endStage();
 	}

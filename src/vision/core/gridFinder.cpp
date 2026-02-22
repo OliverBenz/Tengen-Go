@@ -80,15 +80,16 @@ static double computeMedianSpacing(const std::vector<double>& grid) {
 
 //! Transform an image that contains a Go Board such that the final image is a top-down projection of the board.
 //! \note The border of the image is the outermost grid line + tolerance for the edge stones.
-BoardGeometry rectifyImage(const cv::Mat& originalImg, const WarpResult& input, DebugVisualizer* debugger) {
-	if (input.image.empty() || input.H.empty()) {
+//! \note Variable and space name terminology defined in the README.
+BoardGeometry rectifyImage(const cv::Mat& imageIB, const WarpResult& input, DebugVisualizer* debugger) {
+	if (input.imageB0.empty() || input.H0.empty()) {
 		std::cerr << "Invalid warp result for rectification.\n";
 		return {};
 	}
 
 	if (debugger) {
 		debugger->beginStage("Rectify Image");
-		debugger->add("Input", input.image);
+		debugger->add("Input", input.imageB0);
 	}
 
 	// TODO: Properly rotate at some point. Roughly rotate in warpToBoard() and fine rotate here.
@@ -96,7 +97,7 @@ BoardGeometry rectifyImage(const cv::Mat& originalImg, const WarpResult& input, 
 
 	// 1. Preprocess again
 	cv::Mat gray, blur, edges;
-	cv::cvtColor(input.image, gray, cv::COLOR_BGR2GRAY); // Greyscale
+	cv::cvtColor(input.imageB0, gray, cv::COLOR_BGR2GRAY); // Greyscale
 	if (debugger)
 		debugger->add("Grayscale", gray);
 
@@ -225,7 +226,7 @@ BoardGeometry rectifyImage(const cv::Mat& originalImg, const WarpResult& input, 
 	std::cout << "Unique vertical candidates: " << Nv << "\n";
 	std::cout << "Unique horizontal candidates: " << Nh << "\n";
 	if (debugger) {
-		debugger->add("Grid Candidates", debugging::drawLines(input.image, vGrid, hGrid));
+		debugger->add("Grid Candidates", debugging::drawLines(input.imageB0, vGrid, hGrid));
 	}
 
 	// 3. Grid candidates to proper grid.
@@ -277,23 +278,25 @@ BoardGeometry rectifyImage(const cv::Mat& originalImg, const WarpResult& input, 
 	float ymax = static_cast<float>(hGrid.back() + stoneBuffer);
 
 	// Perform the warping on the original image (avoid getting black bars if the new image is larger than the warped(after first step) one)
-	// Board coordinates in the warped image
-	std::vector<cv::Point2f> srcWarped = {{xmin, ymin}, {xmax, ymin}, {xmax, ymax}, {xmin, ymax}};
+	std::vector<cv::Point2f> boardB0 = {{xmin, ymin}, {xmax, ymin}, {xmax, ymax}, {xmin, ymax}}; //!< Board coordinate in the B_0 space
 
 	// Invert the previous warping so we can apply our new warp on the original image.
-	cv::Mat Hinv = input.H.inv();
-	std::vector<cv::Point2f> srcOriginal;
-	cv::perspectiveTransform(srcWarped, srcOriginal, Hinv);
+	cv::Mat H0_inv = input.H0.inv();
+	std::vector<cv::Point2f> boardIB; //!< Board coordinates in the I_B space
+	cv::perspectiveTransform(boardB0, boardIB, H0_inv);
 
 	// Output range
-	const int outSize            = 1000;
-	std::vector<cv::Point2f> dst = {{0.f, 0.f}, {(float)outSize - 1.f, 0.f}, {(float)outSize - 1.f, (float)outSize - 1.f}, {0.f, (float)outSize - 1.f}};
+	constexpr int outSize           = 1000;
+	std::vector<cv::Point2f> boardB = {{0.f, 0.f},
+	                                   {(float)outSize - 1.f, 0.f},
+	                                   {(float)outSize - 1.f, (float)outSize - 1.f},
+	                                   {0.f, (float)outSize - 1.f}}; //!< Board coordinates in the B space
 
-	cv::Mat homographyFinal = cv::getPerspectiveTransform(srcOriginal, dst);
-	cv::Mat refined;
-	cv::warpPerspective(originalImg, refined, homographyFinal, cv::Size(outSize, outSize));
+	cv::Mat H = cv::getPerspectiveTransform(boardIB, boardB); //!< H: I_B \to B
+	cv::Mat imageB;                                           //!< Image in space B
+	cv::warpPerspective(imageIB, imageB, H, cv::Size(outSize, outSize));
 	if (debugger) {
-		debugger->add("Warp Image", refined);
+		debugger->add("Warp Image", imageB);
 	}
 
 	// 5. Compute and warp intersections
@@ -308,19 +311,19 @@ BoardGeometry rectifyImage(const cv::Mat& originalImg, const WarpResult& input, 
 
 	// Warp back to Original
 	std::vector<cv::Point2f> intersectionsOriginal;
-	cv::perspectiveTransform(intersectionsWarped, intersectionsOriginal, Hinv);
+	cv::perspectiveTransform(intersectionsWarped, intersectionsOriginal, H0_inv);
 
 	// Map to refined image
 	std::vector<cv::Point2f> intersectionsRefined;
-	cv::perspectiveTransform(intersectionsOriginal, intersectionsRefined, homographyFinal);
+	cv::perspectiveTransform(intersectionsOriginal, intersectionsRefined, H);
 	if (debugger) {
-		cv::Mat vis = refined.clone();
+		cv::Mat vis = imageB.clone();
 		for (const auto& p: intersectionsRefined)
 			cv::circle(vis, p, 4, cv::Scalar(255, 0, 0), -1);
 		debugger->add("Intersections Ref.", vis);
 	}
 
-	// Compute spacing (in refined coordinates) from adjacent intersection distances.
+	// Compute spacing (in B-space coordinates) from adjacent intersection distances.
 	const auto N = vGrid.size(); //!< Board size (9,13,19).
 	std::vector<double> spacingSamples;
 	if (N >= 2 && intersectionsRefined.size() == N * N) {
@@ -352,7 +355,7 @@ BoardGeometry rectifyImage(const cv::Mat& originalImg, const WarpResult& input, 
 
 	// Assert output: Fail means we missed a validity check earlier.
 	assert(vGrid.size() == hGrid.size()); // Grid lines equal.
-	BoardGeometry result{refined, homographyFinal, intersectionsRefined, refinedSpacing, static_cast<unsigned>(N)};
+	BoardGeometry result{imageB, H, intersectionsRefined, refinedSpacing, static_cast<unsigned>(N)};
 	assert(isValidGeometry(result));
 	// TODO: Unit test sanity check: Image (width|height) == N*spacing (up to tolerance. N-1 spacings in Grid + stone buffer)
 
@@ -361,8 +364,8 @@ BoardGeometry rectifyImage(const cv::Mat& originalImg, const WarpResult& input, 
 
 
 bool isValidGeometry(const BoardGeometry& g) {
-	const bool validImage     = !g.image.empty(); // TODO: Other checks?
-	const bool validH         = !g.H.empty();     // TODO: Other checks?
+	const bool validImage     = !g.imageB.empty(); // TODO: Other checks?
+	const bool validH         = !g.H.empty();      // TODO: Other checks?
 	const bool validBoardSize = g.boardSize == 9 || g.boardSize == 13 || g.boardSize == 19;
 	const bool validIntersect = g.intersections.size() == g.boardSize * g.boardSize; // TODO: Check approx x,y alignment etc.
 	const bool validSpacing   = true;                                                // TODO:

@@ -27,12 +27,12 @@ TestResult runPipeline(const std::filesystem::path& imgPath) {
 
 	// Warp image roughly around the board.
 	WarpResult warped = warpToBoard(image);
-	EXPECT_FALSE(warped.image.empty());
-	EXPECT_FALSE(warped.H.empty());
+	EXPECT_FALSE(warped.imageB0.empty());
+	EXPECT_FALSE(warped.H0.empty());
 
 	// Properly construct the board geometry.
 	BoardGeometry geometry = rectifyImage(image, warped);
-	EXPECT_FALSE(geometry.image.empty());
+	EXPECT_FALSE(geometry.imageB.empty());
 	EXPECT_FALSE(geometry.H.empty());
 	EXPECT_FALSE(geometry.intersections.empty());
 	EXPECT_TRUE(geometry.intersections.size() == geometry.boardSize * geometry.boardSize);

@@ -16,8 +16,8 @@ namespace tengen::vision::core {
 
 //! Final
 struct BoardGeometry {
-	cv::Mat image;                          //!< Image mapped to Board with padding.
-	cv::Mat H;                              //!< Homography between the original image and the fine-tuned warped image.
+	cv::Mat imageB;                         //!< Image in B space (mapped to Board with padding).
+	cv::Mat H;                              //!< Homography H between the original image and the fine-tuned warped image.
 	std::vector<cv::Point2f> intersections; //!< List of grid intersections on the board (in refined warped coordinates).
 	double spacing;                         //!< Spacing between grid lines (in refined warped coordinated).
 	unsigned boardSize;                     //!< Size of the go board (9, 13, 19).

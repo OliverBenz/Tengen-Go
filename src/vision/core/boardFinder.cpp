@@ -657,8 +657,8 @@ WarpResult warpToBoard(const cv::Mat& image, DebugVisualizer* debugger) {
 }
 
 bool isValidBoard(const WarpResult& board) {
-	const auto validWarped     = !board.image.empty(); // TODO: Additional checks.
-	const auto validHomography = !board.H.empty();     // TODO: Additional checks.
+	const auto validWarped     = !board.imageB0.empty(); // TODO: Additional checks.
+	const auto validHomography = !board.H0.empty();      // TODO: Additional checks.
 
 	return validWarped && validHomography;
 }

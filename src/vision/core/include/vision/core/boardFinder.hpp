@@ -7,8 +7,8 @@
 namespace tengen::vision::core {
 
 struct WarpResult {
-	cv::Mat image; //!< Image warped to fit the rough board contour.
-	cv::Mat H;     //!< Homography used to apply the rough warping.
+	cv::Mat imageB0; //!< Image in B_0 space (warped to fit the rough board contour).
+	cv::Mat H0;      //!< Homography H_0 used to apply the rough warping.
 };
 
 //! Detect rough Go board outline in an image and warp to center the board. Cut out background
