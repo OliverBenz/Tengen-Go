@@ -1,12 +1,11 @@
-#include <cmath>
-#include <cstdlib>
 #include <filesystem>
 #include <iostream>
-#include <opencv2/highgui.hpp>
-#include <vector>
+
+#include <QApplication>
 
 #include <opencv2/opencv.hpp>
 
+#include "mainWindow.hpp"
 #include "vision/core/rectifier.hpp"
 #include "vision/core/stoneFinder.hpp"
 
@@ -26,22 +25,6 @@ namespace tengen::vision::core {
 // 1) Coarse Detection (warpToBoard):  Warps the image to the board but not yet specific which exact board contour is found (outermost grid lines vs physical
 // board contour). 2) Normalise        (warpToBoard):  Output image has fixed normalised size. 3) Refine           (rectifyImage): Border or image is the
 // outermost grid lines + Tolerance for Stones placed at edge. 4) Re-Normalise     (rectifyImage): Final image normalised and with proper border setup.
-
-void showImages(cv::Mat& image1, cv::Mat& image2, cv::Mat& image3) {
-	double scale = 0.4; // adjust as needed
-	cv::Mat small1, small2, small3;
-
-	cv::resize(image1, small1, cv::Size(), scale, scale);
-	cv::resize(image2, small2, cv::Size(), scale, scale);
-	cv::resize(image3, small3, cv::Size(), scale, scale);
-
-	// Stack horizontally
-	cv::Mat combined;
-	cv::hconcat(std::vector<cv::Mat>{small1, small2, small3}, combined);
-
-	cv::imshow("3 Images", combined);
-	cv::waitKey(0);
-}
 
 static bool isValidBoardSize(unsigned size) {
 	return size == 9 || size == 13 || size == 19;
@@ -99,19 +82,18 @@ bool process(const std::filesystem::path& path, DebugVisualizer* debugger = null
 // - Output: Board cropped + Board size. Expect stable
 // 3) Detect grid lines again and stones.
 int main(int argc, char** argv) {
+	QApplication application(argc, argv);
+
 	tengen::vision::core::DebugVisualizer debug;
 	debug.setInteractive(false);
+	cv::Mat imageToDisplay;
 
 	// If a path is passed here then use this image. Else do test images.
 	if (argc > 1) {
-		std::filesystem::path inputPath = argv[1]; // Path from command line.
+		const std::filesystem::path inputPath = argv[1]; // Path from command line.
 
 		if (tengen::vision::core::process(inputPath, &debug)) {
-			cv::Mat mosaic = debug.buildMosaic();
-			if (!mosaic.empty()) {
-				cv::imshow("Debug Mosaic", mosaic);
-			}
-			cv::waitKey(0);
+			imageToDisplay = debug.buildMosaic();
 		}
 
 	} else {
@@ -151,12 +133,14 @@ int main(int argc, char** argv) {
 
 		const auto exampleImage = std::filesystem::path(PATH_TEST_IMG) / "angled_hard/angle_1.jpeg";
 		if (tengen::vision::core::process(exampleImage, &debug)) {
-			const auto mosaic = debug.buildMosaic();
-			// cv::imshow("", mosaic);
-			// cv::waitKey(0);
-			cv::imwrite("/home/oliver/temp.png", mosaic);
+			imageToDisplay = debug.buildMosaic();
 		}
 	}
 
-	return 0;
+	tengen::MainWindow window;
+	window.resize(1400, 900);
+	window.setImage(imageToDisplay);
+	window.show();
+
+	return application.exec();
 }

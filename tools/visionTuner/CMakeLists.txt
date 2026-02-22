@@ -1,18 +1,23 @@
 set(targetName visionTuner)
 
-# TODO: This needed if tengen::vision::core links PUBLIC?
+find_package(Qt6 REQUIRED COMPONENTS Widgets)
 find_package(OpenCV REQUIRED)
 
 # Get files to build
-set(headers)
+set(headers
+	"${CMAKE_CURRENT_LIST_DIR}/mainWindow.hpp"
+)
 set(sources
 	"${CMAKE_CURRENT_LIST_DIR}/main.cpp" 
+	"${CMAKE_CURRENT_LIST_DIR}/mainWindow.cpp" 
 )
 
 add_executable(${targetName} ${headers} ${sources})
 
 target_link_libraries(${targetName}
-	PRIVATE tengen::vision::core
+	PRIVATE
+		tengen::vision::core
+		Qt6::Widgets
 )
 target_compile_definitions(${targetName}
 	PRIVATE
