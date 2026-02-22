@@ -1,5 +1,7 @@
 #pragma once
 
+#include "pipelineStep.hpp"
+
 #include <QImage>
 #include <QMainWindow>
 #include <QWidget>
@@ -24,12 +26,15 @@ private:
 	QImage m_image{};
 };
 
+
 class MainWindow : public QMainWindow {
 public:
 	explicit MainWindow(QWidget* parent = nullptr);
 	~MainWindow() override;
 
 	void setImage(const cv::Mat& image);
+	void setPipelineStepChangedCallback(std::function<void(PipelineStep)> callback);
+	PipelineStep selectedPipelineStep() const;
 
 private:
 	void buildLayout();
@@ -37,6 +42,8 @@ private:
 private:
 	CvMatrixView* m_matrixView{nullptr};
 	QComboBox* m_sourceCombo{nullptr};
+	QComboBox* m_stepCombo{nullptr};
+	std::function<void(PipelineStep)> m_stepChangedCallback{};
 };
 
 } // namespace tengen

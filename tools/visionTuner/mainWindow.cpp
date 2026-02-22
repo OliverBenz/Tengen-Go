@@ -8,7 +8,22 @@
 
 #include <opencv2/imgproc.hpp>
 
+#include <utility>
+
 namespace tengen {
+
+static PipelineStep pipelineStepFromIndex(int index) {
+	switch (index) {
+	case 0:
+		return PipelineStep::FindBoard;
+	case 1:
+		return PipelineStep::ConstructGeometry;
+	case 2:
+		return PipelineStep::FindStones;
+	default:
+		return PipelineStep::All;
+	}
+}
 
 CvMatrixView::CvMatrixView(QWidget* parent) : QWidget(parent) {
 }
@@ -103,11 +118,24 @@ void MainWindow::setImage(const cv::Mat& image) {
 	}
 }
 
+void MainWindow::setPipelineStepChangedCallback(std::function<void(PipelineStep)> callback) {
+	m_stepChangedCallback = std::move(callback);
+}
+
+PipelineStep MainWindow::selectedPipelineStep() const {
+	if (m_stepCombo == nullptr) {
+		return PipelineStep::All;
+	}
+	return pipelineStepFromIndex(m_stepCombo->currentIndex());
+}
+
 void MainWindow::buildLayout() {
-	auto* rootWidget  = new QWidget(this); // TODO: This should be separate widget
+	auto* rootWidget  = new QWidget(this);
 	auto* rootLayout  = new QVBoxLayout(rootWidget);
 	auto* sourceRow   = new QHBoxLayout();
 	auto* sourceLabel = new QLabel("Source:", rootWidget);
+	auto* stepRow     = new QHBoxLayout();
+	auto* stepLabel   = new QLabel("Pipeline:", rootWidget);
 
 	m_sourceCombo = new QComboBox(rootWidget);
 	m_sourceCombo->addItem("Image");
@@ -118,10 +146,28 @@ void MainWindow::buildLayout() {
 	sourceRow->addWidget(m_sourceCombo);
 	sourceRow->addStretch(1);
 
+	m_stepCombo = new QComboBox(rootWidget);
+	m_stepCombo->addItem("Find Board");
+	m_stepCombo->addItem("Construct Geometry");
+	m_stepCombo->addItem("Find Stones");
+	m_stepCombo->addItem("All");
+	m_stepCombo->setCurrentIndex(3);
+
+	stepRow->addWidget(stepLabel);
+	stepRow->addWidget(m_stepCombo);
+	stepRow->addStretch(1);
+
 	m_matrixView = new CvMatrixView(rootWidget);
 
 	rootLayout->addLayout(sourceRow);
+	rootLayout->addLayout(stepRow);
 	rootLayout->addWidget(m_matrixView, 1);
+
+	connect(m_stepCombo, &QComboBox::currentIndexChanged, this, [this](int index) {
+		if (m_stepChangedCallback) {
+			m_stepChangedCallback(pipelineStepFromIndex(index));
+		}
+	});
 
 	setCentralWidget(rootWidget);
 }

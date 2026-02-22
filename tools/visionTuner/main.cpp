@@ -1,145 +1,34 @@
+#include "analyser.hpp"
+#include "mainWindow.hpp"
+
+#include <QApplication>
+#include <opencv2/opencv.hpp>
+
 #include <filesystem>
 #include <iostream>
 
-#include <QApplication>
-
-#include <opencv2/opencv.hpp>
-
-#include "mainWindow.hpp"
-#include "vision/core/rectifier.hpp"
-#include "vision/core/stoneFinder.hpp"
-
-namespace tengen::vision::core {
-// Notes and Findings:
-// - Board Detection
-//   - Easy Straight Dataset
-//     - Adaptive Threshold:   Visually appears to work nicely. May conflict with background
-//     - OTSU Threshold:       Suboptimal. May require further tuning.
-//     - Canny Edge Detection: Visually appears to work. Further tuning needed.
-
-// Tunable Parameters (Default values set below. Real application requires more (adaptive?) tuning):
-// - Gaussian Blur:        (Size{5,5}, 1) results in weaker Canny result than (Size{7,7},1.5)
-// - Canny Edge Detection: Check documentation. More parameters available.
-
-// Board Detection
-// 1) Coarse Detection (warpToBoard):  Warps the image to the board but not yet specific which exact board contour is found (outermost grid lines vs physical
-// board contour). 2) Normalise        (warpToBoard):  Output image has fixed normalised size. 3) Refine           (rectifyImage): Border or image is the
-// outermost grid lines + Tolerance for Stones placed at edge. 4) Re-Normalise     (rectifyImage): Final image normalised and with proper border setup.
-
-static bool isValidBoardSize(unsigned size) {
-	return size == 9 || size == 13 || size == 19;
+static std::filesystem::path resolveInputPath(const int argc, char** argv) {
+	if (argc > 1) {
+		return std::filesystem::path(argv[1]);
+	}
+	return std::filesystem::path(PATH_TEST_IMG) / "angled_hard/angle_1.jpeg";
 }
 
-// TODO: Better validity checks. Add success flag to all? Maybe return optionals?
-bool process(const cv::Mat& image, DebugVisualizer* debugger = nullptr) {
-	// Warp image roughly around the board.
-	WarpResult warped = warpToBoard(image, debugger);
-	if (warped.image.empty() || warped.H.empty()) {
-		std::cerr << "[Error] Could not find board in image.\n";
-		return false;
-	}
-
-	// Properly construct the board geometry.
-	BoardGeometry geometry = rectifyImage(image, warped, debugger);
-	if (geometry.image.empty() || geometry.H.empty() || !isValidBoardSize(geometry.boardSize) ||
-	    geometry.boardSize * geometry.boardSize != geometry.intersections.size()) {
-		std::cerr << "[Error] Could not construct board geometry from warped image.\n";
-		return false;
-	}
-
-	if (geometry.boardSize != 13u) {
-		std::cerr << "This is NOT RIGHT\n";
-	}
-
-	// Find the stones on the board.
-	StoneResult result = analyseBoard(geometry, debugger);
-	if (!result.success) {
-		std::cerr << "[Error] Could not analyse the board to find stones.\n";
-		return false;
-	}
-
-	return true;
-}
-
-bool process(const std::filesystem::path& path, DebugVisualizer* debugger = nullptr) {
-	cv::Mat image = cv::imread(path.string());
-	if (image.empty()) {
-		std::cerr << "Failed to load image: " << path << "\n";
-		return false;
-	}
-	return process(image, debugger);
-}
-
-} // namespace tengen::vision::core
-
-// 3 steps
-// 1) Find board in image and rectify (find largest plausible board contour, dont care if its physical board or outer grid contour)
-// 2) Verify board size, find contours and adapt image again
-//    - Cut image to outermost grid lines + Buffer for edge stones. Do not cut to physical board boundary.
-//    - Use board size etc for testing
-// --- HERE, we have a solid intermediate state. We do not have to repeat this every for frame of the video feed.
-//     But only when the camera changes (would have to detect this)
-// - Output: Board cropped + Board size. Expect stable
-// 3) Detect grid lines again and stones.
 int main(int argc, char** argv) {
 	QApplication application(argc, argv);
 
-	tengen::vision::core::DebugVisualizer debug;
-	debug.setInteractive(false);
-	cv::Mat imageToDisplay;
-
-	// If a path is passed here then use this image. Else do test images.
-	if (argc > 1) {
-		const std::filesystem::path inputPath = argv[1]; // Path from command line.
-
-		if (tengen::vision::core::process(inputPath, &debug)) {
-			imageToDisplay = debug.buildMosaic();
-		}
-
-	} else {
-		// cv::VideoCapture cap(0);
-		// if(!cap.isOpened()) {
-		// 	std::cerr << "Video device not opened\n";
-		// 	return -1;
-		// }
-
-		// cv::Mat image;
-		// for(;;) {
-		// 	debug.clear();
-		// 	cap >> image; // Get an image.
-		// 	if(image.empty()) {
-		// 		std::cerr << "Could not get image.\n";
-		// 		return -1;
-		// 	}
-
-		// 	if(tengen::camera::process(image, &debug)) {
-		// 		// const auto mosaic = debug.buildMosaic();
-		// 		// cv::imshow("", mosaic);
-		// 	} else {
-		// 		//cv::imshow("", image);
-		// 	}
-		// 		const auto mosaic = debug.buildMosaic();
-		// 		cv::imshow("", mosaic);
-
-		// 	// Wait 2s and exit on ESC
-		// 	if(cv::waitKey(500) == 27) {
-		// 		break;
-		// 	}
-		// }
-
-		// cap.release();
-		// cv::destroyAllWindows();
-
-
-		const auto exampleImage = std::filesystem::path(PATH_TEST_IMG) / "angled_hard/angle_1.jpeg";
-		if (tengen::vision::core::process(exampleImage, &debug)) {
-			imageToDisplay = debug.buildMosaic();
-		}
+	const auto inputPath     = resolveInputPath(argc, argv);
+	const cv::Mat inputImage = cv::imread(inputPath.string(), cv::IMREAD_COLOR);
+	if (inputImage.empty()) {
+		std::cerr << "Failed to load image: " << inputPath << "\n";
 	}
+
+	const tengen::vision::Analyser analyser(inputImage);
 
 	tengen::MainWindow window;
 	window.resize(1400, 900);
-	window.setImage(imageToDisplay);
+	window.setPipelineStepChangedCallback([&window, &analyser](const tengen::PipelineStep step) { window.setImage(analyser.analyse(step)); });
+	window.setImage(analyser.analyse(window.selectedPipelineStep()));
 	window.show();
 
 	return application.exec();

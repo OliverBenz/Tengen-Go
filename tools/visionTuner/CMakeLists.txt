@@ -5,10 +5,13 @@ find_package(OpenCV REQUIRED)
 
 # Get files to build
 set(headers
+	"${CMAKE_CURRENT_LIST_DIR}/pipelineStep.hpp" 
+	"${CMAKE_CURRENT_LIST_DIR}/analyser.hpp" 
 	"${CMAKE_CURRENT_LIST_DIR}/mainWindow.hpp"
 )
 set(sources
 	"${CMAKE_CURRENT_LIST_DIR}/main.cpp" 
+	"${CMAKE_CURRENT_LIST_DIR}/analyser.cpp" 
 	"${CMAKE_CURRENT_LIST_DIR}/mainWindow.cpp" 
 )
 
