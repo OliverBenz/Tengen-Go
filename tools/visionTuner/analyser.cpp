@@ -2,7 +2,7 @@
 
 #include "vision/core/boardFinder.hpp"
 #include "vision/core/debugVisualizer.hpp"
-#include "vision/core/rectifier.hpp"
+#include "vision/core/gridFinder.hpp"
 #include "vision/core/stoneFinder.hpp"
 
 #include <opencv2/imgcodecs.hpp>
