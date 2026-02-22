@@ -29,4 +29,6 @@ struct BoardGeometry {
 //! the edges).
 BoardGeometry rectifyImage(const cv::Mat& originalImg, const WarpResult& input, DebugVisualizer* debugger = nullptr);
 
+bool isValidGeometry(const BoardGeometry& geometry);
+
 } // namespace tengen::vision::core

@@ -351,12 +351,24 @@ BoardGeometry rectifyImage(const cv::Mat& originalImg, const WarpResult& input, 
 	std::cout << "\n\n";
 
 	// Assert output: Fail means we missed a validity check earlier.
-	assert(vGrid.size() == hGrid.size());         // Grid lines equal.
-	assert(intersectionsRefined.size() == N * N); // Intersection count fits grid size.
-	assert(N == 9 || N == 13 || N == 19);         // Only valid board sizes.
-	assert(!refined.empty());                     // No empty image.
+	assert(vGrid.size() == hGrid.size()); // Grid lines equal.
+	BoardGeometry result{refined, homographyFinal, intersectionsRefined, refinedSpacing, static_cast<unsigned>(N)};
+	assert(isValidGeometry(result));
 	// TODO: Unit test sanity check: Image (width|height) == N*spacing (up to tolerance. N-1 spacings in Grid + stone buffer)
-	return {refined, homographyFinal, intersectionsRefined, refinedSpacing, static_cast<unsigned>(N)};
+
+	return result;
 }
+
+
+bool isValidGeometry(const BoardGeometry& g) {
+	const bool validImage     = !g.image.empty(); // TODO: Other checks?
+	const bool validH         = !g.H.empty();     // TODO: Other checks?
+	const bool validBoardSize = g.boardSize == 9 || g.boardSize == 13 || g.boardSize == 19;
+	const bool validIntersect = g.intersections.size() == g.boardSize * g.boardSize; // TODO: Check approx x,y alignment etc.
+	const bool validSpacing   = true;                                                // TODO:
+
+	return validImage && validH && validBoardSize && validIntersect && validSpacing;
+}
+
 
 } // namespace tengen::vision::core

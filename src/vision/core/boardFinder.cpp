@@ -656,4 +656,12 @@ WarpResult warpToBoard(const cv::Mat& image, DebugVisualizer* debugger) {
 	return {warped, H};
 }
 
+bool isValidBoard(const WarpResult& board) {
+	const auto validWarped     = !board.image.empty(); // TODO: Additional checks.
+	const auto validHomography = !board.H.empty();     // TODO: Additional checks.
+
+	return validWarped && validHomography;
+}
+
+
 } // namespace tengen::vision::core
