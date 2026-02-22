@@ -6,6 +6,8 @@
 
 #include <opencv2/core/mat.hpp>
 
+class QComboBox;
+
 namespace tengen {
 
 class CvMatrixView : public QWidget {
@@ -34,6 +36,7 @@ private:
 
 private:
 	CvMatrixView* m_matrixView{nullptr};
+	QComboBox* m_sourceCombo{nullptr};
 };
 
 } // namespace tengen
