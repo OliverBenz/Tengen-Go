@@ -1,6 +1,10 @@
 #include "mainWindow.hpp"
 
+#include <QComboBox>
+#include <QHBoxLayout>
+#include <QLabel>
 #include <QPainter>
+#include <QVBoxLayout>
 
 #include <opencv2/imgproc.hpp>
 
@@ -100,8 +104,26 @@ void MainWindow::setImage(const cv::Mat& image) {
 }
 
 void MainWindow::buildLayout() {
-	m_matrixView = new CvMatrixView(this);
-	setCentralWidget(m_matrixView);
+	auto* rootWidget  = new QWidget(this); // TODO: This should be separate widget
+	auto* rootLayout  = new QVBoxLayout(rootWidget);
+	auto* sourceRow   = new QHBoxLayout();
+	auto* sourceLabel = new QLabel("Source:", rootWidget);
+
+	m_sourceCombo = new QComboBox(rootWidget);
+	m_sourceCombo->addItem("Image");
+	m_sourceCombo->addItem("Video");
+	m_sourceCombo->setCurrentIndex(0);
+
+	sourceRow->addWidget(sourceLabel);
+	sourceRow->addWidget(m_sourceCombo);
+	sourceRow->addStretch(1);
+
+	m_matrixView = new CvMatrixView(rootWidget);
+
+	rootLayout->addLayout(sourceRow);
+	rootLayout->addWidget(m_matrixView, 1);
+
+	setCentralWidget(rootWidget);
 }
 
 } // namespace tengen
