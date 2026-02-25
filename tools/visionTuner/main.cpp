@@ -1,5 +1,6 @@
 #include "analyser.hpp"
 #include "mainWindow.hpp"
+#include "webcamAnalysisLoop.hpp"
 
 #include <QApplication>
 #include <opencv2/opencv.hpp>
@@ -14,22 +15,37 @@ static std::filesystem::path resolveInputPath(const int argc, char** argv) {
 	return std::filesystem::path(PATH_TEST_IMG) / "angled_hard/angle_1.jpeg";
 }
 
+static cv::Mat loadFallbackImage(const int argc, char** argv) {
+	const auto inputPath = resolveInputPath(argc, argv);
+	cv::Mat image        = cv::imread(inputPath.string(), cv::IMREAD_COLOR);
+	if (image.empty()) {
+		std::cerr << "Failed to load fallback image: " << inputPath << "\n";
+	}
+	return image;
+}
+
 int main(int argc, char** argv) {
 	QApplication application(argc, argv);
 
-	const auto inputPath     = resolveInputPath(argc, argv);
-	const cv::Mat inputImage = cv::imread(inputPath.string(), cv::IMREAD_COLOR);
-	if (inputImage.empty()) {
-		std::cerr << "Failed to load image: " << inputPath << "\n";
-	}
-
-	const tengen::vision::Analyser analyser(inputImage);
-
+	tengen::vision::Analyser analyser;
 	tengen::MainWindow window;
 	window.resize(1400, 900);
-	window.setPipelineStepChangedCallback([&window, &analyser](const tengen::PipelineStep step) { window.setImage(analyser.analyse(step)); });
-	window.setImage(analyser.analyse(window.selectedPipelineStep()));
+	cv::Mat fallbackImage;
+
+	tengen::WebcamAnalysisLoop webcamLoop(window, analyser, 0, 500);
+	window.setPipelineStepChangedCallback([&webcamLoop](const tengen::PipelineStep) { webcamLoop.refreshFromLastFrame(); });
+
+	if (!webcamLoop.start()) {
+		std::cerr << "Failed to open webcam (camera index 0). Falling back to static image input.\n";
+		fallbackImage = loadFallbackImage(argc, argv);
+		window.setPipelineStepChangedCallback(
+		        [&window, &analyser, &fallbackImage](const tengen::PipelineStep step) { window.setImage(analyser.analyse(fallbackImage, step)); });
+		window.setImage(analyser.analyse(fallbackImage, window.selectedPipelineStep()));
+	}
+
 	window.show();
 
-	return application.exec();
+	const int exitCode = application.exec();
+	webcamLoop.stop();
+	return exitCode;
 }
