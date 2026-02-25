@@ -20,11 +20,8 @@ static cv::Mat buildInfoTile(const std::string& title, const std::string& messag
 }
 
 
-Analyser::Analyser(cv::Mat image) : m_original(std::move(image)) {
-}
-
-cv::Mat Analyser::analyse(const PipelineStep step) const {
-	if (m_original.empty()) {
+cv::Mat Analyser::analyse(const cv::Mat& image, const PipelineStep step) const {
+	if (image.empty()) {
 		return buildInfoTile("Input Error", "Could not load image.");
 	}
 
@@ -33,26 +30,26 @@ cv::Mat Analyser::analyse(const PipelineStep step) const {
 
 	switch (step) {
 	case tengen::PipelineStep::FindBoard:
-		warpToBoard(m_original, &debugger);
+		core::warpToBoard(image, &debugger);
 		break;
 
 	case tengen::PipelineStep::ConstructGeometry: {
-		const core::WarpResult board = core::warpToBoard(m_original);
-		if (!isValidBoard(board)) {
+		const core::WarpResult board = core::warpToBoard(image);
+		if (!core::isValidBoard(board)) {
 			return buildInfoTile("Construct Geometry", "warpToBoard failed for this image.");
 		}
-		rectifyImage(m_original, board, &debugger);
+		core::rectifyImage(image, board, &debugger);
 		break;
 	}
 
 	case tengen::PipelineStep::FindStones: {
-		const core::WarpResult board = core::warpToBoard(m_original);
-		if (!isValidBoard(board)) {
+		const core::WarpResult board = core::warpToBoard(image);
+		if (!core::isValidBoard(board)) {
 			return buildInfoTile("Find Stones", "warpToBoard failed for this image.");
 		}
 
-		const core::BoardGeometry geometry = rectifyImage(m_original, board);
-		if (!isValidGeometry(geometry)) {
+		const core::BoardGeometry geometry = core::rectifyImage(image, board);
+		if (!core::isValidGeometry(geometry)) {
 			return buildInfoTile("Find Stones", "rectifyImage failed for this image.");
 		}
 
@@ -64,17 +61,17 @@ cv::Mat Analyser::analyse(const PipelineStep step) const {
 	}
 
 	case tengen::PipelineStep::All: {
-		const core::WarpResult board = core::warpToBoard(m_original, &debugger);
-		if (!isValidBoard(board)) {
+		const core::WarpResult board = core::warpToBoard(image, &debugger);
+		if (!core::isValidBoard(board)) {
 			break;
 		}
 
-		const core::BoardGeometry geometry = core::rectifyImage(m_original, board, &debugger);
-		if (!isValidGeometry(geometry)) {
+		const core::BoardGeometry geometry = core::rectifyImage(image, board, &debugger);
+		if (!core::isValidGeometry(geometry)) {
 			break;
 		}
 
-		analyseBoard(geometry, &debugger);
+		core::analyseBoard(geometry, &debugger);
 		break;
 	}
 	}

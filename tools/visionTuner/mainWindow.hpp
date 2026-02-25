@@ -6,6 +6,7 @@
 #include <QMainWindow>
 #include <QWidget>
 
+#include <functional>
 #include <opencv2/core/mat.hpp>
 
 class QComboBox;

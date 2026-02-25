@@ -9,12 +9,7 @@ namespace tengen::vision {
 //! Runs the image detection pipeline with the DebugVisualizer attached to the desired PipelineStep.
 class Analyser {
 public:
-	explicit Analyser(cv::Mat image);
-
-	cv::Mat analyse(const PipelineStep step) const;
-
-private:
-	cv::Mat m_original;
+	cv::Mat analyse(const cv::Mat& image, PipelineStep step) const;
 };
 
 } // namespace tengen::vision
