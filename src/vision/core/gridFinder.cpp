@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <numbers>
 
 namespace tengen::vision::core {
 namespace debugging {
@@ -117,11 +118,11 @@ BoardGeometry rectifyImage(const cv::Mat& imageIB, const WarpResult& input, Debu
 	// Find line segments
 	std::vector<cv::Vec4i> lines;
 	cv::HoughLinesP(edges, lines,
-	                1,           // rho resolution
-	                CV_PI / 180, // theta resolution
-	                80,          // threshold (votes)
-	                100,         // minLineLength
-	                20           // maxLineGap
+	                1,                       // rho resolution
+	                std::numbers::pi / 180., // theta resolution
+	                80,                      // threshold (votes)
+	                100,                     // minLineLength
+	                20                       // maxLineGap
 	);
 
 	// Separate horizontal / vertical lines
@@ -129,10 +130,10 @@ BoardGeometry rectifyImage(const cv::Mat& imageIB, const WarpResult& input, Debu
 	std::vector<cv::Vec4i> horizontal;
 
 	for (const auto& l: lines) {
-		float dx = l[2] - l[0];
-		float dy = l[3] - l[1];
+		float dx = static_cast<float>(l[2] - l[0]);
+		float dy = static_cast<float>(l[3] - l[1]);
 
-		float angle = std::atan2(dy, dx) * 180.0f / CV_PI;
+		float angle = std::atan2(dy, dx) * 180.0f / std::numbers::pi_v<float>;
 
 		// Normalize angle to [-90, 90]
 		while (angle < -90)
@@ -288,9 +289,9 @@ BoardGeometry rectifyImage(const cv::Mat& imageIB, const WarpResult& input, Debu
 	// Output range
 	constexpr int outSize           = 1000;
 	std::vector<cv::Point2f> boardB = {{0.f, 0.f},
-	                                   {(float)outSize - 1.f, 0.f},
-	                                   {(float)outSize - 1.f, (float)outSize - 1.f},
-	                                   {0.f, (float)outSize - 1.f}}; //!< Board coordinates in the B space
+	                                   {static_cast<float>(outSize) - 1.f, 0.f},
+	                                   {static_cast<float>(outSize) - 1.f, static_cast<float>(outSize) - 1.f},
+	                                   {0.f, static_cast<float>(outSize) - 1.f}}; //!< Board coordinates in the B space
 
 	cv::Mat H = cv::getPerspectiveTransform(boardIB, boardB); //!< H: I_B \to B
 	cv::Mat imageB;                                           //!< Image in space B

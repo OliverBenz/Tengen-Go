@@ -167,7 +167,7 @@ static double cornerCosine(const cv::Point2f& p0, const cv::Point2f& p1, const c
 	if (norm1 <= 1e-6 || norm2 <= 1e-6) {
 		return 1.0;
 	}
-	return std::abs((v1.x * v2.x + v1.y * v2.y) / (norm1 * norm2));
+	return std::abs((v1.x * v2.x + v1.y * v2.y) / static_cast<float>(norm1 * norm2));
 }
 
 //! Compute absolute cosine between two vectors (parallel/anti-parallel -> 1).
@@ -177,7 +177,7 @@ static double parallelCosine(const cv::Point2f& v0, const cv::Point2f& v1) {
 	if (norm0 <= 1e-6 || norm1 <= 1e-6) {
 		return 0.0;
 	}
-	return std::abs((v0.x * v1.x + v0.y * v1.y) / (norm0 * norm1));
+	return std::abs((v0.x * v1.x + v0.y * v1.y) / static_cast<float>(norm0 * norm1));
 }
 
 //! Quad candidate extracted from one contour.
@@ -399,11 +399,11 @@ static bool isPlausibleBoardQuad(const std::vector<cv::Point2f>& quad, const cv:
 		return false;
 	}
 
-	const double borderTol = std::max(4.0, 0.01 * static_cast<double>(std::min(imageSize.width, imageSize.height)));
-	int nearBorderCorners  = 0;
+	const float borderTol = std::max(4.0f, 0.01f * static_cast<float>(std::min(imageSize.width, imageSize.height)));
+	int nearBorderCorners = 0;
 	for (const auto& p: quad) {
-		if (p.x <= borderTol || p.y <= borderTol || p.x >= static_cast<double>(imageSize.width - 1) - borderTol ||
-		    p.y >= static_cast<double>(imageSize.height - 1) - borderTol) {
+		if (p.x <= borderTol || p.y <= borderTol || p.x >= static_cast<float>(imageSize.width - 1) - borderTol ||
+		    p.y >= static_cast<float>(imageSize.height - 1) - borderTol) {
 			++nearBorderCorners;
 		}
 	}

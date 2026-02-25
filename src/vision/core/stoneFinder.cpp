@@ -863,9 +863,9 @@ static cv::Mat renderStatsTile(const Model& model, const DebugStats& stats) {
 	};
 
 	putLine("Stone Detection v2");
-	putLine(std::string(cv::format("medianEmpty: %.2f", model.medianEmpty)));
-	putLine(std::string(cv::format("sigmaEmpty: %.2f", model.sigmaEmpty)));
-	putLine(std::string(cv::format("chromaT: %.1f", model.tChromaSq)));
+	putLine(std::format("medianEmpty: {:.2f}", model.medianEmpty));
+	putLine(std::format("sigmaEmpty: {:.2f}", model.sigmaEmpty));
+	putLine(std::format("chromaT: {:.1f}", model.tChromaSq));
 	putLine("black: " + std::to_string(stats.blackCount));
 	putLine("white: " + std::to_string(stats.whiteCount));
 	putLine("empty: " + std::to_string(stats.emptyCount));
