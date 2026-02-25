@@ -37,14 +37,14 @@ double stddev(const std::vector<double>& v) {
 double median(std::vector<double> values) {
 	assert(!values.empty());
 
-	const size_t n   = values.size();
-	const size_t mid = n / 2;
+	const std::size_t n   = values.size();
+	const std::size_t mid = n / 2;
 
-	std::nth_element(values.begin(), values.begin() + mid, values.end());
+	std::nth_element(values.begin(), values.begin() + static_cast<std::ptrdiff_t>(mid), values.end());
 	double m = values[mid];
 
 	if (n % 2 == 0) {
-		std::nth_element(values.begin(), values.begin() + mid - 1, values.end());
+		std::nth_element(values.begin(), values.begin() + static_cast<std::ptrdiff_t>(mid) - 1, values.end());
 		m = 0.5 * (m + values[mid - 1]);
 	}
 

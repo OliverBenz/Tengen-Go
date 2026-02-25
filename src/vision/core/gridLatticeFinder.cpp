@@ -43,19 +43,19 @@ double modeGap(const std::vector<double>& gaps, double binWidth) {
 	const double gmax = *std::max_element(gaps.begin(), gaps.end()); //!< Max gap (px)
 
 	// 2. Histogram gaps into uniform bins.
-	const int bins = (int)std::ceil((gmax - gmin) / binWidth) + 1; //!< Number of bins (>= 1)
-	std::vector<int> hist(bins, 0);                                //!< Per-bin counts
+	const auto bins = static_cast<std::size_t>(std::ceil((gmax - gmin) / binWidth)) + 1u; //!< Number of bins (>= 1)
+	std::vector<int> hist(bins, 0);                                                       //!< Per-bin counts
 
 	// g = one adjacent gap (px)
 	for (double g: gaps) {
-		const int b = (int)std::floor((g - gmin) / binWidth); //!< Bin index
-		if (b >= 0 && b < bins)
+		const auto b = static_cast<std::size_t>(std::max(0, static_cast<int>(std::floor((g - gmin) / binWidth)))); //!< Bin index
+		if (b < bins)
 			hist[b]++; // vote
 	}
 
 	// 3. Pick the most populated bin and return its center.
-	const int bestBin = (int)(std::max_element(hist.begin(), hist.end()) - hist.begin()); //!< argmax(hist)
-	return gmin + (bestBin + 0.5) * binWidth;                                             // bin center (px)
+	const int bestBin = static_cast<int>(std::max_element(hist.begin(), hist.end()) - hist.begin()); //!< argmax(hist)
+	return gmin + (bestBin + 0.5) * binWidth;                                                        // bin center (px)
 }
 
 /*! Positive modulo helper in [0, period).
@@ -185,19 +185,19 @@ struct LatticeScore {
  * \param [out] outScore      Filled with inlier/span/RMS metrics if a valid score can be computed.
  * \return      True if at least one inlier was found; false otherwise.
  */
-static bool evaluateLatticeOffset(const std::vector<double>& centersSorted, double start, double spacing, int N, LatticeScore& outScore) {
+static bool evaluateLatticeOffset(const std::vector<double>& centersSorted, double start, double spacing, std::size_t N, LatticeScore& outScore) {
 	// 0. Guard.
 	if (N <= 0 || spacing <= 0.0)
 		return false;
 
 	// 1. For each lattice index k, keep the closest detected center (best absolute residual).
-	std::vector<double> bestErr(static_cast<std::size_t>(N), std::numeric_limits<double>::infinity()); // per-k best error (px)
-	std::vector<uint8_t> has(static_cast<std::size_t>(N), 0u);                                         // per-k match flag
+	std::vector<double> bestErr(N, std::numeric_limits<double>::infinity()); // per-k best error (px)
+	std::vector<uint8_t> has(N, 0u);                                         // per-k match flag
 
-	for (double c: centersSorted) {                                // c = detected center (px)
-		const double kReal = (c - start) / spacing;                // real-valued index
-		const int k        = static_cast<int>(std::lround(kReal)); // nearest lattice index
-		if (k < 0 || k >= N)
+	for (double c: centersSorted) {                 // c = detected center (px)
+		const double kReal = (c - start) / spacing; // real-valued index
+		const auto k       = std::lround(kReal);    // nearest lattice index
+		if (k < 0 || k >= static_cast<long>(N))
 			continue;
 
 		const double predicted = start + static_cast<double>(k) * spacing; // lattice position for k
@@ -212,16 +212,15 @@ static bool evaluateLatticeOffset(const std::vector<double>& centersSorted, doub
 	}
 
 	// 2. Compute inlier count, covered span, and RMS error.
-	double sumSq     = 0.0;       // sum of squared errors
-	unsigned inliers = 0u;        // number of matched indices
-	int minK         = N;         // smallest matched k
-	int maxK         = -1;        // largest matched k
-	for (int k = 0; k < N; ++k) { // k = lattice index
-		const std::size_t ki = static_cast<std::size_t>(k);
-		if (has[ki] == 0u)
+	double sumSq     = 0.0;                // sum of squared errors
+	unsigned inliers = 0u;                 // number of matched indices
+	std::size_t minK = N;                  // smallest matched k
+	std::size_t maxK = 0;                  // largest matched k
+	for (std::size_t k = 0u; k < N; ++k) { // k = lattice index
+		if (has[k] == 0u)
 			continue;
 		++inliers;
-		sumSq += bestErr[ki] * bestErr[ki];
+		sumSq += bestErr[k] * bestErr[k];
 		minK = std::min(minK, k);
 		maxK = std::max(maxK, k);
 	}
@@ -232,7 +231,7 @@ static bool evaluateLatticeOffset(const std::vector<double>& centersSorted, doub
 	// 3. Fill output score.
 	outScore.rms     = std::sqrt(sumSq / static_cast<double>(inliers));
 	outScore.inliers = inliers;
-	outScore.span    = (maxK >= minK) ? (maxK - minK + 1) : 0;
+	outScore.span    = (maxK >= minK) ? static_cast<int>(maxK - minK + 1) : 0;
 	return true;
 }
 
