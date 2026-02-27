@@ -1,10 +1,11 @@
 #pragma once
 
 #include "model/coordinate.hpp"
-#include "vision/core/rectifier.hpp" // TODO: Move to source. Dont propagate dependencies.
+#include "vision/core/gridFinder.hpp" // TODO: Move to source. Dont propagate dependencies.
 #include "vision/source.hpp"
 
 #include <atomic>
+#include <filesystem>
 #include <thread>
 
 namespace tengen::vision {
@@ -30,13 +31,14 @@ public:
 	};
 
 public:
-	explicit Vision(Source source = Source::Camera);
+	explicit Vision(Source source = Source::Video);
 	~Vision();
 
 	//! Detect the board and grid once before the game starts.
 	//! \param [in] gaugeStone Coordinate of a single black stone placed on the board. Used to fix the image orientation/coordinate mapping.
 	//! \returns    True if the board and grid could be detected.
 	bool setup(Coord gaugeCoord);
+	void setSetupImage(std::filesystem::path setupImagePath); //!< Setup image path used when source is Source::Camera.
 
 	void connect(Callbacks callback); //!< Connect callback functions.
 	void disconnect();                //!< Disconnect the callback functions.
@@ -50,8 +52,9 @@ private:
 	void boardLoop();
 
 private:
-	Source m_source;                //!< Source input for the board detection.
-	core::BoardGeometry m_geometry; //!< Result of the setup process.
+	Source m_source;                        //!< Source input for the board detection.
+	core::BoardGeometry m_geometry;         //!< Result of the setup process.
+	std::filesystem::path m_setupImagePath; //!< Setup image path for Source::Camera.
 
 	Callbacks m_callbacks; //!< Callback functions to signal events.
 
