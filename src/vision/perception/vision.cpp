@@ -1,13 +1,13 @@
 #include "vision/vision.hpp"
 #include "include/vision/vision.hpp"
 #include "vision/core/boardFinder.hpp"
-#include "vision/core/rectifier.hpp"
+#include "vision/core/gridFinder.hpp"
 #include "vision/core/stoneFinder.hpp"
-#include <opencv2/imgcodecs.hpp>
-#include <opencv2/videoio.hpp>
 #include <algorithm>
 #include <array>
 #include <cstdlib>
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/videoio.hpp>
 
 
 namespace tengen::vision {
@@ -25,20 +25,28 @@ bool Vision::setup(const Coord gaugeCoord) {
 	const auto stoneCount = [](const std::vector<core::StoneState>& input) -> std::size_t {
 		return std::count_if(input.begin(), input.end(), [](core::StoneState s) { return s == core::StoneState::Black || s == core::StoneState::White; });
 	};
-	
+
 	// Get image from source
 	cv::Mat image;
 	switch (m_source) {
 	case Source::None:
+		return false;
 	case Source::Image:
-		return false; // Not yet implemented
-	case Source::Camera: {
+		if (m_setupImagePath.empty()) {
+			return false;
+		}
+		image = cv::imread(m_setupImagePath.string(), cv::IMREAD_COLOR);
+		break;
+	case Source::Video: {
 		cv::VideoCapture capture{0, cv::CAP_ANY};
 		if (!capture.isOpened() || !capture.read(image) || image.empty()) {
 			return false;
 		}
 		break;
 	}
+	}
+	if (image.empty()) {
+		return false;
 	}
 
 	const core::WarpResult warped = core::warpToBoard(image);
@@ -64,9 +72,8 @@ bool Vision::setup(const Coord gaugeCoord) {
 		return false;
 	}
 
-	const auto stoneIt = std::find_if(result.stones.begin(), result.stones.end(), [](core::StoneState s) {
-		return s == core::StoneState::Black || s == core::StoneState::White;
-	});
+	const auto stoneIt = std::find_if(result.stones.begin(), result.stones.end(),
+	                                  [](core::StoneState s) { return s == core::StoneState::Black || s == core::StoneState::White; });
 	if (stoneIt == result.stones.end()) {
 		return false;
 	}
@@ -100,14 +107,7 @@ bool Vision::setup(const Coord gaugeCoord) {
 	};
 
 	constexpr std::array<D4, 8> group = {
-	        D4::Id,
-	        D4::Rot90,
-	        D4::Rot180,
-	        D4::Rot270,
-	        D4::FlipX,
-	        D4::FlipY,
-	        D4::Diag,
-	        D4::AntiDiag,
+	        D4::Id, D4::Rot90, D4::Rot180, D4::Rot270, D4::FlipX, D4::FlipY, D4::Diag, D4::AntiDiag,
 	};
 
 	const auto symmetryIt = std::find_if(group.begin(), group.end(), [&](D4 g) {
@@ -134,8 +134,7 @@ bool Vision::setup(const Coord gaugeCoord) {
 			break;
 		case D4::Rot180:
 			cv::rotate(geometry.imageB, imageTransformed, cv::ROTATE_180);
-			A = (cv::Mat_<double>(3, 3) << -1.0, 0.0, static_cast<double>(width - 1), 0.0, -1.0, static_cast<double>(height - 1), 0.0, 0.0,
-			     1.0);
+			A = (cv::Mat_<double>(3, 3) << -1.0, 0.0, static_cast<double>(width - 1), 0.0, -1.0, static_cast<double>(height - 1), 0.0, 0.0, 1.0);
 			break;
 		case D4::Rot270:
 			cv::rotate(geometry.imageB, imageTransformed, cv::ROTATE_90_COUNTERCLOCKWISE);
@@ -156,8 +155,7 @@ bool Vision::setup(const Coord gaugeCoord) {
 		case D4::AntiDiag:
 			cv::transpose(geometry.imageB, imageTransformed);
 			cv::flip(imageTransformed, imageTransformed, -1);
-			A = (cv::Mat_<double>(3, 3) << 0.0, -1.0, static_cast<double>(height - 1), -1.0, 0.0, static_cast<double>(width - 1), 0.0, 0.0,
-			     1.0);
+			A = (cv::Mat_<double>(3, 3) << 0.0, -1.0, static_cast<double>(height - 1), -1.0, 0.0, static_cast<double>(width - 1), 0.0, 0.0, 1.0);
 			break;
 		}
 
@@ -167,9 +165,9 @@ bool Vision::setup(const Coord gaugeCoord) {
 		std::vector<cv::Point2f> intersectionsOrdered(intersectionsTransformed.size());
 		for (unsigned x = 0; x < boardSize; ++x) {
 			for (unsigned y = 0; y < boardSize; ++y) {
-				const std::size_t oldIndex = static_cast<std::size_t>(x) * boardSize + y;
-				const Coord mapped         = mapCoord({x, y}, symmetry);
-				const std::size_t newIndex = static_cast<std::size_t>(mapped.x) * boardSize + mapped.y;
+				const std::size_t oldIndex     = static_cast<std::size_t>(x) * boardSize + y;
+				const Coord mapped             = mapCoord({x, y}, symmetry);
+				const std::size_t newIndex     = static_cast<std::size_t>(mapped.x) * boardSize + mapped.y;
 				intersectionsOrdered[newIndex] = intersectionsTransformed[oldIndex];
 			}
 		}
@@ -186,6 +184,10 @@ bool Vision::setup(const Coord gaugeCoord) {
 
 	m_geometry = std::move(geometry);
 	return true;
+}
+
+void Vision::setSetupImage(std::filesystem::path setupImagePath) {
+	m_setupImagePath = std::move(setupImagePath);
 }
 
 void Vision::connect(Callbacks callback) {
