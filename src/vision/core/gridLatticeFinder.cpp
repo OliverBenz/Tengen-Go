@@ -3,11 +3,18 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
-#include <format>
-#include <iostream>
 #include <limits>
 #include <numbers>
 #include <vector>
+
+#if defined(VISION_DEBUG_LOGGING) && defined(VISION_LOG_GRIDFINDER)
+#include <iostream>
+#include <format>
+#define DEBUG_LOG(x) std::cout << x;
+#else
+#define DEBUG_LOG(x) ((void)0);
+#endif
+
 
 /**
  * @brief 1D lattice fitting for Go board grid lines.
@@ -437,16 +444,12 @@ static bool selectGridByLatticeFit(const std::vector<double>& centersSorted, con
 	}
 
 	if (!std::isfinite(bestForN.rms) || bestForN.inliers == 0u) {
-#ifndef NDEBUG
-		std::cout << std::format(" - Fit N={}: no valid lattice fit\n", N);
-#endif
+		DEBUG_LOG(std::format(" - Fit N={}: no valid lattice fit\n", N));
 		return false;
 	}
 
-#ifndef NDEBUG
-	std::cout << std::format(" - Fit N={}: rms={:.3f}px inliers={}/{} span={} gapRms={:.3f}px windowStart={}\n", N, bestForN.rms, bestForN.inliers, N,
-	                         bestForN.span, bestGapRmsForN, bestWindowStartForN);
-#endif
+	DEBUG_LOG(std::format(" - Fit N={}: rms={:.3f}px inliers={}/{} span={} gapRms={:.3f}px windowStart={}\n", N, bestForN.rms, bestForN.inliers, N,
+	                         bestForN.span, bestGapRmsForN, bestWindowStartForN));
 
 	// 4. Reconstruct the full lattice for this N.
 	outGrid.resize(N);
@@ -454,10 +457,8 @@ static bool selectGridByLatticeFit(const std::vector<double>& centersSorted, con
 		outGrid[k] = bestStartForN + static_cast<double>(k) * bestSpacingForN;
 	}
 
-#ifndef NDEBUG
-	std::cout << std::format("Selected N={} spacing={:.3f} phase={:.3f} offset={} rms={:.3f}px inliers={}/{} windowStart={}\n", N, bestSpacingForN,
-	                         bestPhaseForN, bestForN.offset, bestForN.rms, bestForN.inliers, N, bestWindowStartForN);
-#endif
+	DEBUG_LOG(std::format("Selected N={} spacing={:.3f} phase={:.3f} offset={} rms={:.3f}px inliers={}/{} windowStart={}\n", N, bestSpacingForN,
+	                         bestPhaseForN, bestForN.offset, bestForN.rms, bestForN.inliers, N, bestWindowStartForN));
 
 	return true;
 }
@@ -479,7 +480,7 @@ bool findGrid(const std::vector<double>& vCenters, const std::vector<double>& hC
 	}
 
 	double s = modeGap(gaps, 4.0); // rough spacing estimate (px)
-	std::cout << "DEBUG: Estimated spacing s=" << s << "\n";
+	DEBUG_LOG("DEBUG: Estimated spacing s=" << s);
 #endif
 
 	std::vector<std::size_t> NsAll; //!< Candidate board sizes to evaluate.

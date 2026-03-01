@@ -5,12 +5,19 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
-#include <iostream>
 #include <string>
 #include <string_view>
 #include <vector>
+#include <iostream>
 
 #include <opencv2/opencv.hpp>
+
+#if defined(VISION_DEBUG_LOGGING) && defined(VISION_LOG_STONEFINDER)
+#include <format>
+#define DEBUG_LOG(x) std::cout << x;
+#else
+#define DEBUG_LOG(x) ((void)0);
+#endif
 
 namespace tengen::vision::core {
 
@@ -874,19 +881,10 @@ static cv::Mat renderStatsTile(const Model& model, const DebugStats& stats) {
 	return tile;
 }
 
+#if defined(VISION_DEBUG_LOGGING) && defined(VISION_LOG_STONEFINDER)
 static void emitRuntimeDebug(const BoardGeometry& geometry, const std::vector<Features>& features, const Model& model, const std::vector<StoneState>& states,
                              const std::vector<float>& confidence, const std::vector<Eval>& evaluations, const std::vector<float>& neighborMedianMap,
                              const DebugStats& stats, const std::vector<RejectionReason>* rejectionReasons = nullptr) {
-	const char* debugEnv = std::getenv("GO_STONE_DEBUG");
-	if (debugEnv == nullptr) {
-		return;
-	}
-
-	const std::string_view debugFlag(debugEnv);
-	if (debugFlag != "1" && debugFlag != "2") {
-		return;
-	}
-
 	const int boardSize        = static_cast<int>(geometry.boardSize);
 	const bool hasEvaluations  = evaluations.size() == states.size();
 	const bool hasNeighborMeds = neighborMedianMap.size() == states.size();
@@ -908,9 +906,9 @@ static void emitRuntimeDebug(const BoardGeometry& geometry, const std::vector<Fe
 		return computeNeighborMedianDelta(features, gridX, gridY, boardSize, model.medianEmpty);
 	};
 
-	std::cerr << "[stone-debug] N=" << geometry.boardSize << " black=" << stats.blackCount << " white=" << stats.whiteCount << " empty=" << stats.emptyCount
+	DEBUG_LOG("[stone-debug] N=" << geometry.boardSize << " black=" << stats.blackCount << " white=" << stats.whiteCount << " empty=" << stats.emptyCount
 	          << " median=" << model.medianEmpty << " sigma=" << model.sigmaEmpty << " chromaT=" << model.tChromaSq << " refineTried=" << stats.refinedTried
-	          << " refineAccepted=" << stats.refinedAccepted << '\n';
+	          << " refineAccepted=" << stats.refinedAccepted);
 
 	for (std::size_t index = 0; index < states.size(); ++index) {
 		if (states[index] == StoneState::Empty) {
@@ -923,13 +921,13 @@ static void emitRuntimeDebug(const BoardGeometry& geometry, const std::vector<Fe
 		const float neighborMedian   = neighborForIndex(index);
 		const float neighborContrast = (states[index] == StoneState::Black) ? (neighborMedian - feature.deltaL) : (feature.deltaL - neighborMedian);
 		const cv::Point2f point      = geometry.intersections[index];
-		std::cerr << "  idx=" << index << " (" << gridX << "," << gridY << ")"
+		DEBUG_LOG("  idx=" << index << " (" << gridX << "," << gridY << ")"
 		          << " px=(" << point.x << "," << point.y << ")"
 		          << " state=" << (states[index] == StoneState::Black ? "B" : "W") << " conf=" << confidence[index] << " z=" << z << " d=" << feature.darkFrac
-		          << " b=" << feature.brightFrac << " c=" << feature.chromaSq << " nc=" << neighborContrast << '\n';
+		          << " b=" << feature.brightFrac << " c=" << feature.chromaSq << " nc=" << neighborContrast);
 	}
 
-	const bool verboseCandidates = (debugFlag == "2");
+	const bool verboseCandidates = true;
 	if (verboseCandidates) {
 		struct EmptyRow {
 			std::size_t idx{0};
@@ -956,10 +954,10 @@ static void emitRuntimeDebug(const BoardGeometry& geometry, const std::vector<Fe
 			const float rawConf          = hasEvaluations ? evaluations[index].confidence : 0.0f;
 			const float neighborMedian   = neighborForIndex(index);
 			const float neighborContrast = features[index].deltaL - neighborMedian;
-			std::cerr << "  empty-cand idx=" << index << " (" << gridX << "," << gridY << ")"
+			DEBUG_LOG("  empty-cand idx=" << index << " (" << gridX << "," << gridY << ")"
 			          << " z=" << emptyRows[row].z << " d=" << features[index].darkFrac << " b=" << features[index].brightFrac
 			          << " c=" << features[index].chromaSq << " raw=" << (rawState == StoneState::Black ? "B" : (rawState == StoneState::White ? "W" : "E"))
-			          << " m=" << rawMargin << "/" << rawRequired << " conf=" << rawConf << " nc=" << neighborContrast << '\n';
+			          << " m=" << rawMargin << "/" << rawRequired << " conf=" << rawConf << " nc=" << neighborContrast);
 		}
 
 		struct BrightRow {
@@ -987,10 +985,10 @@ static void emitRuntimeDebug(const BoardGeometry& geometry, const std::vector<Fe
 			const float rawConf          = hasEvaluations ? evaluations[index].confidence : 0.0f;
 			const float neighborMedian   = neighborForIndex(index);
 			const float neighborContrast = features[index].deltaL - neighborMedian;
-			std::cerr << "  bright-cand idx=" << index << " (" << gridX << "," << gridY << ")"
+			DEBUG_LOG("  bright-cand idx=" << index << " (" << gridX << "," << gridY << ")"
 			          << " b=" << brightRows[row].bright << " z=" << z << " d=" << features[index].darkFrac << " c=" << features[index].chromaSq
 			          << " raw=" << (rawState == StoneState::Black ? "B" : (rawState == StoneState::White ? "W" : "E")) << " m=" << rawMargin << "/"
-			          << rawRequired << " conf=" << rawConf << " nc=" << neighborContrast << '\n';
+			          << rawRequired << " conf=" << rawConf << " nc=" << neighborContrast);
 		}
 	}
 
@@ -1016,8 +1014,8 @@ static void emitRuntimeDebug(const BoardGeometry& geometry, const std::vector<Fe
 			const std::size_t gridY = index % geometry.boardSize;
 			const Features& feature = features[index];
 			const float z           = zForIndex(index, feature);
-			std::cerr << "  cand idx=" << index << " (" << gridX << "," << gridY << ")"
-			          << " z=" << z << " d=" << feature.darkFrac << " b=" << feature.brightFrac << " c=" << feature.chromaSq << '\n';
+			DEBUG_LOG("  cand idx=" << index << " (" << gridX << "," << gridY << ")"
+			          << " z=" << z << " d=" << feature.darkFrac << " b=" << feature.brightFrac << " c=" << feature.chromaSq);
 		}
 	}
 
@@ -1032,13 +1030,13 @@ static void emitRuntimeDebug(const BoardGeometry& geometry, const std::vector<Fe
 				++reasonCounts[reasonIndex];
 			}
 		}
-		std::cerr << "[stone-debug] rejections";
+		DEBUG_LOG("[stone-debug] rejections");
 		for (std::size_t index = 0; index < reasonCounts.size(); ++index) {
-			std::cerr << " " << rejectionReasonLabel(static_cast<RejectionReason>(index)) << "=" << reasonCounts[index];
+			DEBUG_LOG('\t' << rejectionReasonLabel(static_cast<RejectionReason>(index)) << "=" << reasonCounts[index]);
 		}
-		std::cerr << '\n';
 	}
 }
+#endif
 
 } // namespace Debugging
 
@@ -1169,8 +1167,10 @@ StoneResult analyseBoardV2(const BoardGeometry& geometry, DebugVisualizer* debug
 	            confidence, stats, collectRuntimeDebug ? &evaluations : nullptr, collectRuntimeDebug ? &neighborMedianMap : nullptr,
 	            collectRuntimeDebug ? &rejectionReasons : nullptr);
 
+#if defined(VISION_DEBUG_LOGGING) && defined(VISION_LOG_STONEFINDER)
 	Debugging::emitRuntimeDebug(geometry, features, model, states, confidence, evaluations, neighborMedianMap, stats,
 	                            collectRuntimeDebug ? &rejectionReasons : nullptr);
+#endif
 
 	if (debugger) {
 		debugger->add("Stone Overlay", Debugging::drawOverlay(geometry.imageB, geometry.intersections, states, radii.innerRadius));
