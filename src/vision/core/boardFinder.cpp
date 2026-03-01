@@ -40,6 +40,56 @@ struct QuadConstraints {
 	double minRectFillForMinAreaRect{0.08};
 };
 
+//! Line-count scoring settings for legal board-size evidence.
+struct LineCountScoreSettings {
+	std::array<int, 3> legalBoardLineCounts{9, 13, 19};
+	double distanceForZeroScore{8.0};
+};
+
+//! Settings for fast grid evidence extraction from a warped candidate.
+struct GridEvidenceSettings {
+	int blurKernelSize{9};
+	double blurSigma{1.5};
+	double cannyLow{50.0};
+	double cannyHigh{120.0};
+	int edgeDilateIterations{1};
+	double houghRho{1.0};
+	double houghThetaDeg{1.0};
+	int houghThreshold{80};
+	double houghMinLineLength{100.0};
+	double houghMaxLineGap{20.0};
+	double horizontalAngleMaxDeg{15.0};
+	double verticalAngleMinDeg{75.0};
+	double clusterEpsilonPx{15.0};
+	double balanceDiffForZeroScore{12.0};
+	double segmentSupportForFullScore{220.0};
+	double pairFitWeight{2.0};
+	double balanceWeight{0.8};
+	double segmentSupportWeight{0.4};
+};
+
+//! Geometric scoring weights for candidate quadrilaterals.
+struct QuadScoreSettings {
+	double areaFracWeight{1.2};
+	double squarenessWeight{1.3};
+	double edgeBalanceWeight{1.2};
+	double parallelWeight{1.1};
+	double rightnessWeight{0.6};
+	double centerWeight{0.8};
+	double centerDistanceDiagFrac{0.60};
+	double fromApproxBonus{0.15};
+};
+
+//! Candidate-ranking weights that combine geometry and grid evidence.
+struct CandidateScoringSettings {
+	double extraApproxPreference{0.45};
+	double rectFillWeight{0.90};
+	double minQuadAreaForRectFill{1.0};
+	int refinedCandidateCount{6};
+	double strictGridScoreWeight{1.25};
+	double relaxedGridScoreWeight{2.0};
+};
+
 //! Strict defaults preserve current behavior on known-good datasets.
 static constexpr QuadConstraints STRICT_CONSTRAINTS{};
 
@@ -57,6 +107,10 @@ static constexpr QuadConstraints RELAXED_CONSTRAINTS = {
         .maxNearBorderCorners      = 4,
         .minRectFillForMinAreaRect = 0.0,
 };
+static constexpr LineCountScoreSettings LINE_COUNT_SCORE_SETTINGS{};
+static constexpr GridEvidenceSettings GRID_EVIDENCE_SETTINGS{};
+static constexpr QuadScoreSettings QUAD_SCORE_SETTINGS{};
+static constexpr CandidateScoringSettings CANDIDATE_SCORING_SETTINGS{};
 
 //! Ensure odd kernel sizes for blur/morphology operations.
 static int makeOddKernelSize(int value) {
@@ -326,16 +380,20 @@ static std::vector<double> clusterWeighted1D(std::vector<Line1D> values, double 
 }
 
 //! Score how close a line-count is to legal Go board sizes.
-static double boardLineCountScore(const int count) {
-	const int d9   = std::abs(count - 9);
-	const int d13  = std::abs(count - 13);
-	const int d19  = std::abs(count - 19);
-	const int best = std::min({d9, d13, d19});
-	return std::clamp(1.0 - static_cast<double>(best) / 8.0, 0.0, 1.0);
+static double boardLineCountScore(const int count, const LineCountScoreSettings& settings) {
+	int best = std::numeric_limits<int>::max();
+	for (const int legalCount: settings.legalBoardLineCounts) {
+		best = std::min(best, std::abs(count - legalCount));
+	}
+	if (best == std::numeric_limits<int>::max()) {
+		return 0.0;
+	}
+	return std::clamp(1.0 - static_cast<double>(best) / settings.distanceForZeroScore, 0.0, 1.0);
 }
 
 //! Evaluate grid-line evidence for one board candidate using a fast line-count check on the warped candidate.
-static GridEvidence evaluateGridEvidence(const cv::Mat& image, const std::vector<cv::Point2f>& quad) {
+static GridEvidence evaluateGridEvidence(const cv::Mat& image, const std::vector<cv::Point2f>& quad, const GridEvidenceSettings& evidenceSettings,
+                                         const LineCountScoreSettings& lineCountSettings) {
 	GridEvidence evidence{};
 	if (image.empty() || quad.size() != 4u) {
 		return evidence;
@@ -362,14 +420,15 @@ static GridEvidence evaluateGridEvidence(const cv::Mat& image, const std::vector
 	}
 
 	cv::Mat blur;
-	cv::GaussianBlur(gray, blur, cv::Size(9, 9), 1.5);
+	cv::GaussianBlur(gray, blur, cv::Size(evidenceSettings.blurKernelSize, evidenceSettings.blurKernelSize), evidenceSettings.blurSigma);
 
 	cv::Mat edges;
-	cv::Canny(blur, edges, 50, 120);
-	cv::dilate(edges, edges, cv::Mat(), cv::Point(-1, -1), 1);
+	cv::Canny(blur, edges, evidenceSettings.cannyLow, evidenceSettings.cannyHigh);
+	cv::dilate(edges, edges, cv::Mat(), cv::Point(-1, -1), evidenceSettings.edgeDilateIterations);
 
 	std::vector<cv::Vec4i> lines;
-	cv::HoughLinesP(edges, lines, 1.0, CV_PI / 180.0, 80, 100, 20);
+	cv::HoughLinesP(edges, lines, evidenceSettings.houghRho, evidenceSettings.houghThetaDeg * CV_PI / 180.0, evidenceSettings.houghThreshold,
+	                evidenceSettings.houghMinLineLength, evidenceSettings.houghMaxLineGap);
 	if (lines.empty()) {
 		return evidence;
 	}
@@ -388,26 +447,28 @@ static GridEvidence evaluateGridEvidence(const cv::Mat& image, const std::vector
 		while (angle > 90.0)
 			angle -= 180.0;
 
-		if (std::abs(angle) < 15.0) {
+		if (std::abs(angle) < evidenceSettings.horizontalAngleMaxDeg) {
 			horizontal.push_back({0.5 * static_cast<double>(line[1] + line[3]), segLen});
-		} else if (std::abs(angle) > 75.0) {
+		} else if (std::abs(angle) > evidenceSettings.verticalAngleMinDeg) {
 			vertical.push_back({0.5 * static_cast<double>(line[0] + line[2]), segLen});
 		}
 	}
 
-	const std::vector<double> vCenters = clusterWeighted1D(vertical, 15.0);
-	const std::vector<double> hCenters = clusterWeighted1D(horizontal, 15.0);
+	const std::vector<double> vCenters = clusterWeighted1D(vertical, evidenceSettings.clusterEpsilonPx);
+	const std::vector<double> hCenters = clusterWeighted1D(horizontal, evidenceSettings.clusterEpsilonPx);
 
 	evidence.verticalCount   = static_cast<int>(vCenters.size());
 	evidence.horizontalCount = static_cast<int>(hCenters.size());
 
-	const double fitV           = boardLineCountScore(evidence.verticalCount);
-	const double fitH           = boardLineCountScore(evidence.horizontalCount);
-	const double pairFit        = std::sqrt(fitV * fitH);
-	const double balance        = std::clamp(1.0 - std::abs(evidence.verticalCount - evidence.horizontalCount) / 12.0, 0.0, 1.0);
-	const double segmentSupport = std::clamp((static_cast<double>(vertical.size()) + static_cast<double>(horizontal.size())) / 220.0, 0.0, 1.0);
+	const double fitV    = boardLineCountScore(evidence.verticalCount, lineCountSettings);
+	const double fitH    = boardLineCountScore(evidence.horizontalCount, lineCountSettings);
+	const double pairFit = std::sqrt(fitV * fitH);
+	const double balance = std::clamp(1.0 - std::abs(evidence.verticalCount - evidence.horizontalCount) / evidenceSettings.balanceDiffForZeroScore, 0.0, 1.0);
+	const double segmentSupport =
+	        std::clamp((static_cast<double>(vertical.size()) + static_cast<double>(horizontal.size())) / evidenceSettings.segmentSupportForFullScore, 0.0, 1.0);
 
-	evidence.score = 2.0 * pairFit + 0.8 * balance + 0.4 * segmentSupport;
+	evidence.score =
+	        evidenceSettings.pairFitWeight * pairFit + evidenceSettings.balanceWeight * balance + evidenceSettings.segmentSupportWeight * segmentSupport;
 	return evidence;
 }
 
@@ -478,7 +539,7 @@ static bool isPlausibleBoardQuad(const std::vector<cv::Point2f>& quad, const cv:
 }
 
 //! Score a plausible quad; larger is better.
-static double boardQuadScore(const std::vector<cv::Point2f>& quad, const cv::Size imageSize, bool fromApprox) {
+static double boardQuadScore(const std::vector<cv::Point2f>& quad, const cv::Size imageSize, bool fromApprox, const QuadScoreSettings& settings) {
 	const double imageArea = static_cast<double>(imageSize.width) * static_cast<double>(imageSize.height);
 	const double areaFrac  = std::abs(cv::contourArea(quad)) / imageArea;
 
@@ -505,10 +566,11 @@ static double boardQuadScore(const std::vector<cv::Point2f>& quad, const cv::Siz
 	const cv::Point2f imageCenter{0.5f * static_cast<float>(imageSize.width - 1), 0.5f * static_cast<float>(imageSize.height - 1)};
 	const double centerDist  = cv::norm(center - imageCenter);
 	const double diag        = std::sqrt(static_cast<double>(imageSize.width) * imageSize.width + static_cast<double>(imageSize.height) * imageSize.height);
-	const double centerScore = std::clamp(1.0 - centerDist / (0.60 * diag), 0.0, 1.0);
+	const double centerScore = std::clamp(1.0 - centerDist / (settings.centerDistanceDiagFrac * diag), 0.0, 1.0);
 
-	const double approxBonus = fromApprox ? 0.15 : 0.0;
-	return 1.2 * areaFrac + 1.3 * squareness + 1.2 * edgeBalance + 1.1 * parallelScore + 0.6 * rightness + 0.8 * centerScore + approxBonus;
+	const double approxBonus = fromApprox ? settings.fromApproxBonus : 0.0;
+	return settings.areaFracWeight * areaFrac + settings.squarenessWeight * squareness + settings.edgeBalanceWeight * edgeBalance +
+	       settings.parallelWeight * parallelScore + settings.rightnessWeight * rightness + settings.centerWeight * centerScore + approxBonus;
 }
 
 //! Selected board candidate including source contour index and score.
@@ -557,7 +619,7 @@ static std::optional<BoardCandidate> selectBestBoardCandidate(const std::vector<
 				continue;
 			}
 
-			const double quadArea  = std::max(1.0, candidateA);
+			const double quadArea  = std::max(CANDIDATE_SCORING_SETTINGS.minQuadAreaForRectFill, candidateA);
 			const double rectFill  = q.contourArea / quadArea;
 			const bool lowRectFill = !q.fromApprox && rectFill < constraints.minRectFillForMinAreaRect;
 			if (lowRectFill) {
@@ -566,7 +628,8 @@ static std::optional<BoardCandidate> selectBestBoardCandidate(const std::vector<
 				continue;
 			}
 
-			const double score = boardQuadScore(q.quad, imageSize, q.fromApprox) + (q.fromApprox ? 0.45 : 0.0) + 0.90 * rectFill;
+			const double score = boardQuadScore(q.quad, imageSize, q.fromApprox, QUAD_SCORE_SETTINGS) +
+			                     (q.fromApprox ? CANDIDATE_SCORING_SETTINGS.extraApproxPreference : 0.0) + CANDIDATE_SCORING_SETTINGS.rectFillWeight * rectFill;
 			DEBUG_LOG("[board-debug] pass=" << passName << " rank=" << rank << " idx=" << contourIdx << " contourArea=" << q.contourArea << " quadArea="
 			                                << quadArea << " fill=" << rectFill << " approx=" << (q.fromApprox ? 1 : 0) << " score=" << score << '\n');
 
@@ -590,18 +653,17 @@ static std::optional<BoardCandidate> selectBestBoardCandidate(const std::vector<
 
 	std::sort(candidates.begin(), candidates.end(), [](const BoardCandidate& left, const BoardCandidate& right) { return left.score > right.score; });
 
-	static constexpr int REFINED_CANDIDATES = 6;
-	const double GRID_SCORE_W               = usedRelaxedPass ? 2.0 : 1.25;
+	const double gridScoreWeight = usedRelaxedPass ? CANDIDATE_SCORING_SETTINGS.relaxedGridScoreWeight : CANDIDATE_SCORING_SETTINGS.strictGridScoreWeight;
 
 	BoardCandidate best   = candidates.front();
 	double bestFinalScore = -std::numeric_limits<double>::infinity();
-	const int refineCount = std::min<int>(static_cast<int>(candidates.size()), REFINED_CANDIDATES);
+	const int refineCount = std::min<int>(static_cast<int>(candidates.size()), CANDIDATE_SCORING_SETTINGS.refinedCandidateCount);
 	for (int i = 0; i < refineCount; ++i) {
 		BoardCandidate current      = candidates[static_cast<std::size_t>(i)];
-		const GridEvidence evidence = evaluateGridEvidence(image, current.quad);
+		const GridEvidence evidence = evaluateGridEvidence(image, current.quad, GRID_EVIDENCE_SETTINGS, LINE_COUNT_SCORE_SETTINGS);
 		current.verticalCount       = evidence.verticalCount;
 		current.horizontalCount     = evidence.horizontalCount;
-		const double finalScore     = current.score + GRID_SCORE_W * evidence.score;
+		const double finalScore     = current.score + gridScoreWeight * evidence.score;
 		DEBUG_LOG("[board-debug] refine idx=" << current.contourIdx << " geom=" << current.score << " grid=" << evidence.score << " final=" << finalScore
 		                                      << " v=" << evidence.verticalCount << " h=" << evidence.horizontalCount << '\n');
 		if (finalScore > bestFinalScore) {
