@@ -23,7 +23,7 @@ Vision::~Vision() {
 
 bool Vision::setup(const Coord gaugeCoord) {
 	const auto stoneCount = [](const std::vector<core::StoneState>& input) -> std::size_t {
-		return std::count_if(input.begin(), input.end(), [](core::StoneState s) { return s == core::StoneState::Black || s == core::StoneState::White; });
+		return static_cast<std::size_t>(std::count_if(input.begin(), input.end(), [](core::StoneState s) { return s == core::StoneState::Black || s == core::StoneState::White; }));
 	};
 
 	// Get image from source
