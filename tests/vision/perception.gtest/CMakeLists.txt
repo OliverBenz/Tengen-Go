@@ -10,7 +10,7 @@ add_executable(${targetName}
 target_link_libraries(${targetName} PRIVATE tengen::vision::core tengen::vision::perception GTest::gtest_main)
 set_target_properties(${targetName} PROPERTIES FOLDER "${ideFolderSource}")
 
-target_compile_definitions(${targetName} PRIVATE PATH_TEST_IMG="${CMAKE_CURRENT_LIST_DIR}/resources/")
+target_compile_definitions(${targetName} PRIVATE PATH_TEST_IMG="${CMAKE_CURRENT_LIST_DIR}/../resouces/")
 
 # Setup project settings
 set_project_warnings(${targetName})  # Which warnings to enable
