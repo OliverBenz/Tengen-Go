@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
-#include <cstdlib>
 #include <limits>
 #include <optional>
 #include <vector>
@@ -24,9 +23,40 @@ namespace {
 //! Normalized output size used by rough board warp.
 static constexpr int WARP_OUT_SIZE = 1000;
 //! Number of largest contours considered for board-candidate scoring.
-static constexpr int MAX_CANDIDATE_CONTOURS = 24;
-//! Candidate quad must cover at least this image-area fraction.
-static constexpr double MIN_CONTOUR_AREA_FRAC = 0.08;
+static constexpr int MAX_CANDIDATE_CONTOURS = 80;
+
+//! Geometric constraints used to validate board quads.
+struct QuadConstraints {
+	double minAreaFrac{0.08};
+	double maxAreaFrac{0.75};
+	double minEdgeLenFrac{0.05};
+	double minAspect{0.25};
+	double minTopBottomRatio{0.20};
+	double minLeftRightRatio{0.20};
+	double minParallelTopBottom{0.45};
+	double minParallelLeftRight{0.45};
+	double maxCornerCosine{0.995};
+	int maxNearBorderCorners{3};
+	double minRectFillForMinAreaRect{0.08};
+};
+
+//! Strict defaults preserve current behavior on known-good datasets.
+static constexpr QuadConstraints STRICT_CONSTRAINTS{};
+
+//! Relaxed fallback for difficult frames (e.g. near-border boards or thin outline contours).
+static constexpr QuadConstraints RELAXED_CONSTRAINTS = {
+        .minAreaFrac               = 0.04,
+        .maxAreaFrac               = 0.995,
+        .minEdgeLenFrac            = 0.03,
+        .minAspect                 = 0.16,
+        .minTopBottomRatio         = 0.10,
+        .minLeftRightRatio         = 0.10,
+        .minParallelTopBottom      = 0.25,
+        .minParallelLeftRight      = 0.25,
+        .maxCornerCosine           = 0.998,
+        .maxNearBorderCorners      = 4,
+        .minRectFillForMinAreaRect = 0.0,
+};
 
 //! Ensure odd kernel sizes for blur/morphology operations.
 static int makeOddKernelSize(int value) {
@@ -79,6 +109,40 @@ static bool convertToGray(const cv::Mat& image, cv::Mat& outGray) {
 		return true;
 	}
 	return false;
+}
+
+//! Mildly enhance local contrast in warped output to stabilize downstream grid detection on faint lines.
+static cv::Mat enhanceWarpContrast(const cv::Mat& image) {
+	if (image.empty()) {
+		return image;
+	}
+
+	cv::Mat bgr;
+	if (image.channels() == 3) {
+		bgr = image.clone();
+	} else if (image.channels() == 4) {
+		cv::cvtColor(image, bgr, cv::COLOR_BGRA2BGR);
+	} else if (image.channels() == 1) {
+		cv::cvtColor(image, bgr, cv::COLOR_GRAY2BGR);
+	} else {
+		return image;
+	}
+
+	cv::Mat lab;
+	cv::cvtColor(bgr, lab, cv::COLOR_BGR2Lab);
+	std::vector<cv::Mat> channels;
+	cv::split(lab, channels);
+	if (channels.size() != 3u) {
+		return bgr;
+	}
+
+	cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE(2.0, cv::Size(8, 8));
+	clahe->apply(channels[0], channels[0]);
+	cv::merge(channels, lab);
+
+	cv::Mat enhanced;
+	cv::cvtColor(lab, enhanced, cv::COLOR_Lab2BGR);
+	return enhanced;
 }
 
 //! Build complementary binary masks used for contour extraction.
@@ -348,17 +412,17 @@ static GridEvidence evaluateGridEvidence(const cv::Mat& image, const std::vector
 }
 
 //! Check whether a quad satisfies geometric constraints expected for a physical Go board.
-static bool isPlausibleBoardQuad(const std::vector<cv::Point2f>& quad, const cv::Size imageSize) {
+static bool isPlausibleBoardQuad(const std::vector<cv::Point2f>& quad, const cv::Size imageSize, const QuadConstraints& constraints) {
 	if (quad.size() != 4u) {
 		return false;
 	}
 
 	const double imageArea = static_cast<double>(imageSize.width) * static_cast<double>(imageSize.height);
 	const double area      = std::abs(cv::contourArea(quad));
-	if (area < MIN_CONTOUR_AREA_FRAC * imageArea) {
+	if (area < constraints.minAreaFrac * imageArea) {
 		return false;
 	}
-	if (area > 0.75 * imageArea) {
+	if (area > constraints.maxAreaFrac * imageArea) {
 		return false;
 	}
 
@@ -367,26 +431,26 @@ static bool isPlausibleBoardQuad(const std::vector<cv::Point2f>& quad, const cv:
 	const double bottom = cv::norm(quad[2] - quad[3]);
 	const double left   = cv::norm(quad[3] - quad[0]);
 	const double minLen = std::min({top, right, bottom, left});
-	if (minLen < 0.05 * static_cast<double>(std::min(imageSize.width, imageSize.height))) {
+	if (minLen < constraints.minEdgeLenFrac * static_cast<double>(std::min(imageSize.width, imageSize.height))) {
 		return false;
 	}
 
 	const double widthEstimate  = 0.5 * (top + bottom);
 	const double heightEstimate = 0.5 * (left + right);
 	const double aspect         = std::min(widthEstimate, heightEstimate) / std::max(widthEstimate, heightEstimate);
-	if (aspect < 0.25) {
+	if (aspect < constraints.minAspect) {
 		return false;
 	}
 
 	const double topBottomRatio = std::min(top, bottom) / std::max(top, bottom);
 	const double leftRightRatio = std::min(left, right) / std::max(left, right);
-	if (topBottomRatio < 0.20 || leftRightRatio < 0.20) {
+	if (topBottomRatio < constraints.minTopBottomRatio || leftRightRatio < constraints.minLeftRightRatio) {
 		return false;
 	}
 
 	const double parallelTopBottom = parallelCosine(quad[1] - quad[0], quad[2] - quad[3]);
 	const double parallelLeftRight = parallelCosine(quad[2] - quad[1], quad[3] - quad[0]);
-	if (parallelTopBottom < 0.45 || parallelLeftRight < 0.45) {
+	if (parallelTopBottom < constraints.minParallelTopBottom || parallelLeftRight < constraints.minParallelLeftRight) {
 		return false;
 	}
 
@@ -394,7 +458,7 @@ static bool isPlausibleBoardQuad(const std::vector<cv::Point2f>& quad, const cv:
 	const double c1 = cornerCosine(quad[0], quad[1], quad[2]);
 	const double c2 = cornerCosine(quad[1], quad[2], quad[3]);
 	const double c3 = cornerCosine(quad[2], quad[3], quad[0]);
-	if (std::max({c0, c1, c2, c3}) > 0.995) {
+	if (std::max({c0, c1, c2, c3}) > constraints.maxCornerCosine) {
 		return false;
 	}
 
@@ -406,7 +470,7 @@ static bool isPlausibleBoardQuad(const std::vector<cv::Point2f>& quad, const cv:
 			++nearBorderCorners;
 		}
 	}
-	if (nearBorderCorners >= 4) {
+	if (nearBorderCorners > constraints.maxNearBorderCorners) {
 		return false;
 	}
 
@@ -455,6 +519,7 @@ struct BoardCandidate {
 	double area{0.0};
 	int verticalCount{0};
 	int horizontalCount{0};
+	bool fromRelaxedPass{false};
 };
 
 //! Select best board candidate from contour set using constraints + scoring.
@@ -473,36 +538,50 @@ static std::optional<BoardCandidate> selectBestBoardCandidate(const std::vector<
 	});
 
 	const int candidateCount = std::min(static_cast<int>(sortedIndices.size()), MAX_CANDIDATE_CONTOURS);
-	DEBUG_LOG("[board-debug] candidate-count=" << candidateCount);
+	DEBUG_LOG("[board-debug] candidate-count=" << candidateCount << '\n');
 
-	std::vector<BoardCandidate> candidates;
-	candidates.reserve(static_cast<std::size_t>(candidateCount));
+	const auto collectCandidates = [&](const QuadConstraints& constraints, const char* passName, const bool fromRelaxedPass) {
+		(void)passName;
+		std::vector<BoardCandidate> candidates;
+		candidates.reserve(static_cast<std::size_t>(candidateCount));
 
-	for (int rank = 0; rank < candidateCount; ++rank) {
-		const int contourIdx    = sortedIndices[static_cast<std::size_t>(rank)];
-		const auto& contour     = contours[static_cast<std::size_t>(contourIdx)];
-		const QuadCandidate q   = contourToQuad(contour);
-		const bool plausible    = isPlausibleBoardQuad(q.quad, imageSize);
-		const double candidateA = std::abs(cv::contourArea(q.quad));
-		if (!plausible) {
-			DEBUG_LOG("[board-debug] rank=" << rank << " idx=" << contourIdx << " contourArea=" << q.contourArea << " reject=plausibility\n");
-			continue;
+		for (int rank = 0; rank < candidateCount; ++rank) {
+			const int contourIdx    = sortedIndices[static_cast<std::size_t>(rank)];
+			const auto& contour     = contours[static_cast<std::size_t>(contourIdx)];
+			const QuadCandidate q   = contourToQuad(contour);
+			const bool plausible    = isPlausibleBoardQuad(q.quad, imageSize, constraints);
+			const double candidateA = std::abs(cv::contourArea(q.quad));
+			if (!plausible) {
+				DEBUG_LOG("[board-debug] pass=" << passName << " rank=" << rank << " idx=" << contourIdx << " contourArea=" << q.contourArea
+				                                << " reject=plausibility\n");
+				continue;
+			}
+
+			const double quadArea  = std::max(1.0, candidateA);
+			const double rectFill  = q.contourArea / quadArea;
+			const bool lowRectFill = !q.fromApprox && rectFill < constraints.minRectFillForMinAreaRect;
+			if (lowRectFill) {
+				DEBUG_LOG("[board-debug] pass=" << passName << " rank=" << rank << " idx=" << contourIdx << " contourArea=" << q.contourArea
+				                                << " quadArea=" << quadArea << " fill=" << rectFill << " reject=fill\n");
+				continue;
+			}
+
+			const double score = boardQuadScore(q.quad, imageSize, q.fromApprox) + (q.fromApprox ? 0.45 : 0.0) + 0.90 * rectFill;
+			DEBUG_LOG("[board-debug] pass=" << passName << " rank=" << rank << " idx=" << contourIdx << " contourArea=" << q.contourArea << " quadArea="
+			                                << quadArea << " fill=" << rectFill << " approx=" << (q.fromApprox ? 1 : 0) << " score=" << score << '\n');
+
+			candidates.push_back({q.quad, contourIdx, score, candidateA, 0, 0, fromRelaxedPass});
 		}
 
-		const double quadArea  = std::max(1.0, candidateA);
-		const double rectFill  = q.contourArea / quadArea;
-		const bool lowRectFill = !q.fromApprox && rectFill < 0.08;
-		if (lowRectFill) {
-			DEBUG_LOG("[board-debug] rank=" << rank << " idx=" << contourIdx << " contourArea=" << q.contourArea << " quadArea=" << quadArea
-			                                << " fill=" << rectFill << " reject=fill\n");
-			continue;
-		}
+		return candidates;
+	};
 
-		const double score = boardQuadScore(q.quad, imageSize, q.fromApprox) + (q.fromApprox ? 0.45 : 0.0) + 0.90 * rectFill;
-		DEBUG_LOG("[board-debug] rank=" << rank << " idx=" << contourIdx << " contourArea=" << q.contourArea << " quadArea=" << quadArea << " fill=" << rectFill
-		                                << " approx=" << (q.fromApprox ? 1 : 0) << " score=" << score << '\n');
-
-		candidates.push_back({q.quad, contourIdx, score, candidateA, 0, 0});
+	std::vector<BoardCandidate> candidates = collectCandidates(STRICT_CONSTRAINTS, "strict", false);
+	bool usedRelaxedPass                   = false;
+	if (candidates.empty()) {
+		DEBUG_LOG("[board-debug] strict pass empty; trying relaxed pass\n");
+		candidates      = collectCandidates(RELAXED_CONSTRAINTS, "relaxed", true);
+		usedRelaxedPass = true;
 	}
 
 	if (candidates.empty()) {
@@ -512,7 +591,7 @@ static std::optional<BoardCandidate> selectBestBoardCandidate(const std::vector<
 	std::sort(candidates.begin(), candidates.end(), [](const BoardCandidate& left, const BoardCandidate& right) { return left.score > right.score; });
 
 	static constexpr int REFINED_CANDIDATES = 6;
-	static constexpr double GRID_SCORE_W    = 1.25;
+	const double GRID_SCORE_W               = usedRelaxedPass ? 2.0 : 1.25;
 
 	BoardCandidate best   = candidates.front();
 	double bestFinalScore = -std::numeric_limits<double>::infinity();
@@ -636,6 +715,9 @@ WarpResult warpToBoard(const cv::Mat& image, DebugVisualizer* debugger) {
 
 	cv::Mat warped;
 	cv::warpPerspective(image, warped, H, cv::Size(WARP_OUT_SIZE, WARP_OUT_SIZE));
+	if (bestCandidate->fromRelaxedPass) {
+		warped = enhanceWarpContrast(warped);
+	}
 	if (debugger) {
 		debugger->add("Warped", warped);
 		debugger->endStage();
