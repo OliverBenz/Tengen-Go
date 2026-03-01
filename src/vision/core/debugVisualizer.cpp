@@ -1,4 +1,4 @@
-#include "camera/debugVisualizer.hpp"
+#include "vision/core/debugVisualizer.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -42,7 +42,7 @@ void DebugVisualizer::add(std::string name, const cv::Mat& img) {
 	if (m_interactive) {
 		cv::Mat vis = toBgr8U(img); // Normalise the image for displaying.
 		cv::imshow("Debug", vis);
-		cv::waitKey(m_displayTime);
+		cv::waitKey(static_cast<int>(m_displayTime));
 		cv::destroyWindow("Debug");
 	}
 }
@@ -156,7 +156,7 @@ cv::Mat DebugVisualizer::toBgr8U(const cv::Mat& in) {
 		} else {
 			cv::Mat tmp;
 			in.convertTo(tmp, CV_32F);
-			tmp = (tmp - (float)minV) * (255.0f / (float)(maxV - minV));
+			tmp = (tmp - minV) * (255.0 / (maxV - minV));
 			tmp.convertTo(out, CV_8U);
 		}
 	} else {

@@ -1,6 +1,6 @@
-#include "camera/boardFinder.hpp"
-#include "camera/rectifier.hpp"
-#include "camera/stoneFinder.hpp"
+#include "vision/core/boardFinder.hpp"
+#include "vision/core/gridFinder.hpp"
+#include "vision/core/stoneFinder.hpp"
 
 #include <gtest/gtest.h>
 #include <opencv2/opencv.hpp>
@@ -27,12 +27,12 @@ TestResult runPipeline(const std::filesystem::path& imgPath) {
 
 	// Warp image roughly around the board.
 	WarpResult warped = warpToBoard(image);
-	EXPECT_FALSE(warped.image.empty());
-	EXPECT_FALSE(warped.H.empty());
+	EXPECT_FALSE(warped.imageB0.empty());
+	EXPECT_FALSE(warped.H0.empty());
 
 	// Properly construct the board geometry.
 	BoardGeometry geometry = rectifyImage(image, warped);
-	EXPECT_FALSE(geometry.image.empty());
+	EXPECT_FALSE(geometry.imageB.empty());
 	EXPECT_FALSE(geometry.H.empty());
 	EXPECT_FALSE(geometry.intersections.empty());
 	EXPECT_TRUE(geometry.intersections.size() == geometry.boardSize * geometry.boardSize);
@@ -66,9 +66,9 @@ TEST(Process, Game_Simple_Size9) {
 	const auto TEST_PATH = std::filesystem::path(PATH_TEST_IMG) / "game_simple/size_9";
 
 	// Game Information
-	static constexpr unsigned MOVES      = 13;  //!< This game image series has 13 moves (+ a captures image).
+	static constexpr unsigned MOVES = 13; //!< This game image series has 13 moves (+ a captures image).
 	// static constexpr double SPACING      = 76.; //!< Pixels between grid lines. Manually checked for this series.
-	static constexpr unsigned BOARD_SIZE = 9u;  //!< Board size of this game.
+	static constexpr unsigned BOARD_SIZE = 9u; //!< Board size of this game.
 
 	for (unsigned i = 0; i <= MOVES; ++i) {
 		std::string fileName = std::format("move_{}.png", i);
@@ -96,7 +96,7 @@ TEST(Process, Game_Simple_Size13) {
 	const auto TEST_PATH = std::filesystem::path(PATH_TEST_IMG) / "game_simple/size_13";
 
 	// Game Information
-	static constexpr unsigned MOVES      = 27;  //!< This game image series has 27 moves.
+	static constexpr unsigned MOVES = 27; //!< This game image series has 27 moves.
 	// static constexpr double SPACING      = 72.; //!< Pixels between grid lines. Manually checked for this series.
 	static constexpr unsigned BOARD_SIZE = 13u; //!< Board size of this game.
 

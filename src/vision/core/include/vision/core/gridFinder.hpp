@@ -1,7 +1,7 @@
 #pragma once
 
-#include "boardFinder.hpp"
-#include "camera/debugVisualizer.hpp"
+#include "vision/core//debugVisualizer.hpp"
+#include "vision/core/boardFinder.hpp"
 
 #include <opencv2/opencv.hpp>
 
@@ -16,8 +16,8 @@ namespace tengen::vision::core {
 
 //! Final
 struct BoardGeometry {
-	cv::Mat image;                          //!< Image mapped to Board with padding.
-	cv::Mat H;                              //!< Homography between the original image and the fine-tuned warped image.
+	cv::Mat imageB;                         //!< Image in B space (mapped to Board with padding).
+	cv::Mat H;                              //!< Homography H between the original image and the fine-tuned warped image.
 	std::vector<cv::Point2f> intersections; //!< List of grid intersections on the board (in refined warped coordinates).
 	double spacing;                         //!< Spacing between grid lines (in refined warped coordinated).
 	unsigned boardSize;                     //!< Size of the go board (9, 13, 19).
@@ -28,5 +28,7 @@ struct BoardGeometry {
 //! \returns    Image showing Go board in a top-down view with the background cut out and a slight padding around the outermost edges(to not cut off stones at
 //! the edges).
 BoardGeometry rectifyImage(const cv::Mat& originalImg, const WarpResult& input, DebugVisualizer* debugger = nullptr);
+
+bool isValidGeometry(const BoardGeometry& geometry);
 
 } // namespace tengen::vision::core

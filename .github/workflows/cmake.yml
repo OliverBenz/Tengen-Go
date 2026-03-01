@@ -30,7 +30,7 @@ jobs:
     - name: Build
       run: |
         nix develop --command bash -c "
-          cmake --build build --config $BUILD_TYPE
+          cmake --build build --config $BUILD_TYPE -j
         "
 
     - name: Run Tests

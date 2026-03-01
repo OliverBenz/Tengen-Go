@@ -1,7 +1,7 @@
 #pragma once
 
-#include "camera/debugVisualizer.hpp"
-#include "camera/rectifier.hpp"
+#include "vision/core/debugVisualizer.hpp"
+#include "vision/core/gridFinder.hpp"
 
 #include <opencv2/core/mat.hpp>
 #include <vector>
@@ -130,7 +130,7 @@ struct StoneDetectionConfig {
 	RefinementConfig refinement{};
 };
 
-/*! Detect stones on a rectified Go board image.
+/*! Detect stones on a Go board image in B(Board) space (see README).
  * \param [in]     geometry Rectified board geometry.
  * \param [in,out] debugger Optional debug visualizer for overlays.
  * \param [in]     config   Stone detection configuration.

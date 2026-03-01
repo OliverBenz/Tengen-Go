@@ -10,3 +10,40 @@ The second assumption allows for the algorithm to not yet be hardened against li
 
 The current goal is to provide a basic image detection algorithm which allows for a game to be captured.
 An application to tune the algorithm parameters is provided (CameraTuner).
+
+## Procedure
+Let:
+ - $W$ denote image width, $H$ image height and $C$ number of channels.
+ - $I \subset \mathbb{R}^{H\times W\times C}$ denote the space of digital image.
+ - $I_B \subset I$ dnote the subset of images containing a visible Go board.
+ - $B \subset \mathbb{R}^2$ denote the canonical board coordinate domain (a square region with known grid structure).
+ - $B_0 \subset \mathbb{R}^2$ denote the coarse board domain estimate, obtained from rough contour detection.
+
+Given an image $i \in I_B$, the goal is to estimate a homography
+$$ H: \mathbb{R}^2 \to \mathbb{R}^2 $$
+such that points on the board plane in the image are mapped to a canonical board coordinate system.
+
+The final homography $H$ is constructed by two consequetive steps in the pipeline $H = H_1 \circ H_0$.
+ - **BoardFinder (coarse localization)** A rough quadrilateral is detected in the input image yielding a coarse homography
+ $$
+    \begin{align*}
+        H_0: I_B &\to B_0 \\ i &\mapsto i_0
+    \end{align*}
+ $$
+ - **GridFinder (refinement)** Grid lines are detected in the coarse warp $i_0$ and used to refine the alignment, producing
+ $$
+    \begin{align*}
+        H_1 : B_0 &\to B \\ i_0 &\mapsto i_B
+    \end{align*}
+ $$
+
+Under the assumption that the board pose remains fixed over time, a single calibration image $i\in I_B$ determines $H$, which may then be reused for subsequent frames until re-calibration is requested.
+
+Finally, **StoneFinder** operates in canonical board coordinates $B$ to detect per-intersection stone states.
+
+Unfortunately, image detection is not closed-form exactly solvable so the given algorithm does not work on $I_B$ but rather on some $I_{B_0}\subset I_B$ which we aim to maximize with continuous improvements ;).
+
+## Notes
+We shall strictly keep the above naming conventions for the spaces, images, and homographies in the source code.
+This might be deemed to be redundant and ugly naming but any user adapting source code must be perfectly aware of the underlying design and understand the spaces they are working in.
+We move along with slightly more noisy naming to ensure perfect alignment with the foundational design described above.

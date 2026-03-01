@@ -1,16 +1,21 @@
-#include "camera/boardFinder.hpp"
+#include "vision/core/boardFinder.hpp"
 
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdlib>
-#include <iostream>
 #include <limits>
 #include <optional>
-#include <string_view>
 #include <vector>
 
 #include <opencv2/opencv.hpp>
+
+#if defined(VISION_DEBUG_LOGGING) && defined(VISION_LOG_BOARDFINDER)
+#include <iostream>
+#define DEBUG_LOG(x) std::cout << x;
+#else
+#define DEBUG_LOG(x) ((void)0);
+#endif
 
 namespace tengen::vision::core {
 
@@ -22,12 +27,6 @@ static constexpr int WARP_OUT_SIZE = 1000;
 static constexpr int MAX_CANDIDATE_CONTOURS = 24;
 //! Candidate quad must cover at least this image-area fraction.
 static constexpr double MIN_CONTOUR_AREA_FRAC = 0.08;
-
-//! Enable verbose board-candidate diagnostics via environment variable.
-static bool boardDebugEnabled() {
-	const char* env = std::getenv("GO_BOARD_DEBUG");
-	return env != nullptr && std::string_view(env) == "1";
-}
 
 //! Ensure odd kernel sizes for blur/morphology operations.
 static int makeOddKernelSize(int value) {
@@ -167,7 +166,7 @@ static double cornerCosine(const cv::Point2f& p0, const cv::Point2f& p1, const c
 	if (norm1 <= 1e-6 || norm2 <= 1e-6) {
 		return 1.0;
 	}
-	return std::abs((v1.x * v2.x + v1.y * v2.y) / (norm1 * norm2));
+	return std::abs((v1.x * v2.x + v1.y * v2.y) / static_cast<float>(norm1 * norm2));
 }
 
 //! Compute absolute cosine between two vectors (parallel/anti-parallel -> 1).
@@ -177,7 +176,7 @@ static double parallelCosine(const cv::Point2f& v0, const cv::Point2f& v1) {
 	if (norm0 <= 1e-6 || norm1 <= 1e-6) {
 		return 0.0;
 	}
-	return std::abs((v0.x * v1.x + v0.y * v1.y) / (norm0 * norm1));
+	return std::abs((v0.x * v1.x + v0.y * v1.y) / static_cast<float>(norm0 * norm1));
 }
 
 //! Quad candidate extracted from one contour.
@@ -399,11 +398,11 @@ static bool isPlausibleBoardQuad(const std::vector<cv::Point2f>& quad, const cv:
 		return false;
 	}
 
-	const double borderTol = std::max(4.0, 0.01 * static_cast<double>(std::min(imageSize.width, imageSize.height)));
-	int nearBorderCorners  = 0;
+	const float borderTol = std::max(4.0f, 0.01f * static_cast<float>(std::min(imageSize.width, imageSize.height)));
+	int nearBorderCorners = 0;
 	for (const auto& p: quad) {
-		if (p.x <= borderTol || p.y <= borderTol || p.x >= static_cast<double>(imageSize.width - 1) - borderTol ||
-		    p.y >= static_cast<double>(imageSize.height - 1) - borderTol) {
+		if (p.x <= borderTol || p.y <= borderTol || p.x >= static_cast<float>(imageSize.width - 1) - borderTol ||
+		    p.y >= static_cast<float>(imageSize.height - 1) - borderTol) {
 			++nearBorderCorners;
 		}
 	}
@@ -474,10 +473,7 @@ static std::optional<BoardCandidate> selectBestBoardCandidate(const std::vector<
 	});
 
 	const int candidateCount = std::min(static_cast<int>(sortedIndices.size()), MAX_CANDIDATE_CONTOURS);
-	const bool verbose       = boardDebugEnabled();
-	if (verbose) {
-		std::cout << "[board-debug] candidate-count=" << candidateCount << '\n';
-	}
+	DEBUG_LOG("[board-debug] candidate-count=" << candidateCount);
 
 	std::vector<BoardCandidate> candidates;
 	candidates.reserve(static_cast<std::size_t>(candidateCount));
@@ -489,9 +485,7 @@ static std::optional<BoardCandidate> selectBestBoardCandidate(const std::vector<
 		const bool plausible    = isPlausibleBoardQuad(q.quad, imageSize);
 		const double candidateA = std::abs(cv::contourArea(q.quad));
 		if (!plausible) {
-			if (verbose) {
-				std::cout << "[board-debug] rank=" << rank << " idx=" << contourIdx << " contourArea=" << q.contourArea << " reject=plausibility\n";
-			}
+			DEBUG_LOG("[board-debug] rank=" << rank << " idx=" << contourIdx << " contourArea=" << q.contourArea << " reject=plausibility\n");
 			continue;
 		}
 
@@ -499,18 +493,14 @@ static std::optional<BoardCandidate> selectBestBoardCandidate(const std::vector<
 		const double rectFill  = q.contourArea / quadArea;
 		const bool lowRectFill = !q.fromApprox && rectFill < 0.08;
 		if (lowRectFill) {
-			if (verbose) {
-				std::cout << "[board-debug] rank=" << rank << " idx=" << contourIdx << " contourArea=" << q.contourArea << " quadArea=" << quadArea
-				          << " fill=" << rectFill << " reject=fill\n";
-			}
+			DEBUG_LOG("[board-debug] rank=" << rank << " idx=" << contourIdx << " contourArea=" << q.contourArea << " quadArea=" << quadArea
+				          << " fill=" << rectFill << " reject=fill\n");
 			continue;
 		}
 
 		const double score = boardQuadScore(q.quad, imageSize, q.fromApprox) + (q.fromApprox ? 0.45 : 0.0) + 0.90 * rectFill;
-		if (verbose) {
-			std::cout << "[board-debug] rank=" << rank << " idx=" << contourIdx << " contourArea=" << q.contourArea << " quadArea=" << quadArea
-			          << " fill=" << rectFill << " approx=" << (q.fromApprox ? 1 : 0) << " score=" << score << '\n';
-		}
+		DEBUG_LOG("[board-debug] rank=" << rank << " idx=" << contourIdx << " contourArea=" << q.contourArea << " quadArea=" << quadArea
+			          << " fill=" << rectFill << " approx=" << (q.fromApprox ? 1 : 0) << " score=" << score << '\n');
 
 		candidates.push_back({q.quad, contourIdx, score, candidateA, 0, 0});
 	}
@@ -533,10 +523,8 @@ static std::optional<BoardCandidate> selectBestBoardCandidate(const std::vector<
 		current.verticalCount       = evidence.verticalCount;
 		current.horizontalCount     = evidence.horizontalCount;
 		const double finalScore     = current.score + GRID_SCORE_W * evidence.score;
-		if (verbose) {
-			std::cout << "[board-debug] refine idx=" << current.contourIdx << " geom=" << current.score << " grid=" << evidence.score << " final=" << finalScore
-			          << " v=" << evidence.verticalCount << " h=" << evidence.horizontalCount << '\n';
-		}
+		DEBUG_LOG("[board-debug] refine idx=" << current.contourIdx << " geom=" << current.score << " grid=" << evidence.score << " final=" << finalScore
+			          << " v=" << evidence.verticalCount << " h=" << evidence.horizontalCount << '\n');
 		if (finalScore > bestFinalScore) {
 			bestFinalScore = finalScore;
 			best           = current;
@@ -625,7 +613,7 @@ WarpResult warpToBoard(const cv::Mat& image, DebugVisualizer* debugger) {
 		return fail("No valid board candidate found");
 	}
 
-	std::cout << "Largest contour idx: " << bestCandidate->contourIdx << " area: " << bestCandidate->area << "\n";
+	DEBUG_LOG("Largest contour idx: " << bestCandidate->contourIdx << " area: " << bestCandidate->area << "\n");
 	if (debugger) {
 		cv::Mat selected = image.clone();
 		std::vector<cv::Point> poly;
@@ -655,5 +643,13 @@ WarpResult warpToBoard(const cv::Mat& image, DebugVisualizer* debugger) {
 
 	return {warped, H};
 }
+
+bool isValidBoard(const WarpResult& board) {
+	const auto validWarped     = !board.imageB0.empty(); // TODO: Additional checks.
+	const auto validHomography = !board.H0.empty();      // TODO: Additional checks.
+
+	return validWarped && validHomography;
+}
+
 
 } // namespace tengen::vision::core

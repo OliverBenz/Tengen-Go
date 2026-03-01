@@ -1,16 +1,13 @@
 # Settings
-set(targetName "visionCore.gtest")
+set(targetName "visionPerception.gtest")
 
 # Create executable
 add_executable(${targetName}
-    "${CMAKE_CURRENT_LIST_DIR}/rectifier.gtest.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/process.gtest.cpp"
-	"${CMAKE_CURRENT_LIST_DIR}/boardFinder.gtest.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/stoneFinder.gtest.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/symmetryBreaking.gtest.cpp"
 )
 
 # Link to required libraries
-target_link_libraries(${targetName} PRIVATE tengen::vision::core GTest::gtest_main)
+target_link_libraries(${targetName} PRIVATE tengen::vision::core tengen::vision::perception GTest::gtest_main)
 set_target_properties(${targetName} PROPERTIES FOLDER "${ideFolderSource}")
 
 target_compile_definitions(${targetName} PRIVATE PATH_TEST_IMG="${CMAKE_CURRENT_LIST_DIR}/../resouces/")

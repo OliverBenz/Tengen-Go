@@ -5,18 +5,18 @@ find_package(OpenCV REQUIRED)
 # Get files to build
 set(headers
     "${CMAKE_CURRENT_LIST_DIR}/statistics.hpp"
-    "${CMAKE_CURRENT_LIST_DIR}/include/camera/debugVisualizer.hpp"
-    "${CMAKE_CURRENT_LIST_DIR}/include/camera/boardFinder.hpp"
-    "${CMAKE_CURRENT_LIST_DIR}/gridFinder.hpp"
-    "${CMAKE_CURRENT_LIST_DIR}/include/camera/rectifier.hpp"
-    "${CMAKE_CURRENT_LIST_DIR}/include/camera/stoneFinder.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/gridLatticeFinder.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/include/vision/core/debugVisualizer.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/include/vision/core/boardFinder.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/include/vision/core/gridFinder.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/include/vision/core/stoneFinder.hpp"
 )
 set(sources
     "${CMAKE_CURRENT_LIST_DIR}/statistics.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/debugVisualizer.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/boardFinder.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/gridLatticeFinder.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/gridFinder.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/rectifier.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/stoneFinder.cpp"
 )
 
@@ -33,6 +33,15 @@ target_link_libraries(${targetName}
 )
 
 # Setup project settings
-# set_project_warnings(${targetName})  # Which warnings to enable
+set_project_warnings(${targetName})  # Which warnings to enable
 set_compile_options(${targetName})   # Which extra compiler flags to enable
 set_output_directory(${targetName})  # Set the output directory of the library
+
+
+target_compile_definitions(${targetName}
+	PRIVATE
+		VISION_DEBUG_LOGGING
+		# VISION_LOG_BOARDFINDER
+		# VISION_LOG_GRIDFINDER
+		# VISION_LOG_STONEFINDER
+)
