@@ -40,7 +40,7 @@ set_output_directory(${targetName})  # Set the output directory of the library
 
 target_compile_definitions(${targetName}
 	PRIVATE
-		VISION_DEBUG_LOGGING
+		$<$<CONFIG:Debug>:VISION_DEBUG_LOGGING>
 		# VISION_LOG_BOARDFINDER
 		# VISION_LOG_GRIDFINDER
 		# VISION_LOG_STONEFINDER

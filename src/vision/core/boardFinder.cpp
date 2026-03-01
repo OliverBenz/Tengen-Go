@@ -494,13 +494,13 @@ static std::optional<BoardCandidate> selectBestBoardCandidate(const std::vector<
 		const bool lowRectFill = !q.fromApprox && rectFill < 0.08;
 		if (lowRectFill) {
 			DEBUG_LOG("[board-debug] rank=" << rank << " idx=" << contourIdx << " contourArea=" << q.contourArea << " quadArea=" << quadArea
-				          << " fill=" << rectFill << " reject=fill\n");
+			                                << " fill=" << rectFill << " reject=fill\n");
 			continue;
 		}
 
 		const double score = boardQuadScore(q.quad, imageSize, q.fromApprox) + (q.fromApprox ? 0.45 : 0.0) + 0.90 * rectFill;
-		DEBUG_LOG("[board-debug] rank=" << rank << " idx=" << contourIdx << " contourArea=" << q.contourArea << " quadArea=" << quadArea
-			          << " fill=" << rectFill << " approx=" << (q.fromApprox ? 1 : 0) << " score=" << score << '\n');
+		DEBUG_LOG("[board-debug] rank=" << rank << " idx=" << contourIdx << " contourArea=" << q.contourArea << " quadArea=" << quadArea << " fill=" << rectFill
+		                                << " approx=" << (q.fromApprox ? 1 : 0) << " score=" << score << '\n');
 
 		candidates.push_back({q.quad, contourIdx, score, candidateA, 0, 0});
 	}
@@ -524,7 +524,7 @@ static std::optional<BoardCandidate> selectBestBoardCandidate(const std::vector<
 		current.horizontalCount     = evidence.horizontalCount;
 		const double finalScore     = current.score + GRID_SCORE_W * evidence.score;
 		DEBUG_LOG("[board-debug] refine idx=" << current.contourIdx << " geom=" << current.score << " grid=" << evidence.score << " final=" << finalScore
-			          << " v=" << evidence.verticalCount << " h=" << evidence.horizontalCount << '\n');
+		                                      << " v=" << evidence.verticalCount << " h=" << evidence.horizontalCount << '\n');
 		if (finalScore > bestFinalScore) {
 			bestFinalScore = finalScore;
 			best           = current;

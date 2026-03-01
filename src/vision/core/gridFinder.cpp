@@ -7,8 +7,8 @@
 
 #include <algorithm>
 #include <cmath>
-#include <numbers>
 #include <iostream>
+#include <numbers>
 
 #if defined(VISION_DEBUG_LOGGING) && defined(VISION_LOG_GRIDFINDER)
 #define DEBUG_LOG(x) std::cout << x;

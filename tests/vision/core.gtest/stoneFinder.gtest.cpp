@@ -1,6 +1,6 @@
+#include "vision/core/stoneFinder.hpp"
 #include "vision/core/boardFinder.hpp"
 #include "vision/core/gridFinder.hpp"
-#include "vision/core/stoneFinder.hpp"
 
 #include <gtest/gtest.h>
 #include <opencv2/opencv.hpp>
