@@ -8,6 +8,13 @@
 #include <algorithm>
 #include <cmath>
 #include <numbers>
+#include <iostream>
+
+#if defined(VISION_DEBUG_LOGGING) && defined(VISION_LOG_GRIDFINDER)
+#define DEBUG_LOG(x) std::cout << x;
+#else
+#define DEBUG_LOG(x) ((void)0);
+#endif
 
 namespace tengen::vision::core {
 namespace debugging {
@@ -147,7 +154,7 @@ BoardGeometry rectifyImage(const cv::Mat& imageIB, const WarpResult& input, Debu
 			vertical.push_back(l);
 		}
 	}
-	std::cout << "Vertical lines: " << vertical.size() << "\n Horizontal lines: " << horizontal.size() << "\n";
+	DEBUG_LOG("Vertical lines: " << vertical.size() << "\n Horizontal lines: " << horizontal.size());
 
 	// Group together lines (one grid line has finite thickness -> detected as many lines)
 	std::vector<Line1D> v1d, h1d;
@@ -224,8 +231,8 @@ BoardGeometry rectifyImage(const cv::Mat& imageIB, const WarpResult& input, Debu
 	const auto Nv = vGrid.size();
 	const auto Nh = hGrid.size();
 
-	std::cout << "Unique vertical candidates: " << Nv << "\n";
-	std::cout << "Unique horizontal candidates: " << Nh << "\n";
+	DEBUG_LOG("Unique vertical candidates: " << Nv);
+	DEBUG_LOG("Unique horizontal candidates: " << Nh);
 	if (debugger) {
 		debugger->add("Grid Candidates", debugging::drawLines(input.imageB0, vGrid, hGrid));
 	}
@@ -233,7 +240,7 @@ BoardGeometry rectifyImage(const cv::Mat& imageIB, const WarpResult& input, Debu
 	// 3. Grid candidates to proper grid.
 	// Check if grid found. Else try with another algorithm.
 	if (Nv == Nh && (Nv == 9 || Nv == 13 || Nv == 19)) {
-		std::cout << "Board size determined directly: " << Nv << "\n";
+		DEBUG_LOG("Board size determined directly: " << Nv);
 
 #ifndef NDEBUG
 		// Debug: Verify if the grid is found with a second algorithm.
@@ -247,7 +254,7 @@ BoardGeometry rectifyImage(const cv::Mat& imageIB, const WarpResult& input, Debu
 		}
 #endif
 	} else {
-		std::cout << "Could not detect the board size trivially. Performing further steps.\n";
+		DEBUG_LOG("Could not detect the board size trivially. Performing further steps.");
 
 		std::vector<double> vGridAttempt{};
 		std::vector<double> hGridAttempt{};
@@ -352,7 +359,6 @@ BoardGeometry rectifyImage(const cv::Mat& imageIB, const WarpResult& input, Debu
 
 	if (debugger)
 		debugger->endStage();
-	std::cout << "\n\n";
 
 	// Assert output: Fail means we missed a validity check earlier.
 	assert(vGrid.size() == hGrid.size()); // Grid lines equal.
