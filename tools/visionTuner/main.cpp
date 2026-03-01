@@ -12,7 +12,7 @@ static std::filesystem::path resolveInputPath(const int argc, char** argv) {
 	if (argc > 1) {
 		return std::filesystem::path(argv[1]);
 	}
-	return std::filesystem::path(PATH_TEST_IMG) / "angled_hard/angle_1.jpeg";
+	return std::filesystem::path(PATH_TEST_IMG) / "setup/C2_1.png";
 }
 
 static cv::Mat loadFallbackImage(const int argc, char** argv) {
