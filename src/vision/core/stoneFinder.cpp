@@ -5,10 +5,10 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
+#include <iostream>
 #include <string>
 #include <string_view>
 #include <vector>
-#include <iostream>
 
 #include <opencv2/opencv.hpp>
 
@@ -827,6 +827,7 @@ static bool isRuntimeDebugEnabled() {
 	return debugFlag == "1" || debugFlag == "2";
 }
 
+#if defined(VISION_DEBUG_LOGGING) && defined(VISION_LOG_STONEFINDER)
 static const char* rejectionReasonLabel(RejectionReason reason) {
 	switch (reason) {
 	case RejectionReason::None:
@@ -848,6 +849,7 @@ static const char* rejectionReasonLabel(RejectionReason reason) {
 	}
 	return "Other";
 }
+#endif
 
 static cv::Mat drawOverlay(const cv::Mat& image, const std::vector<cv::Point2f>& intersections, const std::vector<StoneState>& states, int radius) {
 	cv::Mat overlay = image.clone();
@@ -907,8 +909,8 @@ static void emitRuntimeDebug(const BoardGeometry& geometry, const std::vector<Fe
 	};
 
 	DEBUG_LOG("[stone-debug] N=" << geometry.boardSize << " black=" << stats.blackCount << " white=" << stats.whiteCount << " empty=" << stats.emptyCount
-	          << " median=" << model.medianEmpty << " sigma=" << model.sigmaEmpty << " chromaT=" << model.tChromaSq << " refineTried=" << stats.refinedTried
-	          << " refineAccepted=" << stats.refinedAccepted);
+	                             << " median=" << model.medianEmpty << " sigma=" << model.sigmaEmpty << " chromaT=" << model.tChromaSq
+	                             << " refineTried=" << stats.refinedTried << " refineAccepted=" << stats.refinedAccepted);
 
 	for (std::size_t index = 0; index < states.size(); ++index) {
 		if (states[index] == StoneState::Empty) {
@@ -922,9 +924,9 @@ static void emitRuntimeDebug(const BoardGeometry& geometry, const std::vector<Fe
 		const float neighborContrast = (states[index] == StoneState::Black) ? (neighborMedian - feature.deltaL) : (feature.deltaL - neighborMedian);
 		const cv::Point2f point      = geometry.intersections[index];
 		DEBUG_LOG("  idx=" << index << " (" << gridX << "," << gridY << ")"
-		          << " px=(" << point.x << "," << point.y << ")"
-		          << " state=" << (states[index] == StoneState::Black ? "B" : "W") << " conf=" << confidence[index] << " z=" << z << " d=" << feature.darkFrac
-		          << " b=" << feature.brightFrac << " c=" << feature.chromaSq << " nc=" << neighborContrast);
+		                   << " px=(" << point.x << "," << point.y << ")"
+		                   << " state=" << (states[index] == StoneState::Black ? "B" : "W") << " conf=" << confidence[index] << " z=" << z
+		                   << " d=" << feature.darkFrac << " b=" << feature.brightFrac << " c=" << feature.chromaSq << " nc=" << neighborContrast);
 	}
 
 	const bool verboseCandidates = true;
@@ -955,9 +957,10 @@ static void emitRuntimeDebug(const BoardGeometry& geometry, const std::vector<Fe
 			const float neighborMedian   = neighborForIndex(index);
 			const float neighborContrast = features[index].deltaL - neighborMedian;
 			DEBUG_LOG("  empty-cand idx=" << index << " (" << gridX << "," << gridY << ")"
-			          << " z=" << emptyRows[row].z << " d=" << features[index].darkFrac << " b=" << features[index].brightFrac
-			          << " c=" << features[index].chromaSq << " raw=" << (rawState == StoneState::Black ? "B" : (rawState == StoneState::White ? "W" : "E"))
-			          << " m=" << rawMargin << "/" << rawRequired << " conf=" << rawConf << " nc=" << neighborContrast);
+			                              << " z=" << emptyRows[row].z << " d=" << features[index].darkFrac << " b=" << features[index].brightFrac
+			                              << " c=" << features[index].chromaSq
+			                              << " raw=" << (rawState == StoneState::Black ? "B" : (rawState == StoneState::White ? "W" : "E"))
+			                              << " m=" << rawMargin << "/" << rawRequired << " conf=" << rawConf << " nc=" << neighborContrast);
 		}
 
 		struct BrightRow {
@@ -986,9 +989,10 @@ static void emitRuntimeDebug(const BoardGeometry& geometry, const std::vector<Fe
 			const float neighborMedian   = neighborForIndex(index);
 			const float neighborContrast = features[index].deltaL - neighborMedian;
 			DEBUG_LOG("  bright-cand idx=" << index << " (" << gridX << "," << gridY << ")"
-			          << " b=" << brightRows[row].bright << " z=" << z << " d=" << features[index].darkFrac << " c=" << features[index].chromaSq
-			          << " raw=" << (rawState == StoneState::Black ? "B" : (rawState == StoneState::White ? "W" : "E")) << " m=" << rawMargin << "/"
-			          << rawRequired << " conf=" << rawConf << " nc=" << neighborContrast);
+			                               << " b=" << brightRows[row].bright << " z=" << z << " d=" << features[index].darkFrac
+			                               << " c=" << features[index].chromaSq
+			                               << " raw=" << (rawState == StoneState::Black ? "B" : (rawState == StoneState::White ? "W" : "E"))
+			                               << " m=" << rawMargin << "/" << rawRequired << " conf=" << rawConf << " nc=" << neighborContrast);
 		}
 	}
 
@@ -1015,7 +1019,7 @@ static void emitRuntimeDebug(const BoardGeometry& geometry, const std::vector<Fe
 			const Features& feature = features[index];
 			const float z           = zForIndex(index, feature);
 			DEBUG_LOG("  cand idx=" << index << " (" << gridX << "," << gridY << ")"
-			          << " z=" << z << " d=" << feature.darkFrac << " b=" << feature.brightFrac << " c=" << feature.chromaSq);
+			                        << " z=" << z << " d=" << feature.darkFrac << " b=" << feature.brightFrac << " c=" << feature.chromaSq);
 		}
 	}
 
