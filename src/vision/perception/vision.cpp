@@ -51,7 +51,7 @@ bool Vision::setup(const Coord gaugeCoord) {
 	}
 
 	const core::WarpResult warped = core::warpToBoard(image);
-	if (core::isValidBoard(warped)) {
+	if (!core::isValidBoard(warped)) {
 		// TODO: Log
 		return false;
 	}
