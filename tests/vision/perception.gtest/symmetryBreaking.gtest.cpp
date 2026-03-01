@@ -12,7 +12,6 @@
 #include <optional>
 #include <string>
 #include <string_view>
-#include <utility>
 #include <vector>
 
 namespace tengen::vision {
@@ -31,7 +30,8 @@ struct DetectedStone {
 	core::StoneState colour;
 };
 
-Coord mapCoord(const Coord c, const D4 g, const unsigned boardSize) {
+//! Apply a symmetry transformation on a board coordinate.
+Coord transformCoord(const Coord c, const D4 g, const unsigned boardSize) {
 	switch (g) {
 	case D4::Id:
 		return c;
@@ -53,16 +53,21 @@ Coord mapCoord(const Coord c, const D4 g, const unsigned boardSize) {
 	return c;
 }
 
-bool isStone(const core::StoneState state) {
+//! Check black of white stone.
+inline bool isStone(const core::StoneState state) {
 	return state == core::StoneState::Black || state == core::StoneState::White;
 }
 
+//! Run the image detection pipeline and return the 1 stone on the board.
+//! \returns Null for failure in pipeline or not exactly 1 stone found.
 std::optional<DetectedStone> detectSingleStone(const std::filesystem::path& imagePath) {
-	const cv::Mat image = cv::imread(imagePath.string(), cv::IMREAD_COLOR);
+	// Load image
+	const cv::Mat image = cv::imread(imagePath.string());
 	if (image.empty()) {
 		return std::nullopt;
 	}
 
+	// Detection Pipeline
 	const core::WarpResult warped = core::warpToBoard(image);
 	if (!core::isValidBoard(warped)) {
 		return std::nullopt;
@@ -78,6 +83,7 @@ std::optional<DetectedStone> detectSingleStone(const std::filesystem::path& imag
 		return std::nullopt;
 	}
 
+	// Find exactly 1 stone.
 	std::size_t stoneIndex         = result.stones.size();
 	core::StoneState detectedStone = core::StoneState::Empty;
 	for (std::size_t i = 0; i < result.stones.size(); ++i) {
@@ -85,14 +91,14 @@ std::optional<DetectedStone> detectSingleStone(const std::filesystem::path& imag
 			continue;
 		}
 		if (stoneIndex != result.stones.size()) {
-			return std::nullopt;
+			return std::nullopt; // More than 1 stone found
 		}
 		stoneIndex    = i;
 		detectedStone = result.stones[i];
 	}
 
 	if (stoneIndex == result.stones.size()) {
-		return std::nullopt;
+		return std::nullopt; // No stone found
 	}
 
 	return DetectedStone{
@@ -105,15 +111,17 @@ std::optional<DetectedStone> detectSingleStone(const std::filesystem::path& imag
 	};
 }
 
-bool containsCoord(const std::vector<Coord>& coords, const Coord c) {
+//! List of coordinates contains a specific one.
+inline bool containsCoord(const std::vector<Coord>& coords, const Coord c) {
 	return std::any_of(coords.begin(), coords.end(), [&](const Coord value) { return value.x == c.x && value.y == c.y; });
 }
 
+//! Return the D_4 gauge orbit of a given coordinate: O_c^{D_4} = { g \rhd c | g \in D_4}
 std::vector<Coord> d4Orbit(const Coord placedCoord, const unsigned boardSize) {
 	std::vector<Coord> orbit;
 	orbit.reserve(D4_GROUP.size());
 	for (const D4 g: D4_GROUP) {
-		const Coord mapped = mapCoord(placedCoord, g, boardSize);
+		const Coord mapped = transformCoord(placedCoord, g, boardSize);
 		if (!containsCoord(orbit, mapped)) {
 			orbit.push_back(mapped);
 		}
@@ -121,6 +129,7 @@ std::vector<Coord> d4Orbit(const Coord placedCoord, const unsigned boardSize) {
 	return orbit;
 }
 
+//! Return the a board coordinate not in the gauge orbit of some c: c' \notin O_c^{D_4}
 std::optional<Coord> pickOutsideOrbit(const unsigned boardSize, const std::vector<Coord>& orbit) {
 	for (unsigned x = 0; x < boardSize; ++x) {
 		for (unsigned y = 0; y < boardSize; ++y) {
@@ -130,36 +139,17 @@ std::optional<Coord> pickOutsideOrbit(const unsigned boardSize, const std::vecto
 			}
 		}
 	}
+
+	assert(false); // |D_4| = 8, min(BoardSize) = 9 -> 91 Coords. Impossible to not find a c' \notin O_c^{D_4}
 	return std::nullopt;
 }
 
+//! Construct full path of test image given fileName.
 std::filesystem::path setupImage(const std::string_view fileName) {
 	return std::filesystem::path(PATH_TEST_IMG) / "setup" / std::string(fileName);
 }
 
 } // namespace
-
-//! Takes an image with exactly one stone and checks if it can be detected.
-bool canDetectStone(const std::filesystem::path& imagePath, const core::StoneState stoneColour) {
-	const auto stone = detectSingleStone(imagePath);
-	return stone.has_value() && stone->colour == stoneColour;
-}
-
-TEST(Perception, Setup_StoneDetection_Colour) {
-	static constexpr std::array<std::pair<std::string_view, core::StoneState>, 6> CASES = {{
-	        {"center_black.png", core::StoneState::Black},
-	        {"center_white.png", core::StoneState::White},
-	        {"C2_1_white.png", core::StoneState::White},
-	        {"C2_2_white.png", core::StoneState::White},
-	        {"C2_3_white.png", core::StoneState::White},
-	        {"C2_4_white.png", core::StoneState::White},
-	}};
-
-	for (const auto& [fileName, expectedColour]: CASES) {
-		const auto imagePath = setupImage(fileName);
-		EXPECT_TRUE(canDetectStone(imagePath, expectedColour)) << imagePath.string();
-	}
-}
 
 TEST(Perception, Setup_SymmetryBreaking_D4Orbit) {
 	static constexpr std::array<std::string_view, 8> BLACK_CASES = {

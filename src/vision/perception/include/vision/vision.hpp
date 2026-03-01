@@ -36,7 +36,7 @@ public:
 
 	//! Detect the board and grid once before the game starts.
 	//! \param [in] gaugeStone Coordinate of a single black stone placed on the board. Used to fix the image orientation/coordinate mapping.
-	//! \returns    True if the board and grid could be detected.
+	//! \returns    True if the symmetry transformation $g$ could be found.
 	bool setup(Coord gaugeCoord);
 	void setSetupImage(std::filesystem::path setupImagePath); //!< Setup image path used when source is Source::Camera.
 
