@@ -40,8 +40,8 @@ public:
 	bool setup(Coord gaugeCoord);
 	void setSetupImage(std::filesystem::path setupImagePath); //!< Setup image path used when source is Source::Camera.
 
-	void connect(Callbacks callback); //!< Connect callback functions.
-	void disconnect();                //!< Disconnect the callback functions.
+	void connect(Callbacks callbacks); //!< Connect callback functions.
+	void disconnect();                 //!< Disconnect the callback functions.
 
 	//! Start the stone detection loop. Calls back to onStonePlaced when a new stone is detected.
 	//! \note Only runs if source is a live feed.

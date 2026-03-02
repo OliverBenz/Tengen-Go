@@ -34,6 +34,7 @@ bool Vision::setup(const Coord gaugeCoord) {
 		return false;
 	case Source::Image:
 		if (m_setupImagePath.empty()) {
+			assert(false); // Set the image path before calling setup.
 			return false;
 		}
 		image = cv::imread(m_setupImagePath.string(), cv::IMREAD_COLOR);
@@ -56,7 +57,7 @@ bool Vision::setup(const Coord gaugeCoord) {
 		return false;
 	}
 
-	core::BoardGeometry geometry = core::rectifyImage(image, warped);
+	core::BoardGeometry geometry = core::rectifyImage(image, warped); // TODO: Rename this function.
 	if (!core::isValidGeometry(geometry)) {
 		// TODO: Log
 		return false;
@@ -69,10 +70,12 @@ bool Vision::setup(const Coord gaugeCoord) {
 	}
 
 	const unsigned boardSize = geometry.boardSize;
+	// TODO: Or gauge stone in center
 	if (gaugeCoord.x >= boardSize || gaugeCoord.y >= boardSize) {
 		return false;
 	}
 
+	// Get Stone Coordinates
 	const auto stoneIt = std::find_if(result.stones.begin(), result.stones.end(),
 	                                  [](core::StoneState s) { return s == core::StoneState::Black || s == core::StoneState::White; });
 	if (stoneIt == result.stones.end()) {
@@ -84,7 +87,9 @@ bool Vision::setup(const Coord gaugeCoord) {
 	        static_cast<unsigned>(stoneIndex % boardSize),
 	};
 
+	//! D_4 Group Elements.
 	enum class D4 : unsigned char { Id, Rot90, Rot180, Rot270, FlipX, FlipY, Diag, AntiDiag };
+	//! D_4 symmetry transformation on Coordinate.
 	const auto mapCoord = [boardSize](Coord c, D4 g) -> Coord {
 		switch (g) {
 		case D4::Id:
@@ -111,6 +116,8 @@ bool Vision::setup(const Coord gaugeCoord) {
 	        D4::Id, D4::Rot90, D4::Rot180, D4::Rot270, D4::FlipX, D4::FlipY, D4::Diag, D4::AntiDiag,
 	};
 
+
+	// Find proper symmetry transformation.
 	const auto symmetryIt = std::find_if(group.begin(), group.end(), [&](D4 g) {
 		const Coord mapped = mapCoord(placedCoord, g);
 		return mapped.x == gaugeCoord.x && mapped.y == gaugeCoord.y;
@@ -119,55 +126,63 @@ bool Vision::setup(const Coord gaugeCoord) {
 		return false;
 	}
 
-	const D4 symmetry = *symmetryIt;
-	if (symmetry != D4::Id) {
+	// Transform the geometry:
+	//  - Construct trafo matrix Tg = T[g] (representation of the group element g)
+	//  - Transform homography   H' = T[g] H
+	//  - Transform image      i_B' = T[g] i_B = (T[g] H) i
+	//  - Transform intersect. p'_a = T[g] p_a
+	// A_g \equiv T[g]
+	const D4 g = *symmetryIt;
+	if (g != D4::Id) {
 		const int width  = geometry.imageB.cols;
 		const int height = geometry.imageB.rows;
-		cv::Mat imageTransformed;
-		cv::Mat A = cv::Mat::eye(3, 3, CV_64F);
+		cv::Mat Tg       = cv::Mat::eye(3, 3, CV_64F); //!< Representation of g: T[g]  -> Transformation matrix for H
+		cv::Mat imageTransformed;                      //!< Transformed with a representation of our group action i_B' = T[g] i_B = (T[g] H) i
 
-		switch (symmetry) {
+		switch (g) {
 		case D4::Id:
 			break;
 		case D4::Rot90:
 			cv::rotate(geometry.imageB, imageTransformed, cv::ROTATE_90_CLOCKWISE);
-			A = (cv::Mat_<double>(3, 3) << 0.0, -1.0, static_cast<double>(height - 1), 1.0, 0.0, 0.0, 0.0, 0.0, 1.0);
+			Tg = (cv::Mat_<double>(3, 3) << 0.0, -1.0, static_cast<double>(height - 1), 1.0, 0.0, 0.0, 0.0, 0.0, 1.0);
 			break;
 		case D4::Rot180:
 			cv::rotate(geometry.imageB, imageTransformed, cv::ROTATE_180);
-			A = (cv::Mat_<double>(3, 3) << -1.0, 0.0, static_cast<double>(width - 1), 0.0, -1.0, static_cast<double>(height - 1), 0.0, 0.0, 1.0);
+			Tg = (cv::Mat_<double>(3, 3) << -1.0, 0.0, static_cast<double>(width - 1), 0.0, -1.0, static_cast<double>(height - 1), 0.0, 0.0, 1.0);
 			break;
 		case D4::Rot270:
 			cv::rotate(geometry.imageB, imageTransformed, cv::ROTATE_90_COUNTERCLOCKWISE);
-			A = (cv::Mat_<double>(3, 3) << 0.0, 1.0, 0.0, -1.0, 0.0, static_cast<double>(width - 1), 0.0, 0.0, 1.0);
+			Tg = (cv::Mat_<double>(3, 3) << 0.0, 1.0, 0.0, -1.0, 0.0, static_cast<double>(width - 1), 0.0, 0.0, 1.0);
 			break;
 		case D4::FlipX:
 			cv::flip(geometry.imageB, imageTransformed, 1);
-			A = (cv::Mat_<double>(3, 3) << -1.0, 0.0, static_cast<double>(width - 1), 0.0, 1.0, 0.0, 0.0, 0.0, 1.0);
+			Tg = (cv::Mat_<double>(3, 3) << -1.0, 0.0, static_cast<double>(width - 1), 0.0, 1.0, 0.0, 0.0, 0.0, 1.0);
 			break;
 		case D4::FlipY:
 			cv::flip(geometry.imageB, imageTransformed, 0);
-			A = (cv::Mat_<double>(3, 3) << 1.0, 0.0, 0.0, 0.0, -1.0, static_cast<double>(height - 1), 0.0, 0.0, 1.0);
+			Tg = (cv::Mat_<double>(3, 3) << 1.0, 0.0, 0.0, 0.0, -1.0, static_cast<double>(height - 1), 0.0, 0.0, 1.0);
 			break;
 		case D4::Diag:
 			cv::transpose(geometry.imageB, imageTransformed);
-			A = (cv::Mat_<double>(3, 3) << 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0);
+			Tg = (cv::Mat_<double>(3, 3) << 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0);
 			break;
 		case D4::AntiDiag:
 			cv::transpose(geometry.imageB, imageTransformed);
 			cv::flip(imageTransformed, imageTransformed, -1);
-			A = (cv::Mat_<double>(3, 3) << 0.0, -1.0, static_cast<double>(height - 1), -1.0, 0.0, static_cast<double>(width - 1), 0.0, 0.0, 1.0);
+			Tg = (cv::Mat_<double>(3, 3) << 0.0, -1.0, static_cast<double>(height - 1), -1.0, 0.0, static_cast<double>(width - 1), 0.0, 0.0, 1.0);
 			break;
 		}
 
+		// Transform the intersections
 		std::vector<cv::Point2f> intersectionsTransformed;
-		cv::perspectiveTransform(geometry.intersections, intersectionsTransformed, A);
+		cv::perspectiveTransform(geometry.intersections, intersectionsTransformed, Tg);
 
+		// Re-Order intersections coordinate (g \rhd c)
 		std::vector<cv::Point2f> intersectionsOrdered(intersectionsTransformed.size());
 		for (unsigned x = 0; x < boardSize; ++x) {
 			for (unsigned y = 0; y < boardSize; ++y) {
 				const std::size_t oldIndex     = static_cast<std::size_t>(x) * boardSize + y;
-				const Coord mapped             = mapCoord({x, y}, symmetry);
+				const Coord mapped             = mapCoord({x, y}, g);
 				const std::size_t newIndex     = static_cast<std::size_t>(mapped.x) * boardSize + mapped.y;
 				intersectionsOrdered[newIndex] = intersectionsTransformed[oldIndex];
 			}
@@ -178,7 +193,7 @@ bool Vision::setup(const Coord gaugeCoord) {
 			geometry.H.convertTo(H64, CV_64F);
 			geometry.H = std::move(H64);
 		}
-		geometry.H             = A * geometry.H;
+		geometry.H             = Tg * geometry.H;
 		geometry.imageB        = std::move(imageTransformed);
 		geometry.intersections = std::move(intersectionsOrdered);
 	}
@@ -191,8 +206,8 @@ void Vision::setSetupImage(std::filesystem::path setupImagePath) {
 	m_setupImagePath = std::move(setupImagePath);
 }
 
-void Vision::connect(Callbacks callback) {
-	m_callbacks = std::move(callback);
+void Vision::connect(Callbacks callbacks) {
+	m_callbacks = std::move(callbacks);
 }
 
 void Vision::disconnect() {
@@ -220,7 +235,7 @@ void Vision::stop() {
 
 void Vision::boardLoop() {
 	while (m_running.load()) {
-		// TODO:
+		assert(false); // TODO: Implement
 	}
 }
 
