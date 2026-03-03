@@ -1,6 +1,8 @@
-#include "vision/core/stoneFinder.hpp"
+#include "syntheticBoard.hpp"
+
 #include "vision/core/boardFinder.hpp"
 #include "vision/core/gridFinder.hpp"
+#include "vision/core/stoneFinder.hpp"
 
 #include <gtest/gtest.h>
 #include <opencv2/opencv.hpp>
@@ -15,45 +17,6 @@
 
 namespace tengen::vision::core {
 namespace gtest {
-
-//! Create a synthetic, perfectly rectified board geometry with evenly spaced intersections.
-static BoardGeometry makeSyntheticBoard(unsigned N, double spacingPx, const cv::Scalar& woodBgr) {
-	BoardGeometry g{};
-	g.boardSize = N;
-	g.spacing   = spacingPx;
-	g.H         = cv::Mat::eye(3, 3, CV_64F);
-
-	const int margin = static_cast<int>(std::lround(spacingPx)); //!< keep ROIs fully inside the image
-	const int span   = static_cast<int>(std::lround(spacingPx * static_cast<double>(N - 1)));
-	const int w      = 2 * margin + span;
-	const int h      = 2 * margin + span;
-	g.imageB         = cv::Mat(h, w, CV_8UC3, woodBgr);
-
-	g.intersections.reserve(static_cast<std::size_t>(N) * static_cast<std::size_t>(N));
-	for (unsigned gx = 0; gx < N; ++gx) {
-		for (unsigned gy = 0; gy < N; ++gy) {
-			const float x = static_cast<float>(margin + std::lround(static_cast<double>(gx) * spacingPx));
-			const float y = static_cast<float>(margin + std::lround(static_cast<double>(gy) * spacingPx));
-			g.intersections.emplace_back(x, y);
-		}
-	}
-
-	return g;
-}
-
-//! Draw a filled stone at a given grid coordinate (gx,gy).
-static void drawStone(BoardGeometry& g, unsigned gx, unsigned gy, StoneState s) {
-	ASSERT_FALSE(g.imageB.empty());
-	ASSERT_GT(g.boardSize, 0u);
-	ASSERT_EQ(g.intersections.size(), g.boardSize * g.boardSize);
-
-	const unsigned idx = gx * g.boardSize + gy;
-	ASSERT_LT(idx, g.intersections.size());
-
-	const int r          = static_cast<int>(std::lround(g.spacing * 0.40)); //!< < 0.5*spacing to avoid overlap
-	const cv::Scalar col = (s == StoneState::Black) ? cv::Scalar(0, 0, 0) : cv::Scalar(255, 255, 255);
-	cv::circle(g.imageB, g.intersections[idx], r, col, cv::FILLED, cv::LINE_AA);
-}
 
 //! Count occurrences of a given state.
 static std::size_t countState(const std::vector<StoneState>& stones, StoneState s) {
@@ -90,6 +53,7 @@ static std::optional<StoneState> detectSingleStoneInImage(const std::filesystem:
 		return std::nullopt;
 	}
 
+	// Try to find a second stone.
 	const auto stoneIt2 = std::find_if(std::next(stoneIt), result.stones.end(), isStone);
 	if (stoneIt2 != result.stones.end()) {
 		return std::nullopt;
