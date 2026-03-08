@@ -1,6 +1,6 @@
 #pragma once
 
-#include "BoardWidget.hpp"
+#include "gui/boardWidget.hpp"
 #include "BoardWidgetHandler.hpp"
 #include "tengen/sessionManager.hpp"
 #include <QCloseEvent>

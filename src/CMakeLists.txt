@@ -12,6 +12,7 @@ add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/vision/perception") # Library: Image
 
 # Runtime
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/game/runtime")      # Library: Core business logic of applications
+add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/game/gui")          # Library: GUI components for the applications
 
 # Applications
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/apps/tengen")       # Application: The actual game (GUI wrapper of runtime)

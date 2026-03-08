@@ -1,7 +1,5 @@
 #include "boardRenderer.hpp"
 
-#include "Logging.hpp"
-
 #include <QImageReader>
 #include <QPainter>
 #include <cassert>
@@ -18,8 +16,6 @@ BoardRenderer::BoardRenderer(const unsigned nodes) : m_nodes(nodes) {
 		reader.setAutoTransform(true);
 		target = reader.read();
 		if (target.isNull()) {
-			Logger().Log(Logging::LogLevel::Error, std::format("Failed to load '{}': {}\n", path, reader.errorString().toStdString()));
-
 			this->m_ready = false;
 		}
 	};
