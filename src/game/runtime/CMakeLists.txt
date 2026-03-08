@@ -1,4 +1,4 @@
-set(targetName appRuntime)
+set(targetName gameRuntime)
 
 # Get files to build
 set(headers
@@ -19,7 +19,7 @@ set(sources
 )
 
 add_library(${targetName} STATIC ${headers} ${sources})
-add_library(tengen::runtime ALIAS ${targetName})
+add_library(tengen::game::runtime ALIAS ${targetName})
 
 target_include_directories(${targetName}
     PUBLIC
