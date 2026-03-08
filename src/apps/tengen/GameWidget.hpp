@@ -1,7 +1,7 @@
 #pragma once
 
-#include "gui/boardWidget.hpp"
 #include "BoardWidgetHandler.hpp"
+#include "gui/boardWidget.hpp"
 #include "tengen/sessionManager.hpp"
 #include <QCloseEvent>
 #include <QLabel>
@@ -41,9 +41,9 @@ private: // Slots
 private:
 	app::SessionManager& m_game;
 
-	BoardWidget* m_boardWidget                                = nullptr;
+	BoardWidget* m_boardWidget                               = nullptr;
 	std::unique_ptr<BoardWidgetHandler> m_boardWidgetHandler = nullptr;
-	QTabWidget* m_sideTabs                                    = nullptr;
+	QTabWidget* m_sideTabs                                   = nullptr;
 
 	QLabel* m_statusLabel     = nullptr; //!< Game status text (active, finished).
 	QLabel* m_currPlayerLabel = nullptr; //!< Current player text.

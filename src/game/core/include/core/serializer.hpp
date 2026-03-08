@@ -20,4 +20,4 @@ enum class SerializeFormat { dotBW };
  */
 bool readBoard(std::filesystem::path testFile, Board& outBoard, SerializeFormat format = SerializeFormat::dotBW);
 
-}
+} // namespace tengen

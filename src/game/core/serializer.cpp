@@ -1,10 +1,10 @@
 #include "core/serializer.hpp"
 
-#include <fstream>
 #include <algorithm>
+#include <cassert>
+#include <fstream>
 #include <iostream>
 #include <string>
-#include <cassert>
 
 namespace tengen {
 
@@ -39,8 +39,8 @@ static bool readDotBWBoard(std::filesystem::path testFile, Board& outBoard) {
 		}
 
 		unsigned x = 0u;
-		for (const auto token : line) {
-			switch(token) {
+		for (const auto token: line) {
+			switch (token) {
 			case '.':
 				break;
 			case 'B':
@@ -58,19 +58,18 @@ static bool readDotBWBoard(std::filesystem::path testFile, Board& outBoard) {
 
 		++y;
 		assert(x == board.size());
-	} while(std::getline(file, line));
-	
+	} while (std::getline(file, line));
+
 	outBoard = std::move(board);
 	return true;
-
 }
 
 bool readBoard(std::filesystem::path testFile, Board& outBoard, SerializeFormat format) {
-	switch(format) {
+	switch (format) {
 	case SerializeFormat::dotBW:
 		return readDotBWBoard(testFile, outBoard);
 	}
 	return false;
 }
 
-}
+} // namespace tengen
