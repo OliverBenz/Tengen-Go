@@ -4,8 +4,6 @@ set(targetName "visionPerception.gtest")
 # Create executable
 add_executable(${targetName}
     "${CMAKE_CURRENT_LIST_DIR}/symmetryBreaking.gtest.cpp"
-	"${CMAKE_CURRENT_LIST_DIR}/testFileReader.hpp"
-	"${CMAKE_CURRENT_LIST_DIR}/testFileReader.cpp"
 )
 
 # Link to required libraries

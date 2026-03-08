@@ -1,36 +1,44 @@
-#include "testFileReader.hpp"
+#include "core/serializer.hpp"
 
 #include <fstream>
+#include <algorithm>
+#include <iostream>
 #include <string>
 #include <cassert>
 
-namespace tengen::vision {
-namespace gtest {
+namespace tengen {
+namespace internal {
 
 bool readTestBoard(std::filesystem::path testFile, Board& outBoard) {
 	assert(testFile.extension().string() == ".txt"); // Our TXT testfiles must be stored as such.
 
 	std::ifstream file(testFile);
 	if (!file.is_open()) {
+		std::cerr << "[Serializer] Could not open file: " << testFile << '\n';
 		return false;
 	}
 
 	// Get first line, check board size.
 	std::string line;
 	std::getline(file, line);
+	line.erase(std::remove_if(line.begin(), line.end(), ::isspace), line.end());
+
 	if (!(line.size() == 9 || line.size() == 13 || line.size() == 19)) {
+		std::cerr << "[Serializer] Invalid board size: " << line.size() << '\n';
 		return false;
 	}
 
 	Board board(line.size());
-	auto y = static_cast<unsigned>(board.size()); //!< Board y coordinate. Top to bottom parse.
+	unsigned y = 0u; //!< Board y coordinate.
 	do {
-		assert(y >= 1u);
+		line.erase(std::remove_if(line.begin(), line.end(), ::isspace), line.end());
+
+		assert(y < board.size());
 		if (line.size() != board.size()) {
+			std::cerr << "[Serializer] Invalid test file format.\n";
 			return false; // Invalid test file format.
 		}
 
-		--y;
 		unsigned x = 0u;
 		for (const auto token : line) {
 			switch(token) {
@@ -43,11 +51,13 @@ bool readTestBoard(std::filesystem::path testFile, Board& outBoard) {
 				board.place({x, y}, Board::Stone::White);
 				break;
 			default:
+				std::cerr << "[Serializer] Invalid test file format.\n";
 				return false; // Invalid test file format.
 			}
 			++x;
 		}
 
+		++y;
 		assert(x == board.size());
 	} while(std::getline(file, line));
 	
