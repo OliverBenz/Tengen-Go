@@ -1,55 +1,44 @@
 #include "BoardWidget.hpp"
 
-#include "Logging.hpp"
-#include "core/gameEvent.hpp"
-
 #include <QColor>
 #include <QKeyEvent>
-#include <QMetaObject>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QResizeEvent>
-#include <QShowEvent>
 
 #include <algorithm>
-#include <cstdint>
+#include <utility>
 
 namespace tengen::gui {
 
-BoardWidget::BoardWidget(app::SessionManager& game, QWidget* parent)
-    : QWidget(parent), m_game(game), m_boardRenderer(static_cast<unsigned>(game.board().size())) {
+BoardWidget::BoardWidget(Board board, QWidget* parent)
+    : QWidget(parent), m_board(std::move(board)), m_boardRenderer(static_cast<unsigned>(m_board.size())) {
 	setFocusPolicy(Qt::StrongFocus); // Required to get key events.
 	setMouseTracking(false);
-
-	if (!m_listenerRegistered) {
-		m_game.subscribe(this, app::AS_BoardChange);
-		m_listenerRegistered = true;
-	}
 }
 
-BoardWidget::~BoardWidget() {
-	if (m_listenerRegistered) {
-		m_game.unsubscribe(this);
-	}
+const Board& BoardWidget::board() const {
+	return m_board;
 }
 
-void BoardWidget::showEvent(QShowEvent* event) {
-	QWidget::showEvent(event);
+void BoardWidget::setBoard(const Board& board) {
+	const auto oldSize = m_board.size();
+	m_board            = board;
+	if (m_board.size() != oldSize) {
+		m_boardRenderer.setNodes(static_cast<unsigned>(m_board.size()));
+	}
+	m_boardRenderer.setBoardSizePx(boardPixelSize());
+	update();
 }
 
 void BoardWidget::resizeEvent(QResizeEvent* event) {
 	QWidget::resizeEvent(event);
 
 	m_boardRenderer.setBoardSizePx(boardPixelSize());
-
-	queueRender();
+	update();
 }
 
 void BoardWidget::mouseReleaseEvent(QMouseEvent* event) {
-#ifndef NDEBUG
-	Logger().Log(Logging::LogLevel::Info, std::format("Mouse click at: ({}, {})", event->pos().x(), event->pos().y()));
-#endif
-
 	if (event->button() == Qt::LeftButton) {
 		handleClick(event->pos());
 		event->accept();
@@ -60,18 +49,14 @@ void BoardWidget::mouseReleaseEvent(QMouseEvent* event) {
 }
 
 void BoardWidget::keyReleaseEvent(QKeyEvent* event) {
-#ifndef NDEBUG
-	Logger().Log(Logging::LogLevel::Info, std::format("Keyboard click: {}", event->key()));
-#endif
-
 	switch (event->key()) {
 	case Qt::Key_P:
-		m_game.tryPass();
+		emit boardEvent(BoardWidgetEvent::pass());
 		event->accept();
 		return;
 
 	case Qt::Key_R:
-		m_game.tryResign();
+		emit boardEvent(BoardWidgetEvent::resign());
 		event->accept();
 		return;
 
@@ -79,20 +64,6 @@ void BoardWidget::keyReleaseEvent(QKeyEvent* event) {
 		QWidget::keyReleaseEvent(event);
 		return; // Don't accept the event.
 	}
-}
-
-void BoardWidget::onAppEvent(app::AppSignal signal) {
-	switch (signal) {
-	case app::AS_BoardChange:
-		queueRender(); // Async queue.
-		break;
-	default:
-		break;
-	}
-}
-
-void BoardWidget::queueRender() {
-	QMetaObject::invokeMethod(this, [this]() { update(); }, Qt::QueuedConnection);
 }
 
 void BoardWidget::handleClick(const QPoint& pos) {
@@ -110,7 +81,7 @@ void BoardWidget::handleClick(const QPoint& pos) {
 	// Try push event
 	Coord coord{};
 	if (m_boardRenderer.pixelToCoord(local.x(), local.y(), coord)) {
-		m_game.tryPlace(coord.x, coord.y);
+		emit boardEvent(BoardWidgetEvent::place(coord));
 	}
 }
 
@@ -126,7 +97,7 @@ void BoardWidget::renderBoard() {
 	}
 
 	const auto offset    = boardOffset(size);
-	const auto boardSize = static_cast<unsigned>(m_game.board().size());
+	const auto boardSize = static_cast<unsigned>(m_board.size());
 	if (m_boardRenderer.nodes() != boardSize) {
 		m_boardRenderer.setNodes(boardSize);
 		m_boardRenderer.setBoardSizePx(size);
@@ -135,7 +106,7 @@ void BoardWidget::renderBoard() {
 	painter.fillRect(rect(), QColor(20, 20, 20));
 	painter.save();
 	painter.translate(offset); // Center in drawing area
-	m_boardRenderer.draw(painter, m_game.board());
+	m_boardRenderer.draw(painter, m_board);
 	painter.restore();
 }
 
