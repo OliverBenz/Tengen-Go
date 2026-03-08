@@ -4,8 +4,7 @@
 
 namespace tengen::gui {
 
-BoardWidgetHandler::BoardWidgetHandler(app::SessionManager& game, BoardWidget& boardWidget)
-    : m_game(game), m_boardWidget(boardWidget) {
+BoardWidgetHandler::BoardWidgetHandler(app::SessionManager& game, BoardWidget& boardWidget) : m_game(game), m_boardWidget(boardWidget) {
 	m_boardWidget.setBoard(m_game.board());
 	m_game.subscribe(this, app::AS_BoardChange);
 	m_listenerRegistered = true;
@@ -24,12 +23,7 @@ void BoardWidgetHandler::onAppEvent(const app::AppSignal signal) {
 
 	const Board board = m_game.board();
 	auto* widget      = &m_boardWidget;
-	QMetaObject::invokeMethod(
-	        widget,
-	        [widget, board]() {
-		        widget->setBoard(board);
-	        },
-	        Qt::QueuedConnection);
+	QMetaObject::invokeMethod(widget, [widget, board]() { widget->setBoard(board); }, Qt::QueuedConnection);
 }
 
 } // namespace tengen::gui
