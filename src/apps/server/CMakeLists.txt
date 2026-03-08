@@ -6,7 +6,7 @@ add_executable(${targetName}
 
 target_link_libraries(${targetName}
     PRIVATE
-        tengen::runtime
+        tengen::game::runtime
 )
 
 # Setup project settings

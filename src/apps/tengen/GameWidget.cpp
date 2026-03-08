@@ -15,10 +15,12 @@ GameWidget::GameWidget(app::SessionManager& game, QWidget* parent) : QWidget(par
 	buildNetworkLayout();
 
 	// Connect slots
+	connect(m_boardWidget, &BoardWidget::boardEvent, this, &GameWidget::onBoardWidgetEvent);
 	connect(m_passButton, &QPushButton::clicked, this, &GameWidget::onPassClicked);
 	connect(m_resignButton, &QPushButton::clicked, this, &GameWidget::onResignClicked);
 	connect(m_chatSend, &QPushButton::clicked, this, &GameWidget::onSendChat);
 	connect(m_chatInput, &QLineEdit::returnPressed, this, &GameWidget::onSendChat);
+	m_boardWidgetHandler = std::make_unique<BoardWidgetHandler>(m_game, *m_boardWidget);
 
 	// Setup Game Stuff
 	setCurrentPlayerText();
@@ -63,7 +65,7 @@ void GameWidget::buildNetworkLayout() {
 	auto* contentLayout = new QHBoxLayout();
 	contentLayout->setSpacing(12);
 
-	m_boardWidget = new BoardWidget(m_game, central);
+	m_boardWidget = new BoardWidget(m_game.board(), central);
 	m_boardWidget->setMinimumSize(640, 640);
 	contentLayout->addWidget(m_boardWidget);
 
@@ -147,6 +149,22 @@ void GameWidget::appendChatMessages() {
 
 void GameWidget::onPassClicked() {
 	m_game.tryPass();
+}
+
+void GameWidget::onBoardWidgetEvent(const BoardWidgetEvent& event) {
+	switch (event.type) {
+	case BoardWidgetEventType::Place:
+		m_game.tryPlace(event.coord.x, event.coord.y);
+		return;
+	case BoardWidgetEventType::Pass:
+		m_game.tryPass();
+		return;
+	case BoardWidgetEventType::Resign:
+		m_game.tryResign();
+		return;
+	default:
+		return;
+	}
 }
 
 void GameWidget::onResignClicked() {

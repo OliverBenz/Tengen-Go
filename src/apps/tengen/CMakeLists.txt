@@ -6,8 +6,7 @@ add_executable(${targetName}
     "${CMAKE_CURRENT_LIST_DIR}/main.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/MainWindow.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/GameWidget.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/BoardWidget.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/boardRenderer.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/BoardWidgetHandler.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ConnectDialog.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/HostDialog.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/Logging.cpp"
@@ -16,7 +15,8 @@ add_executable(${targetName}
 target_link_libraries(${targetName} 
     PRIVATE
         Logger::Logger
-        tengen::runtime
+        tengen::game::runtime
+        tengen::game::gui
         Qt6::Widgets
 )
 
@@ -28,4 +28,3 @@ target_compile_definitions(${targetName} PRIVATE TEXTURE_WHITE="${CMAKE_SOURCE_D
 set_project_warnings(${targetName})  # Which warnings to enable
 set_compile_options(${targetName})   # Which extra compiler flags to enable
 set_output_directory(${targetName})  # Set the output directory of the library
-

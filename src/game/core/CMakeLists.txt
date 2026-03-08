@@ -11,6 +11,7 @@ set(headers
     "${CMAKE_CURRENT_LIST_DIR}/include/core/sgfHandler.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/include/core/moveChecker.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/include/core/eventHub.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/include/core/serializer.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/zobristHash.hpp"
 )
 set(sources
@@ -19,6 +20,7 @@ set(sources
     "${CMAKE_CURRENT_LIST_DIR}/sgfHandler.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/moveChecker.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/eventHub.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/serializer.cpp"
 )
 
 # Create target
