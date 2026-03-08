@@ -1,9 +1,14 @@
 #pragma once
 
-#include "boardRenderer.hpp"
+#include "model/board.hpp"
+
 #include <QWidget>
 
+#include <memory>
+
 namespace tengen::gui {
+
+class BoardRenderer;
 
 enum class BoardWidgetEventType { Place, Pass, Resign };
 
@@ -29,6 +34,8 @@ class BoardWidget : public QWidget {
 
 public:
 	explicit BoardWidget(Board board, QWidget* parent = nullptr);
+	~BoardWidget();
+
 	const Board& board() const;
 	void setBoard(const Board& board);
 
@@ -53,7 +60,7 @@ private:
 
 private:
 	Board m_board;
-	BoardRenderer m_boardRenderer;
+	std::unique_ptr<BoardRenderer> m_boardRenderer;
 };
 
 } // namespace tengen::gui

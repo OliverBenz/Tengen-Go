@@ -1,4 +1,6 @@
-#include "BoardWidget.hpp"
+#include "gui/boardWidget.hpp"
+
+#include "boardRenderer.hpp"
 
 #include <QColor>
 #include <QKeyEvent>
@@ -12,10 +14,12 @@
 namespace tengen::gui {
 
 BoardWidget::BoardWidget(Board board, QWidget* parent)
-    : QWidget(parent), m_board(std::move(board)), m_boardRenderer(static_cast<unsigned>(m_board.size())) {
+    : QWidget(parent), m_board(std::move(board)), m_boardRenderer{std::make_unique<BoardRenderer>(static_cast<unsigned>(m_board.size()))} {
 	setFocusPolicy(Qt::StrongFocus); // Required to get key events.
 	setMouseTracking(false);
 }
+
+BoardWidget::~BoardWidget() = default;
 
 const Board& BoardWidget::board() const {
 	return m_board;
@@ -25,16 +29,16 @@ void BoardWidget::setBoard(const Board& board) {
 	const auto oldSize = m_board.size();
 	m_board            = board;
 	if (m_board.size() != oldSize) {
-		m_boardRenderer.setNodes(static_cast<unsigned>(m_board.size()));
+		m_boardRenderer->setNodes(static_cast<unsigned>(m_board.size()));
 	}
-	m_boardRenderer.setBoardSizePx(boardPixelSize());
+	m_boardRenderer->setBoardSizePx(boardPixelSize());
 	update();
 }
 
 void BoardWidget::resizeEvent(QResizeEvent* event) {
 	QWidget::resizeEvent(event);
 
-	m_boardRenderer.setBoardSizePx(boardPixelSize());
+	m_boardRenderer->setBoardSizePx(boardPixelSize());
 	update();
 }
 
@@ -80,7 +84,7 @@ void BoardWidget::handleClick(const QPoint& pos) {
 
 	// Try push event
 	Coord coord{};
-	if (m_boardRenderer.pixelToCoord(local.x(), local.y(), coord)) {
+	if (m_boardRenderer->pixelToCoord(local.x(), local.y(), coord)) {
 		emit boardEvent(BoardWidgetEvent::place(coord));
 	}
 }
@@ -98,15 +102,15 @@ void BoardWidget::renderBoard() {
 
 	const auto offset    = boardOffset(size);
 	const auto boardSize = static_cast<unsigned>(m_board.size());
-	if (m_boardRenderer.nodes() != boardSize) {
-		m_boardRenderer.setNodes(boardSize);
-		m_boardRenderer.setBoardSizePx(size);
+	if (m_boardRenderer->nodes() != boardSize) {
+		m_boardRenderer->setNodes(boardSize);
+		m_boardRenderer->setBoardSizePx(size);
 	}
 	QPainter painter(this);
 	painter.fillRect(rect(), QColor(20, 20, 20));
 	painter.save();
 	painter.translate(offset); // Center in drawing area
-	m_boardRenderer.draw(painter, m_board);
+	m_boardRenderer->draw(painter, m_board);
 	painter.restore();
 }
 

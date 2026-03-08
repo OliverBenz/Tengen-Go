@@ -9,7 +9,6 @@ namespace tengen::gui {
 
 class BoardRenderer {
 public:
-	BoardRenderer() = default;
 	explicit BoardRenderer(unsigned nodes);
 
 	unsigned nodes() const;
