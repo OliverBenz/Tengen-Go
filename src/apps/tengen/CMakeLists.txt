@@ -6,7 +6,6 @@ add_executable(${targetName}
     "${CMAKE_CURRENT_LIST_DIR}/main.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/MainWindow.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/GameWidget.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/BoardWidget.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/BoardWidgetHandler.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/boardRenderer.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ConnectDialog.cpp"
@@ -17,7 +16,7 @@ add_executable(${targetName}
 target_link_libraries(${targetName} 
     PRIVATE
         Logger::Logger
-        tengen::runtime
+        tengen::game::runtime
         Qt6::Widgets
 )
 
