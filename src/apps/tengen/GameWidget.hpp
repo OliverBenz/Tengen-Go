@@ -1,6 +1,7 @@
 #pragma once
 
 #include "BoardWidget.hpp"
+#include "BoardWidgetHandler.hpp"
 #include "tengen/sessionManager.hpp"
 #include <QCloseEvent>
 #include <QLabel>
@@ -9,6 +10,7 @@
 #include <QPushButton>
 #include <QTabWidget>
 #include <QWidget>
+#include <memory>
 
 namespace tengen::gui {
 
@@ -31,6 +33,7 @@ private:
 	void appendChatMessages();   //!< Get new chat messages from game and update the chat list.
 
 private: // Slots
+	void onBoardWidgetEvent(const BoardWidgetEvent& event);
 	void onPassClicked();
 	void onResignClicked();
 	void onSendChat();
@@ -38,8 +41,9 @@ private: // Slots
 private:
 	app::SessionManager& m_game;
 
-	BoardWidget* m_boardWidget = nullptr;
-	QTabWidget* m_sideTabs     = nullptr;
+	BoardWidget* m_boardWidget                                = nullptr;
+	std::unique_ptr<BoardWidgetHandler> m_boardWidgetHandler = nullptr;
+	QTabWidget* m_sideTabs                                    = nullptr;
 
 	QLabel* m_statusLabel     = nullptr; //!< Game status text (active, finished).
 	QLabel* m_currPlayerLabel = nullptr; //!< Current player text.

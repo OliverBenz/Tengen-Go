@@ -1,33 +1,48 @@
 #pragma once
 
 #include "boardRenderer.hpp"
-#include "core/game.hpp"
-#include "tengen/sessionManager.hpp"
 #include <QWidget>
 
 namespace tengen::gui {
 
-class BoardWidget : public QWidget, public app::IAppSignalListener {
+enum class BoardWidgetEventType { Place, Pass, Resign };
+
+struct BoardWidgetEvent {
+	BoardWidgetEventType type{BoardWidgetEventType::Place};
+	Coord coord{0u, 0u};
+
+	static BoardWidgetEvent place(const Coord c) {
+		return {BoardWidgetEventType::Place, c};
+	}
+
+	static BoardWidgetEvent pass() {
+		return {BoardWidgetEventType::Pass, {0u, 0u}};
+	}
+
+	static BoardWidgetEvent resign() {
+		return {BoardWidgetEventType::Resign, {0u, 0u}};
+	}
+};
+
+class BoardWidget : public QWidget {
 	Q_OBJECT
 
 public:
-	explicit BoardWidget(app::SessionManager& game, QWidget* parent = nullptr);
-	~BoardWidget() override;
+	explicit BoardWidget(Board board, QWidget* parent = nullptr);
+	const Board& board() const;
+	void setBoard(const Board& board);
 
-	//! Called by the game thread. Ensure not blocking.
-	void onAppEvent(app::AppSignal signal) override;
+signals:
+	void boardEvent(const BoardWidgetEvent& event);
 
 protected:
-	void showEvent(QShowEvent* event) override;
 	void resizeEvent(QResizeEvent* event) override;
 	void paintEvent(QPaintEvent* event) override;
 	void mouseReleaseEvent(QMouseEvent* event) override;
 	void keyReleaseEvent(QKeyEvent* event) override;
 
 private:
-	//! Asynchronously queue a render event. Prevents blocking of calling thread.
-	void queueRender();
-	//! Resolve click position to board coordinate and push game event if valid.
+	//! Resolve click position to board coordinate and emit an event if valid.
 	void handleClick(const QPoint& pos);
 	void renderBoard();
 
@@ -37,9 +52,7 @@ private:
 	QPoint boardOffset(unsigned boardSize) const;
 
 private:
-	app::SessionManager& m_game;
-
-	bool m_listenerRegistered = false;
+	Board m_board;
 	BoardRenderer m_boardRenderer;
 };
 
