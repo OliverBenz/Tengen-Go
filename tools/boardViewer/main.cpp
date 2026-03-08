@@ -4,6 +4,8 @@
 #include <QApplication>
 #include <QShortcut>
 
+// Used for quickly visualising stuff I work on.
+// Only supports visualising dotBW format for now. To be added: Real Images, openCV mats, custom serialization functions, sgf files.
 int main(int argc, char* argv[]) {
 	QApplication application(argc, argv);
 
