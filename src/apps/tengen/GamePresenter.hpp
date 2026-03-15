@@ -9,7 +9,6 @@
 namespace tengen {
 
 namespace gui {
-struct BoardWidgetEvent;
 class GameWidget;
 } // namespace gui
 
@@ -22,13 +21,10 @@ public:
 	void onAppEvent(app::AppSignal signal) override;
 
 private:
-	static void dispatchBoardEvent(app::SessionManager& game, const gui::BoardWidgetEvent& event);
-
 	app::SessionManager& m_game;
 	gui::GameWidget& m_gameWidget;
 	std::unique_ptr<BoardPresenter> m_boardPresenter = nullptr;
 	std::unique_ptr<ChatPresenter> m_chatPresenter   = nullptr;
-	bool m_listenerRegistered                        = false;
 };
 
 } // namespace tengen
