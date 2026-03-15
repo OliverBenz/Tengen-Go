@@ -14,7 +14,8 @@ int main(int argc, char* argv[]) {
 		return -1;
 	}
 
-	tengen::gui::BoardWidget boardWidget(board);
+	tengen::gui::BoardWidget boardWidget;
+	boardWidget.setBoard(board);
 	boardWidget.resize(800, 800);
 
 	QShortcut escShortcut(QKeySequence(Qt::Key_Escape), &boardWidget);

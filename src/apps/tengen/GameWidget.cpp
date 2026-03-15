@@ -10,9 +10,9 @@
 
 namespace tengen::gui {
 
-GameWidget::GameWidget(Board board, QWidget* parent) : QWidget(parent) {
+GameWidget::GameWidget(QWidget* parent) : QWidget(parent) {
 	setWindowTitle("Go Game");
-	buildNetworkLayout(std::move(board));
+	buildNetworkLayout();
 
 	connect(m_passButton, &QPushButton::clicked, this, &GameWidget::passEvent);
 	connect(m_resignButton, &QPushButton::clicked, this, &GameWidget::resignEvent);
@@ -36,7 +36,7 @@ void GameWidget::setGameStateText(const QString& text) {
 	m_statusLabel->setText(text);
 }
 
-void GameWidget::buildNetworkLayout(Board board) {
+void GameWidget::buildNetworkLayout() {
 	auto* mainLayout = new QVBoxLayout(this);
 	mainLayout->setContentsMargins(12, 12, 12, 12);
 	mainLayout->setSpacing(8);
@@ -47,7 +47,7 @@ void GameWidget::buildNetworkLayout(Board board) {
 	auto* contentLayout = new QHBoxLayout();
 	contentLayout->setSpacing(12);
 
-	m_boardWidget = new BoardWidget(std::move(board), this);
+	m_boardWidget = new BoardWidget(this);
 	m_boardWidget->setMinimumSize(640, 640);
 	contentLayout->addWidget(m_boardWidget);
 

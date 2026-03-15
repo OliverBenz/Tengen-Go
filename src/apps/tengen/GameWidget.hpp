@@ -11,11 +11,12 @@ namespace tengen::gui {
 
 class ChatWidget;
 
+// TODO: Move to game::gui
 class GameWidget : public QWidget {
 	Q_OBJECT
 
 public:
-	explicit GameWidget(Board board, QWidget* parent = nullptr);
+	explicit GameWidget(QWidget* parent = nullptr);
 	~GameWidget() override;
 
 	BoardWidget& boardWidget();
@@ -30,7 +31,7 @@ signals:
 
 private:
 	//! Initial setup constructing the layout of the window.
-	void buildNetworkLayout(Board board);
+	void buildNetworkLayout();
 
 private:
 	BoardWidget* m_boardWidget = nullptr;
