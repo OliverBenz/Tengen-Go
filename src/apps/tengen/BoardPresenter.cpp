@@ -1,22 +1,22 @@
-#include "BoardWidgetHandler.hpp"
+#include "BoardPresenter.hpp"
 
 #include <QMetaObject>
 
-namespace tengen::gui {
+namespace tengen {
 
-BoardWidgetHandler::BoardWidgetHandler(app::SessionManager& game, BoardWidget& boardWidget) : m_game(game), m_boardWidget(boardWidget) {
+BoardPresenter::BoardPresenter(app::SessionManager& game, gui::BoardWidget& boardWidget) : m_game(game), m_boardWidget(boardWidget) {
 	m_boardWidget.setBoard(m_game.board());
 	m_game.subscribe(this, app::AS_BoardChange);
 	m_listenerRegistered = true;
 }
 
-BoardWidgetHandler::~BoardWidgetHandler() {
+BoardPresenter::~BoardPresenter() {
 	if (m_listenerRegistered) {
 		m_game.unsubscribe(this);
 	}
 }
 
-void BoardWidgetHandler::onAppEvent(const app::AppSignal signal) {
+void BoardPresenter::onAppEvent(const app::AppSignal signal) {
 	if (signal != app::AS_BoardChange) {
 		return;
 	}
@@ -26,4 +26,4 @@ void BoardWidgetHandler::onAppEvent(const app::AppSignal signal) {
 	QMetaObject::invokeMethod(widget, [widget, board]() { widget->setBoard(board); }, Qt::QueuedConnection);
 }
 
-} // namespace tengen::gui
+} // namespace tengen
