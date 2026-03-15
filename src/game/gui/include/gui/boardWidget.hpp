@@ -10,23 +10,15 @@ namespace tengen::gui {
 
 class BoardRenderer;
 
-enum class BoardWidgetEventType { Place, Pass, Resign };
-
 struct BoardWidgetEvent {
-	BoardWidgetEventType type{BoardWidgetEventType::Place};
+	enum class Type { Place, Pass, Resign };
+
+	Type type{Type::Place};
 	Coord coord{0u, 0u};
 
-	static BoardWidgetEvent place(const Coord c) {
-		return {BoardWidgetEventType::Place, c};
-	}
-
-	static BoardWidgetEvent pass() {
-		return {BoardWidgetEventType::Pass, {0u, 0u}};
-	}
-
-	static BoardWidgetEvent resign() {
-		return {BoardWidgetEventType::Resign, {0u, 0u}};
-	}
+	static BoardWidgetEvent place(const Coord c);
+	static BoardWidgetEvent pass();
+	static BoardWidgetEvent resign();
 };
 
 class BoardWidget : public QWidget {

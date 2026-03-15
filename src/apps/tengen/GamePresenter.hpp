@@ -2,23 +2,21 @@
 
 #include "BoardPresenter.hpp"
 #include "ChatPresenter.hpp"
+#include "gui/gameWidget.hpp"
 #include "tengen/sessionManager.hpp"
 
 #include <memory>
 
 namespace tengen {
 
-namespace gui {
-class GameWidget;
-} // namespace gui
-
 class GamePresenter : public app::IAppSignalListener {
 public:
 	GamePresenter(app::SessionManager& game, gui::GameWidget& gameWidget);
 	~GamePresenter() override;
 
-	//! Called by the game thread. Ensure not blocking.
-	void onAppEvent(app::AppSignal signal) override;
+	void onAppEvent(app::AppSignal signal) override; //!< Called by the game thread. Ensure not blocking.
+	void onPassRequested();                          //!< Handle pass event from Board Widget.
+	void onResignRequested();                        //!< Handle resign event from Board Widget.
 
 private:
 	app::SessionManager& m_game;

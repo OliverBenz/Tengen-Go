@@ -10,15 +10,13 @@ public:
 	BoardPresenter(app::SessionManager& game, gui::BoardWidget& boardWidget);
 	~BoardPresenter() override;
 
-	//! Called by the game thread. Ensure not blocking.
-	void onAppEvent(app::AppSignal signal) override;
+	void onAppEvent(app::AppSignal signal) override; //!< Called by the game thread. Ensure not blocking.
 
 private:
-	void dispatchBoardEvent(const gui::BoardWidgetEvent& event);
+	void onBoardEvent(const gui::BoardWidgetEvent& event);
 
 	app::SessionManager& m_game;
 	gui::BoardWidget& m_boardWidget;
-	bool m_listenerRegistered = false;
 };
 
 } // namespace tengen
