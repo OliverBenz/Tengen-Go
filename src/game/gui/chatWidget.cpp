@@ -1,4 +1,4 @@
-#include "ChatWidget.hpp"
+#include "gui/chatWidget.hpp"
 
 #include <QAbstractItemView>
 #include <QHBoxLayout>
