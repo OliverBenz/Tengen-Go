@@ -13,8 +13,7 @@ public:
 	ChatPresenter(app::SessionManager& game, gui::ChatWidget& chatWidget);
 	~ChatPresenter() override;
 
-	//! Called by the game thread. Ensure not blocking.
-	void onAppEvent(app::AppSignal signal) override;
+	void onAppEvent(app::AppSignal signal) override; //!< Called by the game thread. Ensure not blocking.
 
 private:
 	app::SessionManager& m_game;

@@ -1,9 +1,5 @@
 #include "GamePresenter.hpp"
 
-#include "BoardPresenter.hpp"
-#include "ChatPresenter.hpp"
-#include "gui/gameWidget.hpp"
-
 #include <QMetaObject>
 #include <QObject>
 #include <QString>
@@ -41,8 +37,8 @@ static QString gameStateText(const tengen::GameStatus status) {
 }
 
 GamePresenter::GamePresenter(app::SessionManager& game, gui::GameWidget& gameWidget) : m_game(game), m_gameWidget(gameWidget) {
-	QObject::connect(&m_gameWidget, &gui::GameWidget::passEvent, &m_gameWidget, [game = &m_game]() { game->tryPass(); });
-	QObject::connect(&m_gameWidget, &gui::GameWidget::resignEvent, &m_gameWidget, [game = &m_game]() { game->tryResign(); });
+	QObject::connect(&m_gameWidget, &gui::GameWidget::passEvent, &m_gameWidget, [this]() { this->onPassRequested(); });
+	QObject::connect(&m_gameWidget, &gui::GameWidget::resignEvent, &m_gameWidget, [this]() { this->onResignRequested(); });
 
 	m_boardPresenter = std::make_unique<BoardPresenter>(m_game, m_gameWidget.boardWidget());
 	m_chatPresenter  = std::make_unique<ChatPresenter>(m_game, m_gameWidget.chatWidget());
@@ -73,6 +69,14 @@ void GamePresenter::onAppEvent(const app::AppSignal signal) {
 	default:
 		return;
 	}
+}
+
+void GamePresenter::onPassRequested() {
+	m_game.tryPass();
+}
+
+void GamePresenter::onResignRequested() {
+	m_game.tryResign();
 }
 
 } // namespace tengen
