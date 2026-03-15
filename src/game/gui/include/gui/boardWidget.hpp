@@ -33,7 +33,7 @@ class BoardWidget : public QWidget {
 	Q_OBJECT
 
 public:
-	explicit BoardWidget(Board board, QWidget* parent = nullptr);
+	explicit BoardWidget(QWidget* parent = nullptr);
 	~BoardWidget();
 
 	const Board& board() const;

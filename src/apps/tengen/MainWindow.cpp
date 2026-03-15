@@ -29,7 +29,8 @@ void MainWindow::buildLayout() {
 	connect(connectAction, &QAction::triggered, this, &MainWindow::openConnectDialog);
 	connect(hostAction, &QAction::triggered, this, &MainWindow::openHostDialog);
 
-	m_gameWidget    = new GameWidget(m_game.board());
+	m_gameWidget = new GameWidget();
+	m_gameWidget->boardWidget().setBoard(m_game.board());
 	m_gamePresenter = std::make_unique<tengen::GamePresenter>(m_game, *m_gameWidget);
 	setCentralWidget(m_gameWidget);
 }

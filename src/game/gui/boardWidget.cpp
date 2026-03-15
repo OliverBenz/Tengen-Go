@@ -13,8 +13,8 @@
 
 namespace tengen::gui {
 
-BoardWidget::BoardWidget(Board board, QWidget* parent)
-    : QWidget(parent), m_board(std::move(board)), m_boardRenderer{std::make_unique<BoardRenderer>(static_cast<unsigned>(m_board.size()))} {
+BoardWidget::BoardWidget(QWidget* parent)
+    : QWidget(parent), m_board(9u), m_boardRenderer{std::make_unique<BoardRenderer>(static_cast<unsigned>(m_board.size()))} {
 	setFocusPolicy(Qt::StrongFocus); // Required to get key events.
 	setMouseTracking(false);
 }
