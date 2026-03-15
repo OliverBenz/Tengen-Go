@@ -11,7 +11,6 @@ namespace tengen::gui {
 
 class ChatWidget;
 
-// TODO: Move to game::gui
 class GameWidget : public QWidget {
 	Q_OBJECT
 

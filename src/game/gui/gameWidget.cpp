@@ -1,4 +1,4 @@
-#include "GameWidget.hpp"
+#include "gui/gameWidget.hpp"
 
 #include "gui/chatWidget.hpp"
 

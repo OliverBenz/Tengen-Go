@@ -6,12 +6,14 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets)
 set(headers
     "${CMAKE_CURRENT_LIST_DIR}/include/gui/boardWidget.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/include/gui/chatWidget.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/include/gui/gameWidget.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/boardRenderer.hpp"
 )
 
 set(sources
     "${CMAKE_CURRENT_LIST_DIR}/boardWidget.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/chatWidget.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/gameWidget.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/boardRenderer.cpp"
 )
 
