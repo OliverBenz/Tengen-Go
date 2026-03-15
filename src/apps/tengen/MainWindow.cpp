@@ -1,11 +1,11 @@
 #include "MainWindow.hpp"
 
 #include "ConnectDialog.hpp"
-#include "GamePresenter.hpp"
 #include "HostDialog.hpp"
 #include "gui/gameWidget.hpp"
 
 #include <QMenuBar>
+#include <cassert>
 
 namespace tengen::gui {
 
@@ -19,6 +19,11 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
 
 MainWindow::~MainWindow() = default;
 
+GameWidget& MainWindow::gameWidget() {
+	assert(m_gameWidget);
+	return *m_gameWidget;
+}
+
 void MainWindow::buildLayout() {
 	// Menu Bar
 	auto* menu          = menuBar()->addMenu(tr("&Menu"));
@@ -30,8 +35,6 @@ void MainWindow::buildLayout() {
 	connect(hostAction, &QAction::triggered, this, &MainWindow::openHostDialog);
 
 	m_gameWidget = new GameWidget();
-	m_gameWidget->boardWidget().setBoard(m_game.board());
-	m_gamePresenter = std::make_unique<tengen::GamePresenter>(m_game, *m_gameWidget);
 	setCentralWidget(m_gameWidget);
 }
 
@@ -39,8 +42,7 @@ void MainWindow::openConnectDialog() {
 	ConnectDialog dialog(this);
 
 	if (dialog.exec() == QDialog::Accepted) {
-		const auto ip = dialog.ipAddress().toStdString();
-		m_game.connect(ip);
+		emit connectRequested(dialog.ipAddress());
 	}
 }
 
@@ -48,12 +50,12 @@ void MainWindow::openHostDialog() {
 	HostDialog dialog(this);
 
 	if (dialog.exec() == QDialog::Accepted) {
-		m_game.host(dialog.boardSize());
+		emit hostRequested(dialog.boardSize());
 	}
 }
 
 void MainWindow::closeEvent(QCloseEvent* event) {
-	m_game.shutdown();
+	emit shutdownRequested();
 	QMainWindow::closeEvent(event);
 }
 

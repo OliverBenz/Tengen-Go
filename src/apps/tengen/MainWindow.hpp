@@ -1,10 +1,8 @@
 #pragma once
 
-#include "GamePresenter.hpp"
-#include "tengen/sessionManager.hpp"
-
+#include <QCloseEvent>
 #include <QMainWindow>
-#include <memory>
+#include <QString>
 
 namespace tengen::gui {
 
@@ -17,21 +15,26 @@ public:
 	explicit MainWindow(QWidget* parent = nullptr);
 	~MainWindow() override;
 
+	GameWidget& gameWidget();
+
+signals:
+	void connectRequested(const QString& hostIp);
+	void hostRequested(unsigned boardSize);
+	void shutdownRequested();
+
 private:
 	//! Initial setup constructing the layout of the window.
 	void buildLayout();
 
-private: // Slots
+private:
 	void openConnectDialog();
 	void openHostDialog();
-	void closeEvent(QCloseEvent* event);
+
+protected:
+	void closeEvent(QCloseEvent* event) override;
 
 private:
-	app::SessionManager m_game;
-
-	QWidget* m_menuWidget;
-	GameWidget* m_gameWidget                                 = nullptr;
-	std::unique_ptr<::tengen::GamePresenter> m_gamePresenter = nullptr;
+	GameWidget* m_gameWidget = nullptr;
 };
 
 } // namespace tengen::gui
