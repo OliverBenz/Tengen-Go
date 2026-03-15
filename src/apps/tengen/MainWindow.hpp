@@ -1,10 +1,14 @@
 #pragma once
 
+#include "GamePresenter.hpp"
 #include "tengen/sessionManager.hpp"
 
 #include <QMainWindow>
+#include <memory>
 
 namespace tengen::gui {
+
+class GameWidget;
 
 class MainWindow : public QMainWindow {
 	Q_OBJECT
@@ -26,7 +30,8 @@ private:
 	app::SessionManager m_game;
 
 	QWidget* m_menuWidget;
-	QWidget* m_gameWidget;
+	GameWidget* m_gameWidget                                 = nullptr;
+	std::unique_ptr<::tengen::GamePresenter> m_gamePresenter = nullptr;
 };
 
 } // namespace tengen::gui
