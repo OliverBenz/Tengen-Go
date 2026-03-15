@@ -1,18 +1,19 @@
 #pragma once
 
-#include "BoardWidgetHandler.hpp"
+#include "BoardPresenter.hpp"
+#include "ChatPresenter.hpp"
 #include "gui/boardWidget.hpp"
 #include "tengen/sessionManager.hpp"
 #include <QCloseEvent>
 #include <QLabel>
-#include <QLineEdit>
-#include <QListWidget>
 #include <QPushButton>
 #include <QTabWidget>
 #include <QWidget>
 #include <memory>
 
 namespace tengen::gui {
+
+class ChatWidget;
 
 class GameWidget : public QWidget, public app::IAppSignalListener {
 	Q_OBJECT
@@ -30,32 +31,26 @@ private:
 
 	void setCurrentPlayerText(); //!< Get current player from game and update the label.
 	void setGameStateText();     //!< Get game state from game and update the label.
-	void appendChatMessages();   //!< Get new chat messages from game and update the chat list.
 
 private: // Slots
 	void onBoardWidgetEvent(const BoardWidgetEvent& event);
 	void onPassClicked();
 	void onResignClicked();
-	void onSendChat();
 
 private:
 	app::SessionManager& m_game;
 
-	BoardWidget* m_boardWidget                               = nullptr;
-	std::unique_ptr<BoardWidgetHandler> m_boardWidgetHandler = nullptr;
-	QTabWidget* m_sideTabs                                   = nullptr;
+	BoardWidget* m_boardWidget                       = nullptr;
+	std::unique_ptr<BoardPresenter> m_boardPresenter = nullptr;
+	ChatWidget* m_chatWidget                         = nullptr;
+	std::unique_ptr<ChatPresenter> m_chatPresenter   = nullptr;
+	QTabWidget* m_sideTabs                           = nullptr;
 
 	QLabel* m_statusLabel     = nullptr; //!< Game status text (active, finished).
 	QLabel* m_currPlayerLabel = nullptr; //!< Current player text.
 
 	QPushButton* m_passButton   = nullptr;
 	QPushButton* m_resignButton = nullptr;
-
-	// Chat
-	QListWidget* m_chatList      = nullptr;
-	QLineEdit* m_chatInput       = nullptr;
-	QPushButton* m_chatSend      = nullptr;
-	unsigned m_lastChatMessageId = 0u;
 };
 
 } // namespace tengen::gui

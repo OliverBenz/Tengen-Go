@@ -1,5 +1,7 @@
 #include "GameWidget.hpp"
 
+#include "ChatWidget.hpp"
+
 #include <QHBoxLayout>
 #include <QMetaObject>
 #include <QTabWidget>
@@ -18,14 +20,13 @@ GameWidget::GameWidget(app::SessionManager& game, QWidget* parent) : QWidget(par
 	connect(m_boardWidget, &BoardWidget::boardEvent, this, &GameWidget::onBoardWidgetEvent);
 	connect(m_passButton, &QPushButton::clicked, this, &GameWidget::onPassClicked);
 	connect(m_resignButton, &QPushButton::clicked, this, &GameWidget::onResignClicked);
-	connect(m_chatSend, &QPushButton::clicked, this, &GameWidget::onSendChat);
-	connect(m_chatInput, &QLineEdit::returnPressed, this, &GameWidget::onSendChat);
-	m_boardWidgetHandler = std::make_unique<BoardWidgetHandler>(m_game, *m_boardWidget);
+	m_boardPresenter = std::make_unique<BoardPresenter>(m_game, *m_boardWidget);
+	m_chatPresenter  = std::make_unique<ChatPresenter>(m_game, *m_chatWidget);
 
 	// Setup Game Stuff
 	setCurrentPlayerText();
 	setGameStateText();
-	m_game.subscribe(this, app::AS_PlayerChange | app::AS_StateChange | app::AS_NewChat);
+	m_game.subscribe(this, app::AS_PlayerChange | app::AS_StateChange);
 }
 
 GameWidget::~GameWidget() {
@@ -39,9 +40,6 @@ void GameWidget::onAppEvent(const app::AppSignal signal) {
 		break;
 	case app::AS_StateChange:
 		QMetaObject::invokeMethod(this, [this]() { setGameStateText(); }, Qt::QueuedConnection);
-		break;
-	case app::AS_NewChat:
-		QMetaObject::invokeMethod(this, [this]() { appendChatMessages(); }, Qt::QueuedConnection);
 		break;
 	default:
 		break;
@@ -82,19 +80,9 @@ void GameWidget::buildNetworkLayout() {
 	// Chat
 	auto* chatTab    = new QWidget(m_sideTabs);
 	auto* chatLayout = new QVBoxLayout(chatTab); // Title and content below
-	m_chatList       = new QListWidget(chatTab);
-	m_chatList->setSelectionMode(QAbstractItemView::NoSelection);
-	m_chatList->setFocusPolicy(Qt::NoFocus);
-	chatLayout->addWidget(m_chatList, 1);
-
-	auto* chatInputRow    = new QWidget(chatTab);
-	auto* chatInputLayout = new QHBoxLayout(chatInputRow);
-	chatInputLayout->setContentsMargins(0, 0, 0, 0);
-	m_chatInput = new QLineEdit(chatInputRow);
-	m_chatSend  = new QPushButton("Send", chatInputRow);
-	chatInputLayout->addWidget(m_chatInput, 1);
-	chatInputLayout->addWidget(m_chatSend);
-	chatLayout->addWidget(chatInputRow);
+	chatLayout->setContentsMargins(0, 0, 0, 0);
+	m_chatWidget = new ChatWidget(chatTab);
+	chatLayout->addWidget(m_chatWidget, 1);
 	m_sideTabs->addTab(chatTab, "Chat");
 
 	contentLayout->addWidget(m_sideTabs, 1);
@@ -135,18 +123,6 @@ void GameWidget::setGameStateText() {
 	m_statusLabel->setText(QString::fromStdString(message.at(m_game.status())));
 }
 
-void GameWidget::appendChatMessages() {
-	const auto messageEntries = m_game.getChatSince(m_lastChatMessageId);
-	for (const auto& entry: messageEntries) {
-		const auto player = entry.player == Player::Black ? "Black" : "White";
-		const auto line   = std::format("{}: {}", player, entry.message);
-
-		m_lastChatMessageId = entry.messageId; // Assumes ordered.
-		m_chatList->addItem(QString::fromStdString(line));
-	}
-	m_chatList->scrollToBottom();
-}
-
 void GameWidget::onPassClicked() {
 	m_game.tryPass();
 }
@@ -169,18 +145,6 @@ void GameWidget::onBoardWidgetEvent(const BoardWidgetEvent& event) {
 
 void GameWidget::onResignClicked() {
 	m_game.tryResign();
-}
-
-void GameWidget::onSendChat() {
-	if (!m_chatInput) {
-		return;
-	}
-	const auto text = m_chatInput->text().trimmed();
-	if (text.isEmpty()) {
-		return;
-	}
-	m_game.chat(text.toStdString());
-	m_chatInput->clear();
 }
 
 } // namespace tengen::gui
