@@ -2,7 +2,7 @@
 
 #include "BoardPresenter.hpp"
 #include "ChatPresenter.hpp"
-#include "GameWidget.hpp"
+#include "gui/gameWidget.hpp"
 
 #include <QMetaObject>
 #include <QObject>

@@ -2,8 +2,8 @@
 
 #include "ConnectDialog.hpp"
 #include "GamePresenter.hpp"
-#include "GameWidget.hpp"
 #include "HostDialog.hpp"
+#include "gui/gameWidget.hpp"
 
 #include <QMenuBar>
 

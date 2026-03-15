@@ -5,7 +5,6 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets)
 add_executable(${targetName}
     "${CMAKE_CURRENT_LIST_DIR}/main.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/MainWindow.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/GameWidget.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/GamePresenter.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/BoardPresenter.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ChatPresenter.cpp"
