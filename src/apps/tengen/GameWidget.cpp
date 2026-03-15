@@ -1,6 +1,6 @@
 #include "GameWidget.hpp"
 
-#include "ChatWidget.hpp"
+#include "gui/chatWidget.hpp"
 
 #include <QHBoxLayout>
 #include <QMetaObject>
