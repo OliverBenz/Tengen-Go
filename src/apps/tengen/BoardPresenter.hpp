@@ -14,6 +14,8 @@ public:
 	void onAppEvent(app::AppSignal signal) override;
 
 private:
+	void dispatchBoardEvent(const gui::BoardWidgetEvent& event);
+
 	app::SessionManager& m_game;
 	gui::BoardWidget& m_boardWidget;
 	bool m_listenerRegistered = false;

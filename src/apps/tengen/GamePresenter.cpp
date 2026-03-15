@@ -10,9 +10,9 @@
 
 #include <cassert>
 
-namespace {
+namespace tengen {
 
-QString currentPlayerText(const tengen::Player player) {
+static QString currentPlayerText(const tengen::Player player) {
 	switch (player) {
 	case tengen::Player::Black:
 		return QStringLiteral("Current Player: Black");
@@ -24,7 +24,7 @@ QString currentPlayerText(const tengen::Player player) {
 	}
 }
 
-QString gameStateText(const tengen::GameStatus status) {
+static QString gameStateText(const tengen::GameStatus status) {
 	switch (status) {
 	case tengen::GameStatus::Idle:
 		return QStringLiteral("Idle");
@@ -40,14 +40,7 @@ QString gameStateText(const tengen::GameStatus status) {
 	}
 }
 
-} // namespace
-
-namespace tengen {
-
 GamePresenter::GamePresenter(app::SessionManager& game, gui::GameWidget& gameWidget) : m_game(game), m_gameWidget(gameWidget) {
-	// TODO: This should be done in boardPresenter?
-	QObject::connect(&m_gameWidget.boardWidget(), &gui::BoardWidget::boardEvent, &m_gameWidget,
-	                 [game = &m_game](const gui::BoardWidgetEvent& event) { dispatchBoardEvent(*game, event); });
 	QObject::connect(&m_gameWidget, &gui::GameWidget::passEvent, &m_gameWidget, [game = &m_game]() { game->tryPass(); });
 	QObject::connect(&m_gameWidget, &gui::GameWidget::resignEvent, &m_gameWidget, [game = &m_game]() { game->tryResign(); });
 
@@ -58,13 +51,10 @@ GamePresenter::GamePresenter(app::SessionManager& game, gui::GameWidget& gameWid
 	m_gameWidget.setGameStateText(gameStateText(m_game.status()));
 
 	m_game.subscribe(this, app::AS_PlayerChange | app::AS_StateChange);
-	m_listenerRegistered = true;
 }
 
 GamePresenter::~GamePresenter() {
-	if (m_listenerRegistered) {
-		m_game.unsubscribe(this);
-	}
+	m_game.unsubscribe(this);
 }
 
 void GamePresenter::onAppEvent(const app::AppSignal signal) {
@@ -80,22 +70,6 @@ void GamePresenter::onAppEvent(const app::AppSignal signal) {
 		QMetaObject::invokeMethod(widget, [widget, text]() { widget->setGameStateText(text); }, Qt::QueuedConnection);
 		return;
 	}
-	default:
-		return;
-	}
-}
-
-void GamePresenter::dispatchBoardEvent(app::SessionManager& game, const gui::BoardWidgetEvent& event) {
-	switch (event.type) {
-	case gui::BoardWidgetEventType::Place:
-		game.tryPlace(event.coord.x, event.coord.y);
-		return;
-	case gui::BoardWidgetEventType::Pass:
-		game.tryPass();
-		return;
-	case gui::BoardWidgetEventType::Resign:
-		game.tryResign();
-		return;
 	default:
 		return;
 	}
