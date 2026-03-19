@@ -37,6 +37,5 @@ target_compile_definitions(${targetName} PRIVATE TEXTURE_WHITE="${CMAKE_SOURCE_D
 
 
 # Setup project settings
-set_project_warnings(${targetName})
-set_compile_options(${targetName})
+set_target_configuration(${targetName} Config::Default)
 set_output_directory(${targetName})

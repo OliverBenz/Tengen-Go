@@ -29,6 +29,5 @@ target_link_libraries(${targetName}
 )
 
 # Setup project settings
-set_project_warnings(${targetName})
-set_compile_options(${targetName})
+set_target_configuration(${targetName} Config::Default)
 set_output_directory(${targetName})

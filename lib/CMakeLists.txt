@@ -1,10 +1,8 @@
 # Setup project settings
-include(cmake/ProjectSettings.cmake)
-include(cmake/CompilerWarnings.cmake)
-include(cmake/CustomCommands.cmake)
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # Add libraries
-include(gtest.cmake)
-include(logger.cmake)
-include(asio.cmake)
-include(nlohmann_json.cmake)
+include("${CMAKE_CURRENT_SOURCE_DIR}/gtest.cmake")
+include("${CMAKE_CURRENT_SOURCE_DIR}/logger.cmake")
+include("${CMAKE_CURRENT_SOURCE_DIR}/asio.cmake")
+include("${CMAKE_CURRENT_SOURCE_DIR}/nlohmann_json.cmake")

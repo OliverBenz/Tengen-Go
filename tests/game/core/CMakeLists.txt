@@ -12,9 +12,8 @@ target_link_libraries(${targetName} PRIVATE tengen::game::core GTest::gtest_main
 set_target_properties(${targetName} PROPERTIES FOLDER "${ideFolderSource}")
 
 # Setup project settings
-set_project_warnings(${targetName})  # Which warnings to enable
-set_compile_options(${targetName})   # Which extra compiler flags to enable
-set_output_directory(${targetName})  # Set the output directory of the library
+set_target_configuration(${targetName} Config::Default)
+set_output_directory(${targetName})
 
 # Add tests
 include(GoogleTest)
