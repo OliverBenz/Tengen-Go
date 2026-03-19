@@ -27,6 +27,5 @@ target_compile_definitions(${targetName} PRIVATE TEXTURE_BLACK="${CMAKE_SOURCE_D
 target_compile_definitions(${targetName} PRIVATE TEXTURE_WHITE="${CMAKE_SOURCE_DIR}/assets/anime_white.png")
 
 # Setup project settings
-set_project_warnings(${targetName})  # Which warnings to enable
-set_compile_options(${targetName})   # Which extra compiler flags to enable
-set_output_directory(${targetName})  # Set the output directory of the library
+set_target_configuration(${targetName} Config::Default)
+set_output_directory(${targetName})
