@@ -29,7 +29,8 @@ target_include_directories(${targetName}
 		${OpenCV_INCLUDE_DIRS}
 )
 target_link_libraries(${targetName}
-	PUBLIC ${OpenCV_LIBS}
+	PUBLIC
+		${OpenCV_LIBS}
 )
 
 # Setup project settings

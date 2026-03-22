@@ -9,7 +9,6 @@ add_executable(${targetName} "${CMAKE_CURRENT_LIST_DIR}/main.cpp")
 target_link_libraries(${targetName}
 	PRIVATE
 		tengen::game::core
-		tengen::vision::core
 		tengen::game::gui
 		Qt6::Widgets
 )
