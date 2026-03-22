@@ -1,3 +1,5 @@
+include_guard(GLOBAL)
+
 set(targetName gameModel)
 
 # Get files to build

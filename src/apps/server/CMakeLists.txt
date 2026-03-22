@@ -1,3 +1,5 @@
+include_guard(GLOBAL)
+
 set(targetName server)
 
 add_executable(${targetName}

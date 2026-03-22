@@ -1,3 +1,5 @@
+include_guard(GLOBAL)
+
 set(targetName visionPerception)
 
 # TODO: We still need this if tengen::vision::core links OpenCV privately?

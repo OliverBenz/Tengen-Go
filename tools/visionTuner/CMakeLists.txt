@@ -1,9 +1,10 @@
+include_guard(GLOBAL)
+
 set(targetName visionTuner)
 
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
 find_package(OpenCV REQUIRED)
 
-# Get files to build
 set(headers
 	"${CMAKE_CURRENT_LIST_DIR}/pipelineStep.hpp" 
 	"${CMAKE_CURRENT_LIST_DIR}/analyser.hpp" 

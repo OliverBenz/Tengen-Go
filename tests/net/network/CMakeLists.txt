@@ -1,7 +1,7 @@
-# Settings
+include_guard(GLOBAL)
+
 set(targetName "netNetwork.gtest")
 
-# Create executable
 add_executable(${targetName}
     "${CMAKE_CURRENT_LIST_DIR}/mockClient.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/mockServer.cpp"
@@ -9,14 +9,16 @@ add_executable(${targetName}
     "${CMAKE_CURRENT_LIST_DIR}/nwEvents.gtest.cpp"
 )
 
-# Link to required libraries
 target_link_libraries(${targetName}
     PRIVATE
         tengen::net::gameNet
         GTest::gtest_main
         nlohmann_json::nlohmann_json
 )
-set_target_properties(${targetName} PROPERTIES FOLDER "${ideFolderSource}")
+set_target_properties(${targetName}
+    PROPERTIES
+        FOLDER "${ideFolderSource}"
+)
 
 # Setup project settings
 set_target_configuration(${targetName} Config::Default)
