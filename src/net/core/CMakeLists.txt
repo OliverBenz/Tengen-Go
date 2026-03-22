@@ -1,3 +1,5 @@
+include_guard(GLOBAL)
+
 set(targetName netCore)
 
 # Get files to build

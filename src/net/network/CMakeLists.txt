@@ -1,3 +1,5 @@
+include_guard(GLOBAL)
+
 set(targetName netNetwork)
 
 # Get files to build

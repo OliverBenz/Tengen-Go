@@ -1,3 +1,5 @@
+include_guard(GLOBAL)
+
 set(targetName tengen)
 
 find_package(Qt6 REQUIRED COMPONENTS Widgets)

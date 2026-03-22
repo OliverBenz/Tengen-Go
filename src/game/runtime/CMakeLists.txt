@@ -1,3 +1,5 @@
+include_guard(GLOBAL)
+
 set(targetName gameRuntime)
 
 # Get files to build

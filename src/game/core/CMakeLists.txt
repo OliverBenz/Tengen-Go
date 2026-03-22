@@ -1,3 +1,5 @@
+include_guard(GLOBAL)
+
 set(targetName gameCore)
 
 # Get files to build

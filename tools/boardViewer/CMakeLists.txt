@@ -1,9 +1,9 @@
+include_guard(GLOBAL)
+
 set(targetName boardViewer)
 
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
-# find_package(OpenCV REQUIRED)
 
-# Get files to build
 add_executable(${targetName} "${CMAKE_CURRENT_LIST_DIR}/main.cpp")
 
 target_link_libraries(${targetName}

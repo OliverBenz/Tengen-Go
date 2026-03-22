@@ -1,3 +1,5 @@
+include_guard(GLOBAL)
+
 set(targetName visionCore)
 
 find_package(OpenCV REQUIRED)

@@ -1,15 +1,22 @@
-# Settings
+include_guard(GLOBAL)
+
 set(targetName "gameCore.gtest")
 
-# Create executable
 add_executable(${targetName}
     "${CMAKE_CURRENT_LIST_DIR}/game.gtest.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/moveChecker.gtest.cpp"
 )
 
 # Link to required libraries
-target_link_libraries(${targetName} PRIVATE tengen::game::core GTest::gtest_main)
-set_target_properties(${targetName} PROPERTIES FOLDER "${ideFolderSource}")
+target_link_libraries(${targetName}
+    PRIVATE
+        tengen::game::core
+        GTest::gtest_main
+)
+set_target_properties(${targetName}
+    PROPERTIES
+        FOLDER "${ideFolderSource}"
+)
 
 # Setup project settings
 set_target_configuration(${targetName} Config::Default)
