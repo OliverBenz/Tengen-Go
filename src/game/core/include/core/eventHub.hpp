@@ -26,6 +26,9 @@ public:
 	void subscribe(IGameStateListener* listener);
 	void unsubscribe(IGameStateListener* listener);
 
+private:
+	friend Game;
+	
 	void signal(GameSignal signal);           //!< Signal a game event.
 	void signalDelta(const GameDelta& delta); //!< Signal a game state delta.
 
