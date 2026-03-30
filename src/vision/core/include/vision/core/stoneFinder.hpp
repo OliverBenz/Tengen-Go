@@ -138,12 +138,4 @@ struct StoneDetectionConfig {
  */
 StoneResult analyseBoard(const BoardGeometry& geometry, DebugVisualizer* debugger = nullptr, const StoneDetectionConfig& config = StoneDetectionConfig{});
 
-/*! Detect stones using score-based self-calibrating v2 classifier.
- * \param [in]     geometry Rectified board geometry.
- * \param [in,out] debugger Optional debug visualizer for overlays.
- * \param [in]     config   Stone detection configuration.
- * \return         StoneResult where `stones[i]`/`confidence[i]` map to `geometry.intersections[i]`.
- */
-StoneResult analyseBoardV2(const BoardGeometry& geometry, DebugVisualizer* debugger = nullptr, const StoneDetectionConfig& config = StoneDetectionConfig{});
-
 } // namespace tengen::vision::core
