@@ -13,6 +13,16 @@ set(headers
     "${CMAKE_CURRENT_LIST_DIR}/include/vision/core/boardFinder.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/include/vision/core/gridFinder.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/include/vision/core/stoneFinder.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/include/vision/core/stoneFinderConfig.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/stoneFinder/decisionPolicy.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/stoneFinder/debugging.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/stoneFinder/featureExtraction.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/stoneFinder/features.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/stoneFinder/geometrySampling.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/stoneFinder/modelCalibration.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/stoneFinder/refinementEngine.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/stoneFinder/scoring.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/stoneFinder/stoneFinderInternal.hpp"
 )
 set(sources
     "${CMAKE_CURRENT_LIST_DIR}/statistics.cpp"
@@ -21,7 +31,15 @@ set(sources
     "${CMAKE_CURRENT_LIST_DIR}/boardFinder.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/gridLatticeFinder.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/gridFinder.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/stoneFinder.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/stoneFinder/debugging.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/stoneFinder/decisionPolicy.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/stoneFinder/featureExtraction.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/stoneFinder/geometrySampling.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/stoneFinder/modelCalibration.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/stoneFinder/refinementEngine.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/stoneFinder/scoring.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/stoneFinder/stoneFinder.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/stoneFinder/stoneFinderInternal.cpp"
 )
 
 add_library(${targetName} STATIC ${headers} ${sources})
