@@ -8,6 +8,7 @@ find_package(OpenCV REQUIRED)
 set(headers
     "${CMAKE_CURRENT_LIST_DIR}/statistics.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/gridLatticeFinder.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/boardFinderInternal.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/include/vision/core/debugVisualizer.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/include/vision/core/boardFinder.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/include/vision/core/gridFinder.hpp"
@@ -16,6 +17,7 @@ set(headers
 set(sources
     "${CMAKE_CURRENT_LIST_DIR}/statistics.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/debugVisualizer.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/boardFinderInternal.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/boardFinder.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/gridLatticeFinder.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/gridFinder.cpp"
