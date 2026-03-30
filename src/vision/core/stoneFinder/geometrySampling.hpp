@@ -1,11 +1,13 @@
 #pragma once
 
-#include "stoneFinderInternal.hpp"
+#include "stoneFinderTypes.hpp"
 
-namespace tengen::vision::core::GeometrySampling {
+namespace tengen::vision::core {
+namespace GeometrySampling {
 
 Radii chooseRadii(double spacing, const GeometryConfig& config);
 std::vector<cv::Point> makeCircleOffsets(int radius);
 Offsets precomputeOffsets(const Radii& radii);
 
-} // namespace tengen::vision::core::GeometrySampling
+} // namespace GeometrySampling
+} // namespace tengen::vision::core

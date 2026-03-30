@@ -3,7 +3,8 @@
 #include <algorithm>
 #include <cmath>
 
-namespace tengen::vision::core::ModelCalibration {
+namespace tengen::vision::core {
+namespace ModelCalibration {
 
 float medianSorted(const std::vector<float>& sortedValues) {
 	const std::size_t count = sortedValues.size();
@@ -102,4 +103,5 @@ bool calibrateModel(const std::vector<Features>& features, unsigned boardSize, c
 	return true;
 }
 
-} // namespace tengen::vision::core::ModelCalibration
+} // namespace ModelCalibration
+} // namespace tengen::vision::core

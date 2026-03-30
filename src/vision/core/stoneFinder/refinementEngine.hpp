@@ -1,6 +1,6 @@
 #pragma once
 
-#include "stoneFinderInternal.hpp"
+#include "stoneFinderTypes.hpp"
 
 namespace tengen::vision::core {
 

@@ -23,6 +23,7 @@ set(headers
     "${CMAKE_CURRENT_LIST_DIR}/stoneFinder/refinementEngine.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/stoneFinder/scoring.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/stoneFinder/stoneFinderInternal.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/stoneFinder/stoneFinderTypes.hpp"
 )
 set(sources
     "${CMAKE_CURRENT_LIST_DIR}/statistics.cpp"

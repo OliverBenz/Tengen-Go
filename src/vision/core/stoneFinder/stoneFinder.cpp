@@ -60,8 +60,8 @@ StoneResult analyseBoard(const BoardGeometry& geometry, DebugVisualizer* debugge
 	std::vector<float> neighborMedianMap;
 	std::vector<RejectionReason> rejectionReasons;
 	const bool collectRuntimeDebug = Debugging::isRuntimeDebugEnabled();
-	classifyAll(geometry.intersections, features, model, geometry.boardSize, config.scoring, config.decision, config.refinement, refinementEngine, states,
-	            confidence, stats, collectRuntimeDebug ? &evaluations : nullptr, collectRuntimeDebug ? &neighborMedianMap : nullptr,
+	classifyAll(geometry.intersections, features, model, geometry.boardSize, config.scoring, config.decision, refinementEngine, states, confidence, stats,
+	            collectRuntimeDebug ? &evaluations : nullptr, collectRuntimeDebug ? &neighborMedianMap : nullptr,
 	            collectRuntimeDebug ? &rejectionReasons : nullptr);
 
 #if defined(VISION_DEBUG_LOGGING) && defined(VISION_LOG_STONEFINDER)

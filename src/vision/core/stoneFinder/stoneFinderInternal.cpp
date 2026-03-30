@@ -67,13 +67,12 @@ int computeRefinementExtent(double spacing, const RefinementConfig& config) {
 }
 
 void classifyAll(const std::vector<cv::Point2f>& intersections, const std::vector<Features>& features, const Model& model, unsigned boardSize,
-                 const ScoringConfig& scoringConfig, const DecisionConfig& decisionConfig, const RefinementConfig& refinementConfig,
-                 const RefinementEngine& refinementEngine, std::vector<StoneState>& outStates, std::vector<float>& outConfidence, DebugStats& outStats,
-                 std::vector<Eval>* outEvaluations, std::vector<float>* outNeighborMedianMap, std::vector<RejectionReason>* outRejectionReasons) {
+                 const ScoringConfig& scoringConfig, const DecisionConfig& decisionConfig, const RefinementEngine& refinementEngine,
+                 std::vector<StoneState>& outStates, std::vector<float>& outConfidence, DebugStats& outStats, std::vector<Eval>* outEvaluations,
+                 std::vector<float>* outNeighborMedianMap, std::vector<RejectionReason>* outRejectionReasons) {
 	outStates.assign(intersections.size(), StoneState::Empty);
 	outConfidence.assign(intersections.size(), 0.0f);
 	outStats = DebugStats{};
-	(void)refinementConfig;
 	if (outEvaluations != nullptr) {
 		outEvaluations->assign(intersections.size(), Eval{});
 	}
