@@ -1119,7 +1119,7 @@ static void classifyAll(const std::vector<cv::Point2f>& intersections, const std
 
 } // namespace
 
-StoneResult analyseBoardV2(const BoardGeometry& geometry, DebugVisualizer* debugger, const StoneDetectionConfig& config) {
+StoneResult analyseBoard(const BoardGeometry& geometry, DebugVisualizer* debugger, const StoneDetectionConfig& config) {
 	if (geometry.imageB.empty()) {
 		std::cerr << "Stone detection failed: input image is empty\n";
 		return {false, {}, {}};
@@ -1183,10 +1183,6 @@ StoneResult analyseBoardV2(const BoardGeometry& geometry, DebugVisualizer* debug
 	}
 
 	return {true, std::move(states), std::move(confidence)};
-}
-
-StoneResult analyseBoard(const BoardGeometry& geometry, DebugVisualizer* debugger, const StoneDetectionConfig& config) {
-	return analyseBoardV2(geometry, debugger, config);
 }
 
 } // namespace tengen::vision::core
