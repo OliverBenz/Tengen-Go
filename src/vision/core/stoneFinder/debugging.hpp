@@ -1,8 +1,9 @@
 #pragma once
 
-#include "stoneFinderInternal.hpp"
+#include "stoneFinderTypes.hpp"
 
-namespace tengen::vision::core::Debugging {
+namespace tengen::vision::core {
+namespace Debugging {
 
 bool isRuntimeDebugEnabled();
 cv::Mat drawOverlay(const cv::Mat& image, const std::vector<cv::Point2f>& intersections, const std::vector<StoneState>& states, int radius);
@@ -11,4 +12,5 @@ void emitRuntimeDebug(const BoardGeometry& geometry, const std::vector<Features>
                       const std::vector<float>& confidence, const std::vector<Eval>& evaluations, const std::vector<float>& neighborMedianMap,
                       const DebugStats& stats, const std::vector<RejectionReason>* rejectionReasons = nullptr);
 
-} // namespace tengen::vision::core::Debugging
+} // namespace Debugging
+} // namespace tengen::vision::core

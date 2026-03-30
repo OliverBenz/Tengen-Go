@@ -5,7 +5,8 @@
 #include <cmath>
 #include <cstdint>
 
-namespace tengen::vision::core::FeatureExtraction {
+namespace tengen::vision::core {
+namespace FeatureExtraction {
 
 bool convertToLab(const cv::Mat& image, cv::Mat& outLab) {
 	if (image.channels() == 3) {
@@ -169,4 +170,5 @@ std::vector<Features> computeFeatures(const std::vector<cv::Point2f>& intersecti
 	return allFeatures;
 }
 
-} // namespace tengen::vision::core::FeatureExtraction
+} // namespace FeatureExtraction
+} // namespace tengen::vision::core

@@ -2,6 +2,7 @@
 
 #include "featureExtraction.hpp"
 #include "scoring.hpp"
+#include "stoneFinderInternal.hpp"
 
 #include <cmath>
 

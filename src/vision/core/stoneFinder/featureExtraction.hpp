@@ -1,8 +1,9 @@
 #pragma once
 
-#include "stoneFinderInternal.hpp"
+#include "stoneFinderTypes.hpp"
 
-namespace tengen::vision::core::FeatureExtraction {
+namespace tengen::vision::core {
+namespace FeatureExtraction {
 
 bool convertToLab(const cv::Mat& image, cv::Mat& outLab);
 bool prepareLabBlur(const cv::Mat& image, const Radii& radii, const GeometryConfig& config, LabBlur& outBlur);
@@ -13,4 +14,5 @@ bool computeFeaturesAt(const SampleContext& context, const Offsets& offsets, con
 std::vector<Features> computeFeatures(const std::vector<cv::Point2f>& intersections, const SampleContext& context, const Offsets& offsets, const Radii& radii,
                                       const GeometryConfig& config);
 
-} // namespace tengen::vision::core::FeatureExtraction
+} // namespace FeatureExtraction
+} // namespace tengen::vision::core

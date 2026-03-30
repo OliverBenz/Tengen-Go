@@ -1,9 +1,12 @@
 #include "geometrySampling.hpp"
 
+#include "stoneFinderInternal.hpp"
+
 #include <algorithm>
 #include <cmath>
 
-namespace tengen::vision::core::GeometrySampling {
+namespace tengen::vision::core {
+namespace GeometrySampling {
 
 Radii chooseRadii(double spacing, const GeometryConfig& config) {
 	Radii radii{};
@@ -40,4 +43,5 @@ Offsets precomputeOffsets(const Radii& radii) {
 	return offsets;
 }
 
-} // namespace tengen::vision::core::GeometrySampling
+} // namespace GeometrySampling
+} // namespace tengen::vision::core

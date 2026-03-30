@@ -1,14 +1,16 @@
 #include "debugging.hpp"
 
+#include "stoneFinderInternal.hpp"
+
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdlib>
-#include <format>
 #include <string>
 #include <string_view>
 
 #if defined(VISION_DEBUG_LOGGING) && defined(VISION_LOG_STONEFINDER)
+#include <format>
 #include <iostream>
 #define DEBUG_LOG(x) std::cout << x
 
@@ -41,7 +43,8 @@ const char* rejectionReasonLabel(tengen::vision::core::RejectionReason reason) {
 #define DEBUG_LOG(x) ((void)0)
 #endif
 
-namespace tengen::vision::core::Debugging {
+namespace tengen::vision::core {
+namespace Debugging {
 
 bool isRuntimeDebugEnabled() {
 	const char* debugEnv = std::getenv("GO_STONE_DEBUG");
@@ -253,4 +256,5 @@ void emitRuntimeDebug(const BoardGeometry& geometry, const std::vector<Features>
 #endif
 }
 
-} // namespace tengen::vision::core::Debugging
+} // namespace Debugging
+} // namespace tengen::vision::core
