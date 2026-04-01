@@ -32,16 +32,16 @@ All open source so you can tinker around as you like.
 ### Internal Components
 Name        | Description 
 ------------|------------
-libCore     | Library for game rules, basic types, board state validation, etc.
-libNetwork  | Library for network layer networking. Sending/Receiving messages.
-libGameNet  | Library for application layer networking. Translating game events to/from messages. Uses libNetwork.
-libCamera   | Library for physical board detection using OpenCV.
-GameGUI     | Executable defining the gui renderer with SDL2. Inherits and uses the Game library.
+gameCore    | Library for game rules, board state validation, deltas, and move handling.
+netCore     | Library for low-level TCP transport, framing, and connection management.
+netNetwork  | Library for the game/network protocol and client/server session handling.
+visionCore  | Library for board, grid, and stone detection using OpenCV.
+tengen      | Qt GUI application built on the runtime and GUI libraries.
 
 Including a [ComponentName].GTest project for each component.
 
-The executables only specify IO handling and communicate with the Game library.
-e.g. GameGUI will render information from the Game library to the screen and translation mouse/keyboard inputs before passing it directly to the Game library.
+The executables mainly specify IO handling and communicate with the runtime/core libraries.
+For example, `tengen` renders information from the runtime layer and forwards user input through presenters and the session manager.
 
 
 ### External Components
@@ -54,14 +54,16 @@ GTest  | Google unit testing library.
 
 ## General Documentation
 - [General](docs/Documentation.md) — entry point and general notes
-- [Core](Core.md) — core rules/logic overview
+- [Core](docs/Core.md) — core rules/logic overview
 - [GUI](docs/GUI.md) — GUI architecture and rendering notes
 - [Networking](docs/Networking.md) — higher-level networking notes
 
 ## Technical Documentation
-- [libCore](src/libCore/README.md) — Core rules, game loop, deltas, and move validation
-- [libNetwork](src/libNetwork/README.md) — Network layer design and implementation details
-- [libGameNet](src/libGameNet/README.md) — Protocol, client/server wrappers, and session mapping
+- [gameCore](src/game/core/README.md) — Core rules, game loop, deltas, and move validation
+- [netCore](src/net/core/README.md) — Network transport and framing details
+- [netNetwork](src/net/network/README.md) — Protocol, client/server wrappers, and session mapping
+- [visionCore](src/vision/core/README.md) — Board, grid, and stone detection pipeline
+- [visionPerception](src/vision/perception/README.md) — Mapping detected stones onto game coordinates
 
 ## License
 Licensed under the GNU Affero General Public License v3.0 (AGPL-3.0-or-later). See `LICENSE`.

@@ -1,4 +1,4 @@
-# Core Library (libCore)
+# Core Library (`gameCore`)
 
 This module is the rules engine. It owns the game loop, validates moves, and emits deltas.
 External code should treat it like a black box: push events in, listen to deltas out.
@@ -28,7 +28,7 @@ This ensures all game logic is modularized and external components are pure repr
 
 ## Where To Look
 
-- `src/libCore/game.*` for the rules loop and delta emission.
-- `src/libCore/moveChecker.*` for legality and capture logic.
-- `src/libCore/board.*` and `src/libCore/position.*` for data structures.
-- `src/libCore/zobristHash.hpp` for hash generation.
+- `src/game/core/game.*` for the rules loop and delta emission.
+- `src/game/core/moveChecker.*` for legality and capture logic.
+- `src/game/model/board.*` and `src/game/core/position.*` for data structures.
+- `src/game/core/zobristHash.hpp` for hash generation.

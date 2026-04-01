@@ -1,4 +1,4 @@
-# Network Layer (libNetwork)
+# Network Layer (`netCore`)
 
 This module is the low-level transport layer for the project. It is intentionally small and boring: just TCP sockets with a tiny framing header. The rest of the app (game logic, UI, etc.) treats it as a pipe.
 
@@ -41,7 +41,7 @@ Payload size is bounded by `MAX_PAYLOAD_BYTES`. Oversized payloads are rejected 
 
 ## Where To Look
 
-- `src/libNetwork/connection.*` for async read/write and lifetime rules.
-- `src/libNetwork/tcpServer.*` for accept loop and connection ownership.
-- `src/libNetwork/tcpClient.*` for the blocking client.
-- `src/libNetwork/include/network/protocol.hpp` for framing constants and byte order helpers.
+- `src/net/core/connection.*` for async read/write and lifetime rules.
+- `src/net/core/tcpServer.*` for accept loop and connection ownership.
+- `src/net/core/tcpClient.*` for the blocking client.
+- `src/net/core/include/network/core/protocol.hpp` for framing constants and byte order helpers.
