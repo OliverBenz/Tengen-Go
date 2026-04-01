@@ -1,6 +1,6 @@
-# GameNet Layer (libGameNet)
+# Game Networking Layer (`netNetwork`)
 
-This module sits between the raw TCP transport (libNetwork) and the game logic.
+This module sits between the raw TCP transport (`netCore`) and the game logic.
 It turns typed game events into wire messages and back, and it manages server/client roles.
 
 ## Big Picture
@@ -17,7 +17,7 @@ It turns typed game events into wire messages and back, and it manages server/cl
 
 ## Where To Look
 
-- `src/libGameNet/include/gameNet/nwEvents.hpp` for the protocol types.
-- `src/libGameNet/nwEvents.cpp` for serialization/parsing.
-- `src/libGameNet/server.*` for the server wrapper and event forwarding.
-- `src/libGameNet/client.*` for the client wrapper and read loop.
+- `src/net/network/include/network/nwEvents.hpp` for the protocol types.
+- `src/net/network/nwEvents.cpp` for serialization/parsing.
+- `src/net/network/server.*` for the server wrapper and event forwarding.
+- `src/net/network/client.*` for the client wrapper and read loop.
