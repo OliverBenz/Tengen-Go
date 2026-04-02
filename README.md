@@ -21,6 +21,16 @@ The motivation for this project is simple.
 I don't enjoy playing on the computer and don't have Go-interested people near me.
 So let's replace the opponent with a robotic arm and play other people online but over the board.
 
+## Current Status
+Area             | Status                 | Notes
+-----------------|------------------------|------
+gameModel/Core   | Working                | Core data structures, rules, move validation, and deltas are implemented.
+netCore/Network  | Working / In Progress  | TCP transport and game protocol exist; reconnect and some session features are still incomplete.
+GUI Application  | Working / In Progress  | Qt client and standalone server exist; the application is still under active development.
+visionCore       | Working / Experimental | Board, grid, and stone detection exist, but still rely on a controlled setup.
+visionPerception | In Progress            | Setup/orientation logic exists; the live board detection loop is not finished yet.
+Robot Arm        | Planned                | The long-term goal is documented, but this is not shipped in the repository yet.
+
 ### Goal
 The final goal is to have a full robotic Go set.
 We may document a parts list for the hardware and provide the software here.
@@ -30,18 +40,28 @@ All open source so you can tinker around as you like.
 
 ## Components
 ### Internal Components
-Name        | Description 
-------------|------------
-gameCore    | Library for game rules, board state validation, deltas, and move handling.
-netCore     | Library for low-level TCP transport, framing, and connection management.
-netNetwork  | Library for the game/network protocol and client/server session handling.
-visionCore  | Library for board, grid, and stone detection using OpenCV.
-tengen      | Qt GUI application built on the runtime and GUI libraries.
+Name             | Description 
+-----------------|------------
+gameModel        | Library specifying the core data structures for the game.
+gameCore         | Library for game rules, board state validation, deltas, and move handling.
+gameGui          | Library for QT6 graphical user elements built on the gameModel.
+                 |
+netCore          | Library for low-level TCP transport, framing, and connection management.
+netNetwork       | Library for the game/network protocol and client/server session handling. Building on netCore.
+                 |
+visionCore       | Library for board, grid, and stone detection using OpenCV.
+visionPerception | Library for the game specific image detection. Building on visionCore.
+                 |
+gameRuntime      | Library defining the application logic. Connecting the core game with vision algorithms and networking.
+tengen           | The final application built on the runtime and GUI libraries.
 
-Including a [ComponentName].GTest project for each component.
+Including a [ComponentName].GTest project which should be managed for each component.
+As the whole project is still very much work-in-progress, detailed testing is not yet present for each module.
 
 The executables mainly specify IO handling and communicate with the runtime/core libraries.
 For example, `tengen` renders information from the runtime layer and forwards user input through presenters and the session manager.
+We also provide a standalone `server` and tools for development purposes - like the `visionTuner` for debugging and visualizing the vision pipeline steps and the `boardViewer` which aims to allow to render go board states from different file formats. 
+These are currently very basic and to be extended as required.
 
 
 ### External Components
