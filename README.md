@@ -45,13 +45,10 @@ Name             | Description
 gameModel        | Library specifying the core data structures for the game.
 gameCore         | Library for game rules, board state validation, deltas, and move handling.
 gameGui          | Library for QT6 graphical user elements built on the gameModel.
-                 |
 netCore          | Library for low-level TCP transport, framing, and connection management.
 netNetwork       | Library for the game/network protocol and client/server session handling. Building on netCore.
-                 |
 visionCore       | Library for board, grid, and stone detection using OpenCV.
 visionPerception | Library for the game specific image detection. Building on visionCore.
-                 |
 gameRuntime      | Library defining the application logic. Connecting the core game with vision algorithms and networking.
 tengen           | The final application built on the runtime and GUI libraries.
 
