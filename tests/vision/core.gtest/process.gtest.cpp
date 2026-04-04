@@ -14,7 +14,7 @@ namespace gtest {
 //! Expected test results (result of each step in the pipeline).
 struct TestResult {
 	WarpResult warped;
-	BoardGeometry geometry;
+	RectifiedBoard rectified;
 	StoneResult stoneStep;
 };
 
@@ -31,20 +31,21 @@ TestResult runPipeline(const std::filesystem::path& imgPath) {
 	EXPECT_FALSE(warped.H0.empty());
 
 	// Properly construct the board geometry.
-	BoardGeometry geometry = analyseGeometry(warped);
-	transformImage(image, geometry);
-	EXPECT_FALSE(geometry.imageB.empty());
-	EXPECT_FALSE(geometry.H.empty());
-	EXPECT_FALSE(geometry.intersections.empty());
-	EXPECT_TRUE(geometry.intersections.size() == geometry.boardSize * geometry.boardSize);
-	EXPECT_TRUE(geometry.boardSize == 9 || geometry.boardSize == 13 || geometry.boardSize == 19);
+	const BoardGeometry geometry = analyseGeometry(warped);
+	EXPECT_TRUE(isValidGeometry(geometry));
+	RectifiedBoard rectified = transformImage(image, geometry);
+	EXPECT_TRUE(isValidRectifiedBoard(rectified));
+	EXPECT_FALSE(rectified.geometry.H.empty());
+	EXPECT_FALSE(rectified.geometry.intersections.empty());
+	EXPECT_TRUE(rectified.geometry.intersections.size() == rectified.geometry.boardSize * rectified.geometry.boardSize);
+	EXPECT_TRUE(rectified.geometry.boardSize == 9 || rectified.geometry.boardSize == 13 || rectified.geometry.boardSize == 19);
 
 	// Find the stones on the board.
-	StoneResult stoneRes = analyseBoard(geometry);
+	StoneResult stoneRes = analyseBoard(rectified);
 	EXPECT_TRUE(stoneRes.success);
-	EXPECT_EQ(stoneRes.stones.size(), geometry.intersections.size());
+	EXPECT_EQ(stoneRes.stones.size(), rectified.geometry.intersections.size());
 
-	return {warped, geometry, stoneRes};
+	return {warped, rectified, stoneRes};
 }
 
 //! Count how many black stones are present in a StoneState list.
@@ -75,8 +76,8 @@ TEST(Process, Game_Simple_Size9) {
 		std::string fileName = std::format("move_{}.png", i);
 		TestResult result    = runPipeline(TEST_PATH / fileName);
 
-		EXPECT_EQ(result.geometry.boardSize, BOARD_SIZE);
-		// EXPECT_NEAR(result.geometry.spacing, SPACING, SPACING * 0.1); // Allow 5% deviation from expected spacing.
+		EXPECT_EQ(result.rectified.geometry.boardSize, BOARD_SIZE);
+		// EXPECT_NEAR(result.rectified.geometry.spacing, SPACING, SPACING * 0.1); // Allow 5% deviation from expected spacing.
 
 		EXPECT_TRUE(result.stoneStep.success);
 		EXPECT_EQ(stoneCount(result.stoneStep.stones), i);
@@ -105,8 +106,8 @@ TEST(Process, Game_Simple_Size13) {
 		std::string fileName = std::format("move_{}.png", i);
 		TestResult result    = runPipeline(TEST_PATH / fileName);
 
-		EXPECT_EQ(result.geometry.boardSize, BOARD_SIZE);
-		// EXPECT_NEAR(result.geometry.spacing, SPACING, SPACING * 0.1); // Allow 5% deviation from expected spacing.
+		EXPECT_EQ(result.rectified.geometry.boardSize, BOARD_SIZE);
+		// EXPECT_NEAR(result.rectified.geometry.spacing, SPACING, SPACING * 0.1); // Allow 5% deviation from expected spacing.
 
 		EXPECT_TRUE(result.stoneStep.success);
 		EXPECT_EQ(stoneCount(result.stoneStep.stones), i);
@@ -127,8 +128,8 @@ TEST(Process, Board_Detect_Easy) {
 		std::string fileName = std::format("angle_{}.jpeg", i);
 		TestResult result    = runPipeline(TEST_PATH / fileName);
 
-		EXPECT_EQ(result.geometry.boardSize, BOARD_SIZE);
-		// EXPECT_NEAR(result.geometry.spacing, SPACING, SPACING * 0.1); // Allow 5% deviation from expected spacing.
+		EXPECT_EQ(result.rectified.geometry.boardSize, BOARD_SIZE);
+		// EXPECT_NEAR(result.rectified.geometry.spacing, SPACING, SPACING * 0.1); // Allow 5% deviation from expected spacing.
 
 		EXPECT_TRUE(result.stoneStep.success);
 		EXPECT_EQ(stoneCount(result.stoneStep.stones), 10u);

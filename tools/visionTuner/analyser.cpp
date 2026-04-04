@@ -49,13 +49,13 @@ cv::Mat Analyser::analyse(const cv::Mat& image, const PipelineStep step) const {
 			return buildInfoTile("Find Stones", "warpToBoard failed for this image.");
 		}
 
-		core::BoardGeometry geometry = core::analyseGeometry(board);
-		core::transformImage(image, geometry);
-		if (!core::isValidGeometry(geometry)) {
-			return buildInfoTile("Find Stones", "analyseGeometry failed for this image.");
+		const core::BoardGeometry geometry   = core::analyseGeometry(board);
+		const core::RectifiedBoard rectified = core::transformImage(image, geometry);
+		if (!core::isValidRectifiedBoard(rectified)) {
+			return buildInfoTile("Find Stones", "Rectification failed for this image.");
 		}
 
-		const core::StoneResult result = core::analyseBoard(geometry, &debugger);
+		const core::StoneResult result = core::analyseBoard(rectified, &debugger);
 		if (!result.success) {
 			return buildInfoTile("Find Stones", "analyseBoard failed for this image.");
 		}
@@ -68,13 +68,13 @@ cv::Mat Analyser::analyse(const cv::Mat& image, const PipelineStep step) const {
 			break;
 		}
 
-		core::BoardGeometry geometry = core::analyseGeometry(board, &debugger);
-		core::transformImage(image, geometry, &debugger);
-		if (!core::isValidGeometry(geometry)) {
+		const core::BoardGeometry geometry   = core::analyseGeometry(board, &debugger);
+		const core::RectifiedBoard rectified = core::transformImage(image, geometry, &debugger);
+		if (!core::isValidRectifiedBoard(rectified)) {
 			break;
 		}
 
-		core::analyseBoard(geometry, &debugger);
+		core::analyseBoard(rectified, &debugger);
 		break;
 	}
 	}

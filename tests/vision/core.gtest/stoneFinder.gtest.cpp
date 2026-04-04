@@ -38,14 +38,14 @@ static std::optional<StoneState> detectSingleStoneInImage(const std::filesystem:
 		warped = {image, cv::Mat::eye(3, 3, CV_64F)};
 	}
 
-	BoardGeometry geometry = analyseGeometry(warped);
-	transformImage(image, geometry);
-	if (!isValidGeometry(geometry)) {
+	const BoardGeometry geometry   = analyseGeometry(warped);
+	const RectifiedBoard rectified = transformImage(image, geometry);
+	if (!isValidRectifiedBoard(rectified)) {
 		return std::nullopt;
 	}
 
-	const StoneResult result = analyseBoard(geometry);
-	if (!result.success || result.stones.size() != geometry.intersections.size()) {
+	const StoneResult result = analyseBoard(rectified);
+	if (!result.success || result.stones.size() != rectified.geometry.intersections.size()) {
 		return std::nullopt;
 	}
 
@@ -64,11 +64,11 @@ static std::optional<StoneState> detectSingleStoneInImage(const std::filesystem:
 }
 
 TEST(StoneFinderUnit, EmptyBoard_NoStones) {
-	BoardGeometry g = makeSyntheticBoard(9u, 80.0, cv::Scalar(80, 140, 200));
+	RectifiedBoard g = makeSyntheticBoard(9u, 80.0, cv::Scalar(80, 140, 200));
 
 	const StoneResult r = analyseBoard(g);
 	ASSERT_TRUE(r.success);
-	ASSERT_EQ(r.stones.size(), g.intersections.size());
+	ASSERT_EQ(r.stones.size(), g.geometry.intersections.size());
 	ASSERT_EQ(r.confidence.size(), r.stones.size());
 
 	EXPECT_EQ(countState(r.stones, StoneState::Black), 0u);
@@ -76,7 +76,7 @@ TEST(StoneFinderUnit, EmptyBoard_NoStones) {
 }
 
 TEST(StoneFinderUnit, SingleBlackStone_Detected) {
-	BoardGeometry g = makeSyntheticBoard(9u, 80.0, cv::Scalar(80, 140, 200));
+	RectifiedBoard g = makeSyntheticBoard(9u, 80.0, cv::Scalar(80, 140, 200));
 	drawStone(g, 4u, 4u, StoneState::Black);
 
 	const StoneResult r = analyseBoard(g);
@@ -88,7 +88,7 @@ TEST(StoneFinderUnit, SingleBlackStone_Detected) {
 }
 
 TEST(StoneFinderUnit, SingleWhiteStone_Detected) {
-	BoardGeometry g = makeSyntheticBoard(9u, 80.0, cv::Scalar(80, 140, 200));
+	RectifiedBoard g = makeSyntheticBoard(9u, 80.0, cv::Scalar(80, 140, 200));
 	drawStone(g, 4u, 4u, StoneState::White);
 
 	const StoneResult r = analyseBoard(g);
@@ -100,7 +100,7 @@ TEST(StoneFinderUnit, SingleWhiteStone_Detected) {
 }
 
 TEST(StoneFinderUnit, EdgeWhiteStone_Detected) {
-	BoardGeometry g = makeSyntheticBoard(9u, 80.0, cv::Scalar(80, 140, 200));
+	RectifiedBoard g = makeSyntheticBoard(9u, 80.0, cv::Scalar(80, 140, 200));
 	drawStone(g, 0u, 4u, StoneState::White); // on grid edge
 
 	const StoneResult r = analyseBoard(g);
@@ -112,11 +112,11 @@ TEST(StoneFinderUnit, EdgeWhiteStone_Detected) {
 }
 
 TEST(StoneFinderUnit, BlackStone_WithMildGlare_NotWhite) {
-	BoardGeometry g = makeSyntheticBoard(9u, 80.0, cv::Scalar(80, 140, 200));
+	RectifiedBoard g = makeSyntheticBoard(9u, 80.0, cv::Scalar(80, 140, 200));
 	drawStone(g, 4u, 4u, StoneState::Black);
 
 	// Add a small bright highlight inside the black stone (simulates mild glare/reflection).
-	const cv::Point2f c = g.intersections[4u * 9u + 4u];
+	const cv::Point2f c = g.geometry.intersections[4u * 9u + 4u];
 	cv::circle(g.imageB, c + cv::Point2f(10.0f, -10.0f), 6, cv::Scalar(255, 255, 255), cv::FILLED, cv::LINE_AA);
 
 	const StoneResult r = analyseBoard(g);

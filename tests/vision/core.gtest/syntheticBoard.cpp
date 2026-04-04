@@ -6,11 +6,11 @@
 namespace tengen::vision::core {
 namespace gtest {
 
-BoardGeometry makeSyntheticBoard(unsigned N, double spacingPx, const cv::Scalar& woodBgr) {
-	BoardGeometry g{};
-	g.boardSize = N;
-	g.spacing   = spacingPx;
-	g.H         = cv::Mat::eye(3, 3, CV_64F);
+RectifiedBoard makeSyntheticBoard(unsigned N, double spacingPx, const cv::Scalar& woodBgr) {
+	RectifiedBoard g{};
+	g.geometry.boardSize = N;
+	g.geometry.spacing   = spacingPx;
+	g.geometry.H         = cv::Mat::eye(3, 3, CV_64F);
 
 	const int margin = static_cast<int>(std::lround(spacingPx)); //!< keep ROIs fully inside the image
 	const int span   = static_cast<int>(std::lround(spacingPx * static_cast<double>(N - 1)));
@@ -18,12 +18,12 @@ BoardGeometry makeSyntheticBoard(unsigned N, double spacingPx, const cv::Scalar&
 	const int h      = 2 * margin + span;
 	g.imageB         = cv::Mat(h, w, CV_8UC3, woodBgr);
 
-	g.intersections.reserve(static_cast<std::size_t>(N) * static_cast<std::size_t>(N));
+	g.geometry.intersections.reserve(static_cast<std::size_t>(N) * static_cast<std::size_t>(N));
 	for (unsigned gx = 0; gx < N; ++gx) {
 		for (unsigned gy = 0; gy < N; ++gy) {
 			const float x = static_cast<float>(margin + std::lround(static_cast<double>(gx) * spacingPx));
 			const float y = static_cast<float>(margin + std::lround(static_cast<double>(gy) * spacingPx));
-			g.intersections.emplace_back(x, y);
+			g.geometry.intersections.emplace_back(x, y);
 		}
 	}
 
@@ -93,17 +93,17 @@ cv::Mat makeCanonicalBoardImage(unsigned boardSize, int sidePx) {
 	return board;
 }
 
-void drawStone(BoardGeometry& g, unsigned gx, unsigned gy, StoneState s) {
+void drawStone(RectifiedBoard& g, unsigned gx, unsigned gy, StoneState s) {
 	ASSERT_FALSE(g.imageB.empty());
-	ASSERT_TRUE(g.boardSize == 9u || g.boardSize == 13u || g.boardSize == 19u);
-	ASSERT_EQ(g.intersections.size(), g.boardSize * g.boardSize);
+	ASSERT_TRUE(g.geometry.boardSize == 9u || g.geometry.boardSize == 13u || g.geometry.boardSize == 19u);
+	ASSERT_EQ(g.geometry.intersections.size(), g.geometry.boardSize * g.geometry.boardSize);
 
-	const unsigned idx = gx * g.boardSize + gy;
-	ASSERT_LT(idx, g.intersections.size());
+	const unsigned idx = gx * g.geometry.boardSize + gy;
+	ASSERT_LT(idx, g.geometry.intersections.size());
 
-	const int r          = static_cast<int>(std::lround(g.spacing * 0.40)); //!< < 0.5*spacing to avoid overlap
+	const int r          = static_cast<int>(std::lround(g.geometry.spacing * 0.40)); //!< < 0.5*spacing to avoid overlap
 	const cv::Scalar col = (s == StoneState::Black) ? cv::Scalar(0, 0, 0) : cv::Scalar(255, 255, 255);
-	cv::circle(g.imageB, g.intersections[idx], r, col, cv::FILLED, cv::LINE_AA);
+	cv::circle(g.imageB, g.geometry.intersections[idx], r, col, cv::FILLED, cv::LINE_AA);
 }
 
 } // namespace gtest

@@ -20,11 +20,11 @@ cv::Mat makeOutlineOnlySyntheticScene();
 //! Build a high-contrast synthetic image with a board that almost touches all image borders.
 cv::Mat makeFullFrameSyntheticScene();
 
-//! Create a synthetic, perfectly rectified board geometry with evenly spaced intersections.
-BoardGeometry makeSyntheticBoard(unsigned N, double spacingPx, const cv::Scalar& woodBgr);
+//! Create a synthetic, perfectly rectified board with evenly spaced intersections.
+RectifiedBoard makeSyntheticBoard(unsigned N, double spacingPx, const cv::Scalar& woodBgr);
 
 //! Draw a filled stone at a given grid coordinate (gx,gy).
-void drawStone(BoardGeometry& g, unsigned gx, unsigned gy, StoneState s);
+void drawStone(RectifiedBoard& g, unsigned gx, unsigned gy, StoneState s);
 
 } // namespace gtest
 } // namespace tengen::vision::core

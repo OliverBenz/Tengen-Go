@@ -57,20 +57,20 @@ bool Vision::setup(const Coord gaugeCoord) {
 		return false;
 	}
 
-	core::BoardGeometry geometry = core::analyseGeometry(warped);
-	core::transformImage(image, geometry);
-	if (!core::isValidGeometry(geometry)) {
+	const core::BoardGeometry geometry = core::analyseGeometry(warped);
+	core::RectifiedBoard board         = core::transformImage(image, geometry);
+	if (!core::isValidRectifiedBoard(board)) {
 		// TODO: Log
 		return false;
 	}
 
-	const core::StoneResult result = core::analyseBoard(geometry);
+	const core::StoneResult result = core::analyseBoard(board);
 	if (!result.success || stoneCount(result.stones) != 1) {
 		// TODO: Log
 		return false;
 	}
 
-	const unsigned boardSize = geometry.boardSize;
+	const unsigned boardSize = board.geometry.boardSize;
 	// TODO: Or gauge stone in center
 	if (gaugeCoord.x >= boardSize || gaugeCoord.y >= boardSize) {
 		return false;
@@ -135,8 +135,8 @@ bool Vision::setup(const Coord gaugeCoord) {
 	// A_g \equiv T[g]
 	const D4 g = *symmetryIt;
 	if (g != D4::Id) {
-		const int width  = geometry.imageB.cols;
-		const int height = geometry.imageB.rows;
+		const int width  = board.imageB.cols;
+		const int height = board.imageB.rows;
 		cv::Mat Tg       = cv::Mat::eye(3, 3, CV_64F); //!< Representation of g: T[g]  -> Transformation matrix for H
 		cv::Mat imageTransformed;                      //!< Transformed with a representation of our group action i_B' = T[g] i_B = (T[g] H) i
 
@@ -144,31 +144,31 @@ bool Vision::setup(const Coord gaugeCoord) {
 		case D4::Id:
 			break;
 		case D4::Rot90:
-			cv::rotate(geometry.imageB, imageTransformed, cv::ROTATE_90_CLOCKWISE);
+			cv::rotate(board.imageB, imageTransformed, cv::ROTATE_90_CLOCKWISE);
 			Tg = (cv::Mat_<double>(3, 3) << 0.0, -1.0, static_cast<double>(height - 1), 1.0, 0.0, 0.0, 0.0, 0.0, 1.0);
 			break;
 		case D4::Rot180:
-			cv::rotate(geometry.imageB, imageTransformed, cv::ROTATE_180);
+			cv::rotate(board.imageB, imageTransformed, cv::ROTATE_180);
 			Tg = (cv::Mat_<double>(3, 3) << -1.0, 0.0, static_cast<double>(width - 1), 0.0, -1.0, static_cast<double>(height - 1), 0.0, 0.0, 1.0);
 			break;
 		case D4::Rot270:
-			cv::rotate(geometry.imageB, imageTransformed, cv::ROTATE_90_COUNTERCLOCKWISE);
+			cv::rotate(board.imageB, imageTransformed, cv::ROTATE_90_COUNTERCLOCKWISE);
 			Tg = (cv::Mat_<double>(3, 3) << 0.0, 1.0, 0.0, -1.0, 0.0, static_cast<double>(width - 1), 0.0, 0.0, 1.0);
 			break;
 		case D4::FlipX:
-			cv::flip(geometry.imageB, imageTransformed, 1);
+			cv::flip(board.imageB, imageTransformed, 1);
 			Tg = (cv::Mat_<double>(3, 3) << -1.0, 0.0, static_cast<double>(width - 1), 0.0, 1.0, 0.0, 0.0, 0.0, 1.0);
 			break;
 		case D4::FlipY:
-			cv::flip(geometry.imageB, imageTransformed, 0);
+			cv::flip(board.imageB, imageTransformed, 0);
 			Tg = (cv::Mat_<double>(3, 3) << 1.0, 0.0, 0.0, 0.0, -1.0, static_cast<double>(height - 1), 0.0, 0.0, 1.0);
 			break;
 		case D4::Diag:
-			cv::transpose(geometry.imageB, imageTransformed);
+			cv::transpose(board.imageB, imageTransformed);
 			Tg = (cv::Mat_<double>(3, 3) << 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0);
 			break;
 		case D4::AntiDiag:
-			cv::transpose(geometry.imageB, imageTransformed);
+			cv::transpose(board.imageB, imageTransformed);
 			cv::flip(imageTransformed, imageTransformed, -1);
 			Tg = (cv::Mat_<double>(3, 3) << 0.0, -1.0, static_cast<double>(height - 1), -1.0, 0.0, static_cast<double>(width - 1), 0.0, 0.0, 1.0);
 			break;
@@ -176,7 +176,7 @@ bool Vision::setup(const Coord gaugeCoord) {
 
 		// Transform the intersections
 		std::vector<cv::Point2f> intersectionsTransformed;
-		cv::perspectiveTransform(geometry.intersections, intersectionsTransformed, Tg);
+		cv::perspectiveTransform(board.geometry.intersections, intersectionsTransformed, Tg);
 
 		// Re-Order intersections coordinate (g \rhd c)
 		std::vector<cv::Point2f> intersectionsOrdered(intersectionsTransformed.size());
@@ -189,17 +189,17 @@ bool Vision::setup(const Coord gaugeCoord) {
 			}
 		}
 
-		if (geometry.H.type() != CV_64F) {
+		if (board.geometry.H.type() != CV_64F) {
 			cv::Mat H64;
-			geometry.H.convertTo(H64, CV_64F);
-			geometry.H = std::move(H64);
+			board.geometry.H.convertTo(H64, CV_64F);
+			board.geometry.H = std::move(H64);
 		}
-		geometry.H             = Tg * geometry.H;
-		geometry.imageB        = std::move(imageTransformed);
-		geometry.intersections = std::move(intersectionsOrdered);
+		board.geometry.H             = Tg * board.geometry.H;
+		board.imageB                 = std::move(imageTransformed);
+		board.geometry.intersections = std::move(intersectionsOrdered);
 	}
 
-	m_geometry = std::move(geometry);
+	m_board = std::move(board);
 	return true;
 }
 

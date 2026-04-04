@@ -53,7 +53,7 @@ private:
 
 private:
 	Source m_source;                        //!< Source input for the board detection.
-	core::BoardGeometry m_geometry;         //!< Result of the setup process.
+	core::RectifiedBoard m_board;           //!< Result of the setup process.
 	std::filesystem::path m_setupImagePath; //!< Setup image path for Source::Camera.
 
 	Callbacks m_callbacks; //!< Callback functions to signal events.

@@ -14,23 +14,29 @@
 //   grid lines + padding of a half stone and compute the homography for the final image transform.
 namespace tengen::vision::core {
 
-//! Final
 struct BoardGeometry {
-	cv::Mat imageB;                         //!< Image in B space (mapped to Board with padding). Filled by transformImage().
 	cv::Mat H;                              //!< Homography H between the original image and the fine-tuned warped image.
 	std::vector<cv::Point2f> intersections; //!< List of grid intersections on the board (in refined warped coordinates).
 	double spacing;                         //!< Spacing between grid lines (in refined warped coordinated).
 	unsigned boardSize;                     //!< Size of the go board (9, 13, 19).
 };
 
+//! Final output of the rectification stage.
+struct RectifiedBoard {
+	cv::Mat imageB;         //!< Image in B space (mapped to board with padding).
+	BoardGeometry geometry; //!< Geometry aligned with imageB.
+};
+
 //! Analyse the projected board image and compute the refined board geometry.
 //! \param [in] input Warped image of a Go board (board already detected).
-//! \returns    Board geometry in refined board coordinates. Call transformImage() afterwards to populate BoardGeometry::imageB.
+//! \returns    Board geometry in refined board coordinates.
 BoardGeometry analyseGeometry(const WarpResult& input, DebugVisualizer* debugger = nullptr);
 
 //! Transform the original image into the refined board image space described by geometry.H.
-void transformImage(const cv::Mat& originalImg, BoardGeometry& geometry, DebugVisualizer* debugger = nullptr);
+//! \returns    Rectified board image together with the geometry it matches.
+RectifiedBoard transformImage(const cv::Mat& originalImg, const BoardGeometry& geometry, DebugVisualizer* debugger = nullptr);
 
 bool isValidGeometry(const BoardGeometry& geometry);
+bool isValidRectifiedBoard(const RectifiedBoard& board);
 
 } // namespace tengen::vision::core

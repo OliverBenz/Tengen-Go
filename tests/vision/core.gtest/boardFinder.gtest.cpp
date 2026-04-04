@@ -28,12 +28,12 @@ void runTest(const std::string& testSetName) {
 		EXPECT_FALSE(warpResult.imageB0.empty());
 		EXPECT_FALSE(warpResult.H0.empty());
 
-		auto geometry = analyseGeometry(warpResult);
-		transformImage(image, geometry);
-		EXPECT_FALSE(geometry.imageB.empty());
-		EXPECT_FALSE(geometry.H.empty());
-		EXPECT_EQ(geometry.intersections.size(), BOARD_SIZE * BOARD_SIZE);
-		EXPECT_EQ(geometry.boardSize, BOARD_SIZE);
+		const auto geometry  = analyseGeometry(warpResult);
+		const auto rectified = transformImage(image, geometry);
+		EXPECT_FALSE(rectified.imageB.empty());
+		EXPECT_FALSE(rectified.geometry.H.empty());
+		EXPECT_EQ(rectified.geometry.intersections.size(), BOARD_SIZE * BOARD_SIZE);
+		EXPECT_EQ(rectified.geometry.boardSize, BOARD_SIZE);
 	}
 }
 
@@ -53,11 +53,11 @@ TEST(Process, Find_Board_Synthetic_FullFramePerspective) {
 	const auto warpResult = warpToBoard(image);
 	EXPECT_TRUE(isValidBoard(warpResult));
 
-	auto geometry = analyseGeometry(warpResult);
-	transformImage(image, geometry);
-	EXPECT_FALSE(geometry.imageB.empty());
-	EXPECT_FALSE(geometry.H.empty());
-	EXPECT_EQ(geometry.boardSize, 13u);
+	const auto geometry  = analyseGeometry(warpResult);
+	const auto rectified = transformImage(image, geometry);
+	EXPECT_FALSE(rectified.imageB.empty());
+	EXPECT_FALSE(rectified.geometry.H.empty());
+	EXPECT_EQ(rectified.geometry.boardSize, 13u);
 }
 
 TEST(Process, Find_Board_Synthetic_OutlineOnly) {
