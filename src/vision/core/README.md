@@ -47,3 +47,6 @@ Unfortunately, image detection is not closed-form exactly solvable so the given 
 We shall strictly keep the above naming conventions for the spaces, images, and homographies in the source code.
 This might be deemed to be redundant and ugly naming but any user adapting source code must be perfectly aware of the underlying design and understand the spaces they are working in.
 We move along with slightly more noisy naming to ensure perfect alignment with the foundational design described above.
+
+## Class Diagram
+![Class Diagram](docs/img/Class_Diagram.svg)
