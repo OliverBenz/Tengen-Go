@@ -28,7 +28,8 @@ void runTest(const std::string& testSetName) {
 		EXPECT_FALSE(warpResult.imageB0.empty());
 		EXPECT_FALSE(warpResult.H0.empty());
 
-		const auto geometry = rectifyImage(image, warpResult);
+		auto geometry = analyseGeometry(warpResult);
+		transformImage(image, geometry);
 		EXPECT_FALSE(geometry.imageB.empty());
 		EXPECT_FALSE(geometry.H.empty());
 		EXPECT_EQ(geometry.intersections.size(), BOARD_SIZE * BOARD_SIZE);
@@ -52,7 +53,8 @@ TEST(Process, Find_Board_Synthetic_FullFramePerspective) {
 	const auto warpResult = warpToBoard(image);
 	EXPECT_TRUE(isValidBoard(warpResult));
 
-	const auto geometry = rectifyImage(image, warpResult);
+	auto geometry = analyseGeometry(warpResult);
+	transformImage(image, geometry);
 	EXPECT_FALSE(geometry.imageB.empty());
 	EXPECT_FALSE(geometry.H.empty());
 	EXPECT_EQ(geometry.boardSize, 13u);

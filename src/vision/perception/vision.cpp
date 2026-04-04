@@ -57,7 +57,8 @@ bool Vision::setup(const Coord gaugeCoord) {
 		return false;
 	}
 
-	core::BoardGeometry geometry = core::rectifyImage(image, warped); // TODO: Rename this function.
+	core::BoardGeometry geometry = core::analyseGeometry(warped);
+	core::transformImage(image, geometry);
 	if (!core::isValidGeometry(geometry)) {
 		// TODO: Log
 		return false;

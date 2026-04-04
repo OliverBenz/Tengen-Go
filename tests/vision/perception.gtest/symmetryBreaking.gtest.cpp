@@ -73,7 +73,8 @@ std::optional<DetectedStone> detectSingleStone(const std::filesystem::path& imag
 		return std::nullopt;
 	}
 
-	const core::BoardGeometry geometry = core::rectifyImage(image, warped);
+	core::BoardGeometry geometry = core::analyseGeometry(warped);
+	core::transformImage(image, geometry);
 	if (!core::isValidGeometry(geometry)) {
 		return std::nullopt;
 	}

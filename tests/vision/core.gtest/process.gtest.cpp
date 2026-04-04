@@ -31,7 +31,8 @@ TestResult runPipeline(const std::filesystem::path& imgPath) {
 	EXPECT_FALSE(warped.H0.empty());
 
 	// Properly construct the board geometry.
-	BoardGeometry geometry = rectifyImage(image, warped);
+	BoardGeometry geometry = analyseGeometry(warped);
+	transformImage(image, geometry);
 	EXPECT_FALSE(geometry.imageB.empty());
 	EXPECT_FALSE(geometry.H.empty());
 	EXPECT_FALSE(geometry.intersections.empty());
