@@ -36,5 +36,5 @@ jobs:
     - name: Run Tests
       run: |
         nix develop --command bash -c "
-          ctest --test-dir build --output-on-failure
+          ctest --test-dir build --output-on-failure --parallel
         "
