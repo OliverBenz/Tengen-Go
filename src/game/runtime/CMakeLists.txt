@@ -33,7 +33,8 @@ target_link_libraries(${targetName}
     PRIVATE
         Logger::Logger
     PUBLIC
-		tengen::game::core tengen::net::gameNet
+		tengen::game::core
+        tengen::net::gameNet
 )
 
 # Setup project settings

@@ -13,7 +13,7 @@ struct WarpResult {
 
 //! Detect rough Go board outline in an image and warp to center the board. Cut out background
 //! \param [in] image Original unwarped image of a Go board.
-//! \note       In the resulting warped image, it is not defined what exactly the border is. This is done in the second step (rectifyImage).
+//! \note       In the resulting warped image, it is not defined what exactly the border is. This is done in the second step (analyseGeometry + transformImage).
 WarpResult warpToBoard(const cv::Mat& image, DebugVisualizer* debugger = nullptr);
 
 bool isValidBoard(const WarpResult& board);

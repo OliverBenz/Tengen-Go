@@ -38,7 +38,8 @@ static std::optional<StoneState> detectSingleStoneInImage(const std::filesystem:
 		warped = {image, cv::Mat::eye(3, 3, CV_64F)};
 	}
 
-	const BoardGeometry geometry = rectifyImage(image, warped);
+	BoardGeometry geometry = analyseGeometry(warped);
+	transformImage(image, geometry);
 	if (!isValidGeometry(geometry)) {
 		return std::nullopt;
 	}

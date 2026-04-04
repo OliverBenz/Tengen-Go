@@ -86,17 +86,19 @@ static double computeMedianSpacing(const std::vector<double>& grid) {
 	return median(diffs);
 }
 
-//! Transform an image that contains a Go Board such that the final image is a top-down projection of the board.
+static constexpr int kOutputImageSize = 1000;
+
+//! Analyse a warped Go board image and compute the refined board geometry.
 //! \note The border of the image is the outermost grid line + tolerance for the edge stones.
 //! \note Variable and space name terminology defined in the README.
-BoardGeometry rectifyImage(const cv::Mat& imageIB, const WarpResult& input, DebugVisualizer* debugger) {
+BoardGeometry analyseGeometry(const WarpResult& input, DebugVisualizer* debugger) {
 	if (input.imageB0.empty() || input.H0.empty()) {
-		std::cerr << "Invalid warp result for rectification.\n";
+		std::cerr << "Invalid warp result for geometry analysis.\n";
 		return {};
 	}
 
 	if (debugger) {
-		debugger->beginStage("Rectify Image");
+		debugger->beginStage("Analyse Geometry");
 		debugger->add("Input", input.imageB0);
 	}
 
@@ -273,7 +275,7 @@ BoardGeometry rectifyImage(const cv::Mat& imageIB, const WarpResult& input, Debu
 		return {};
 	}
 
-	// 4. Warp image with stone buffer at edge (want to detect full stone at edge)
+	// 4. Compute refined homography with stone buffer at edge (want to detect full stone at edge)
 	double spacingX = computeMedianSpacing(vGrid);
 	double spacingY = computeMedianSpacing(hGrid);
 	double spacing  = 0.5 * (spacingX + spacingY); //!< Spacing between grid lines.
@@ -285,7 +287,7 @@ BoardGeometry rectifyImage(const cv::Mat& imageIB, const WarpResult& input, Debu
 	float ymin = static_cast<float>(hGrid.front() - stoneBuffer);
 	float ymax = static_cast<float>(hGrid.back() + stoneBuffer);
 
-	// Perform the warping on the original image (avoid getting black bars if the new image is larger than the warped(after first step) one)
+	// Determine the refined board bounds in the original image.
 	std::vector<cv::Point2f> boardB0 = {{xmin, ymin}, {xmax, ymin}, {xmax, ymax}, {xmin, ymax}}; //!< Board coordinate in the B_0 space
 
 	// Invert the previous warping so we can apply our new warp on the original image.
@@ -294,18 +296,12 @@ BoardGeometry rectifyImage(const cv::Mat& imageIB, const WarpResult& input, Debu
 	cv::perspectiveTransform(boardB0, boardIB, H0_inv);
 
 	// Output range
-	constexpr int outSize           = 1000;
 	std::vector<cv::Point2f> boardB = {{0.f, 0.f},
-	                                   {static_cast<float>(outSize) - 1.f, 0.f},
-	                                   {static_cast<float>(outSize) - 1.f, static_cast<float>(outSize) - 1.f},
-	                                   {0.f, static_cast<float>(outSize) - 1.f}}; //!< Board coordinates in the B space
+	                                   {static_cast<float>(kOutputImageSize) - 1.f, 0.f},
+	                                   {static_cast<float>(kOutputImageSize) - 1.f, static_cast<float>(kOutputImageSize) - 1.f},
+	                                   {0.f, static_cast<float>(kOutputImageSize) - 1.f}}; //!< Board coordinates in the B space
 
 	cv::Mat H = cv::getPerspectiveTransform(boardIB, boardB); //!< H: I_B \to B
-	cv::Mat imageB;                                           //!< Image in space B
-	cv::warpPerspective(imageIB, imageB, H, cv::Size(outSize, outSize));
-	if (debugger) {
-		debugger->add("Warp Image", imageB);
-	}
 
 	// 5. Compute and warp intersections
 	std::vector<cv::Point2f> intersectionsWarped;
@@ -324,12 +320,6 @@ BoardGeometry rectifyImage(const cv::Mat& imageIB, const WarpResult& input, Debu
 	// Map to refined image
 	std::vector<cv::Point2f> intersectionsRefined;
 	cv::perspectiveTransform(intersectionsOriginal, intersectionsRefined, H);
-	if (debugger) {
-		cv::Mat vis = imageB.clone();
-		for (const auto& p: intersectionsRefined)
-			cv::circle(vis, p, 4, cv::Scalar(255, 0, 0), -1);
-		debugger->add("Intersections Ref.", vis);
-	}
 
 	// Compute spacing (in B-space coordinates) from adjacent intersection distances.
 	const auto N = vGrid.size(); //!< Board size (9,13,19).
@@ -360,13 +350,37 @@ BoardGeometry rectifyImage(const cv::Mat& imageIB, const WarpResult& input, Debu
 	if (debugger)
 		debugger->endStage();
 
-	// Assert output: Fail means we missed a validity check earlier.
 	assert(vGrid.size() == hGrid.size()); // Grid lines equal.
-	BoardGeometry result{imageB, H, intersectionsRefined, refinedSpacing, static_cast<unsigned>(N)};
-	assert(isValidGeometry(result));
-	// TODO: Unit test sanity check: Image (width|height) == N*spacing (up to tolerance. N-1 spacings in Grid + stone buffer)
+	BoardGeometry result{{}, H, intersectionsRefined, refinedSpacing, static_cast<unsigned>(N)};
+	assert(!result.H.empty());
+	assert(result.intersections.size() == static_cast<std::size_t>(N) * static_cast<std::size_t>(N));
 
 	return result;
+}
+
+void transformImage(const cv::Mat& originalImg, BoardGeometry& geometry, DebugVisualizer* debugger) {
+	if (originalImg.empty() || geometry.H.empty()) {
+		std::cerr << "Invalid input for image transformation.\n";
+		geometry.imageB.release();
+		return;
+	}
+
+	if (debugger) {
+		debugger->beginStage("Transform Image");
+		debugger->add("Input", originalImg);
+	}
+
+	cv::warpPerspective(originalImg, geometry.imageB, geometry.H, cv::Size(kOutputImageSize, kOutputImageSize));
+	if (debugger) {
+		debugger->add("Warp Image", geometry.imageB);
+		if (!geometry.intersections.empty()) {
+			cv::Mat vis = geometry.imageB.clone();
+			for (const auto& p: geometry.intersections)
+				cv::circle(vis, p, 4, cv::Scalar(255, 0, 0), -1);
+			debugger->add("Intersections Ref.", vis);
+		}
+		debugger->endStage();
+	}
 }
 
 
