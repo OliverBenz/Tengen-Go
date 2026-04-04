@@ -73,14 +73,14 @@ std::optional<DetectedStone> detectSingleStone(const std::filesystem::path& imag
 		return std::nullopt;
 	}
 
-	core::BoardGeometry geometry = core::analyseGeometry(warped);
-	core::transformImage(image, geometry);
-	if (!core::isValidGeometry(geometry)) {
+	const core::BoardGeometry geometry   = core::analyseGeometry(warped);
+	const core::RectifiedBoard rectified = core::transformImage(image, geometry);
+	if (!core::isValidRectifiedBoard(rectified)) {
 		return std::nullopt;
 	}
 
-	const core::StoneResult result = core::analyseBoard(geometry);
-	if (!result.success || result.stones.size() != geometry.intersections.size()) {
+	const core::StoneResult result = core::analyseBoard(rectified);
+	if (!result.success || result.stones.size() != rectified.geometry.intersections.size()) {
 		return std::nullopt;
 	}
 
@@ -103,10 +103,10 @@ std::optional<DetectedStone> detectSingleStone(const std::filesystem::path& imag
 	}
 
 	return DetectedStone{
-	        geometry.boardSize,
+	        rectified.geometry.boardSize,
 	        Coord{
-	                static_cast<unsigned>(stoneIndex / geometry.boardSize),
-	                static_cast<unsigned>(stoneIndex % geometry.boardSize),
+	                static_cast<unsigned>(stoneIndex / rectified.geometry.boardSize),
+	                static_cast<unsigned>(stoneIndex % rectified.geometry.boardSize),
 	        },
 	        detectedStone,
 	};

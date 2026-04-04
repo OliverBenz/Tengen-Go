@@ -351,18 +351,20 @@ BoardGeometry analyseGeometry(const WarpResult& input, DebugVisualizer* debugger
 		debugger->endStage();
 
 	assert(vGrid.size() == hGrid.size()); // Grid lines equal.
-	BoardGeometry result{{}, H, intersectionsRefined, refinedSpacing, static_cast<unsigned>(N)};
+	BoardGeometry result{H, intersectionsRefined, refinedSpacing, static_cast<unsigned>(N)};
 	assert(!result.H.empty());
 	assert(result.intersections.size() == static_cast<std::size_t>(N) * static_cast<std::size_t>(N));
 
 	return result;
 }
 
-void transformImage(const cv::Mat& originalImg, BoardGeometry& geometry, DebugVisualizer* debugger) {
+RectifiedBoard transformImage(const cv::Mat& originalImg, const BoardGeometry& geometry, DebugVisualizer* debugger) {
+	RectifiedBoard result{};
+	result.geometry = geometry;
+
 	if (originalImg.empty() || geometry.H.empty()) {
 		std::cerr << "Invalid input for image transformation.\n";
-		geometry.imageB.release();
-		return;
+		return result;
 	}
 
 	if (debugger) {
@@ -370,28 +372,33 @@ void transformImage(const cv::Mat& originalImg, BoardGeometry& geometry, DebugVi
 		debugger->add("Input", originalImg);
 	}
 
-	cv::warpPerspective(originalImg, geometry.imageB, geometry.H, cv::Size(kOutputImageSize, kOutputImageSize));
+	cv::warpPerspective(originalImg, result.imageB, geometry.H, cv::Size(kOutputImageSize, kOutputImageSize));
 	if (debugger) {
-		debugger->add("Warp Image", geometry.imageB);
+		debugger->add("Warp Image", result.imageB);
 		if (!geometry.intersections.empty()) {
-			cv::Mat vis = geometry.imageB.clone();
+			cv::Mat vis = result.imageB.clone();
 			for (const auto& p: geometry.intersections)
 				cv::circle(vis, p, 4, cv::Scalar(255, 0, 0), -1);
 			debugger->add("Intersections Ref.", vis);
 		}
 		debugger->endStage();
 	}
+
+	return result;
 }
 
 
 bool isValidGeometry(const BoardGeometry& g) {
-	const bool validImage     = !g.imageB.empty(); // TODO: Other checks?
-	const bool validH         = !g.H.empty();      // TODO: Other checks?
+	const bool validH         = !g.H.empty(); // TODO: Other checks?
 	const bool validBoardSize = g.boardSize == 9 || g.boardSize == 13 || g.boardSize == 19;
 	const bool validIntersect = g.intersections.size() == g.boardSize * g.boardSize; // TODO: Check approx x,y alignment etc.
 	const bool validSpacing   = true;                                                // TODO:
 
-	return validImage && validH && validBoardSize && validIntersect && validSpacing;
+	return validH && validBoardSize && validIntersect && validSpacing;
+}
+
+bool isValidRectifiedBoard(const RectifiedBoard& board) {
+	return !board.imageB.empty() && isValidGeometry(board.geometry);
 }
 
 

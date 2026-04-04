@@ -15,16 +15,16 @@ enum class StoneState { Empty, Black, White };
 //! Result of the stone detection stage.
 struct StoneResult {
 	bool success;                   //!< True if detection ran successfully; false on invalid input.
-	std::vector<StoneState> stones; //!< Stone states aligned to BoardGeometry::intersections (size = boardSize * boardSize).
+	std::vector<StoneState> stones; //!< Stone states aligned to RectifiedBoard::geometry.intersections (size = boardSize * boardSize).
 	std::vector<float> confidence;  //!< Per-intersection confidence for stones[i] (size = stones.size()). 0 -> Empty/unknown.
 };
 
 /*! Detect stones on a Go board image in B(Board) space (see README).
- * \param [in]     geometry Rectified board geometry.
+ * \param [in]     board    Rectified board image and matching geometry.
  * \param [in,out] debugger Optional debug visualizer for overlays.
  * \param [in]     config   Stone detection configuration.
- * \return         StoneResult where `stones[i]`/`confidence[i]` map to `geometry.intersections[i]`.
+ * \return         StoneResult where `stones[i]`/`confidence[i]` map to `board.geometry.intersections[i]`.
  */
-StoneResult analyseBoard(const BoardGeometry& geometry, DebugVisualizer* debugger = nullptr, const StoneDetectionConfig& config = StoneDetectionConfig{});
+StoneResult analyseBoard(const RectifiedBoard& board, DebugVisualizer* debugger = nullptr, const StoneDetectionConfig& config = StoneDetectionConfig{});
 
 } // namespace tengen::vision::core

@@ -12,26 +12,24 @@
 
 namespace tengen::vision::core {
 
-StoneResult analyseBoard(const BoardGeometry& geometry, DebugVisualizer* debugger, const StoneDetectionConfig& config) {
-	if (geometry.imageB.empty()) {
-		std::cerr << "Stone detection failed: input image is empty\n";
-		return {false, {}, {}};
-	}
-	if (geometry.boardSize == 0u || geometry.intersections.size() != geometry.boardSize * geometry.boardSize) {
-		std::cerr << "Stone detection failed: invalid board geometry\n";
+StoneResult analyseBoard(const RectifiedBoard& board, DebugVisualizer* debugger, const StoneDetectionConfig& config) {
+	if (!isValidRectifiedBoard(board)) {
+		std::cerr << "Stone detection failed: invalid rectified board\n";
 		return {false, {}, {}};
 	}
 
+	const BoardGeometry& geometry = board.geometry;
+
 	if (debugger) {
 		debugger->beginStage("Stone Detection v2");
-		debugger->add("Input", geometry.imageB);
+		debugger->add("Input", board.imageB);
 	}
 
 	const Radii radii     = GeometrySampling::chooseRadii(geometry.spacing, config.geometry);
 	const Offsets offsets = GeometrySampling::precomputeOffsets(radii);
 
 	LabBlur blurredLab{};
-	if (!FeatureExtraction::prepareLabBlur(geometry.imageB, radii, config.geometry, blurredLab)) {
+	if (!FeatureExtraction::prepareLabBlur(board.imageB, radii, config.geometry, blurredLab)) {
 		if (debugger) {
 			debugger->endStage();
 		}
@@ -70,7 +68,7 @@ StoneResult analyseBoard(const BoardGeometry& geometry, DebugVisualizer* debugge
 #endif
 
 	if (debugger) {
-		debugger->add("Stone Overlay", Debugging::drawOverlay(geometry.imageB, geometry.intersections, states, radii.innerRadius));
+		debugger->add("Stone Overlay", Debugging::drawOverlay(board.imageB, geometry.intersections, states, radii.innerRadius));
 		debugger->add("Stone Stats", Debugging::renderStatsTile(model, stats));
 		debugger->endStage();
 	}
