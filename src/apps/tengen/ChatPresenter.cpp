@@ -10,14 +10,15 @@
 
 namespace tengen {
 
-ChatPresenter::ChatPresenter(app::IChatSession& game, gui::ChatWidget& chatWidget) : m_game(game), m_chatWidget(chatWidget) {
-	QObject::connect(&m_chatWidget, &gui::ChatWidget::chatEvent, &m_chatWidget, [this](const std::string& message) { this->m_game.chat(message); });
+ChatPresenter::ChatPresenter(app::IChatSession& chat, gui::ChatWidget& chatWidget) : m_chat(chat), m_chatWidget(chatWidget) {
+	QObject::connect(&m_chatWidget, &gui::ChatWidget::chatEvent, &m_chatWidget, [this](const std::string& message) { m_chat.chat(message); });
 
-	m_game.subscribe(this, app::AS_NewChat);
+	m_chat.subscribe(this, app::AS_NewChat);
+	onAppEvent(app::AS_NewChat);
 }
 
 ChatPresenter::~ChatPresenter() {
-	m_game.unsubscribe(this);
+	m_chat.unsubscribe(this);
 }
 
 void ChatPresenter::onAppEvent(const app::AppSignal signal) {
@@ -25,7 +26,7 @@ void ChatPresenter::onAppEvent(const app::AppSignal signal) {
 		return;
 	}
 
-	const auto messageEntries = m_game.getChatSince(m_lastChatMessageId);
+	const auto messageEntries = m_chat.getChatSince(m_lastChatMessageId);
 	if (messageEntries.empty()) {
 		return;
 	}

@@ -23,8 +23,6 @@ public:
 
 private:
 	app::IGameSession& m_game;
-	app::IChatSession* m_chat{nullptr};
-
 	gui::GameWidget& m_gameWidget;
 	std::unique_ptr<BoardPresenter> m_boardPresenter = nullptr;
 	std::unique_ptr<ChatPresenter> m_chatPresenter   = nullptr;

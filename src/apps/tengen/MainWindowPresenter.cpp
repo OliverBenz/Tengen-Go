@@ -15,38 +15,43 @@ MainWindowPresenter::MainWindowPresenter(gui::MainWindow& mainWindow) : m_mainWi
 MainWindowPresenter::~MainWindowPresenter() = default;
 
 void MainWindowPresenter::onConnectRequested(const std::string& hostIp) {
-    if(m_game) {
-        // Session already in progress
-        return;
-    }
+	if (m_game) {
+		// Session already in progress
+		return;
+	}
 
-    m_game = std::make_unique<app::NetworkSession>();
-    m_game->connect(hostIp);
+	auto session = std::make_unique<app::NetworkSession>();
+	session->connect(hostIp);
 
-    m_gamePresenter = std::make_unique<GamePresenter>(m_game, m_mainWindow.gameWidget());
-    m_gamePresenter->addChatWindow(*m_game.get());
+	auto& game = static_cast<app::IGameSession&>(*session);
+	auto& chat = static_cast<app::IChatSession&>(*session);
+	m_gamePresenter = std::make_unique<GamePresenter>(game, m_mainWindow.gameWidget());
+	m_gamePresenter->addChatWindow(chat);
+	m_game = std::move(session);
 }
 
 void MainWindowPresenter::onHostRequested(const unsigned boardSize) {
-    if(m_game) {
-        // Session already in progress
-        return;
-    }
+	if (m_game) {
+		// Session already in progress
+		return;
+	}
 
-    m_game = std::make_unique<app::NetworkSession>();
-    m_game->host(boardSize);
+	auto session = std::make_unique<app::NetworkSession>();
+	session->host(boardSize);
 
-    m_gamePresenter = std::make_unique<GamePresenter>(m_game, m_mainWindow.gameWidget());
-    m_gamePresenter->addChatWindow(*m_game.get());
+	auto& game = static_cast<app::IGameSession&>(*session);
+	auto& chat = static_cast<app::IChatSession&>(*session);
+	m_gamePresenter = std::make_unique<GamePresenter>(game, m_mainWindow.gameWidget());
+	m_gamePresenter->addChatWindow(chat);
+	m_game = std::move(session);
 }
 
 void MainWindowPresenter::onShutdownRequested() {
-    if(m_game){
-        m_gamePresenter = nullptr; // Destroy before m_game
-
-        m_game->shutdown();
-        m_game = nullptr;
-    }
+	if (m_game) {
+		m_gamePresenter = nullptr; // Destroy before m_game
+		m_game->shutdown();
+		m_game = nullptr;
+	}
 }
 
 } // namespace tengen
