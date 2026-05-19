@@ -1,6 +1,6 @@
 #pragma once
 
-#include "IAppSignalListener.hpp"
+#include "IAppSignal.hpp"
 
 #include <mutex>
 #include <vector>
