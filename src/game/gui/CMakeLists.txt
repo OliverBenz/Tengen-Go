@@ -33,10 +33,15 @@ target_link_libraries(${targetName}
         Qt6::Widgets
 )
 
-set_target_properties(${targetName} PROPERTIES AUTOMOC ON) # Auto handling of QT Meta-Object Compiler
-target_compile_definitions(${targetName} PRIVATE TEXTURE_BLACK="${CMAKE_SOURCE_DIR}/assets/anime_black.png")
-target_compile_definitions(${targetName} PRIVATE TEXTURE_WHITE="${CMAKE_SOURCE_DIR}/assets/anime_white.png")
-
+set_target_properties(${targetName}
+    PROPERTIES
+        AUTOMOC ON # Auto handling of QT Meta-Object Compiler
+)
+target_compile_definitions(${targetName}
+    PRIVATE
+        TEXTURE_BLACK="${CMAKE_SOURCE_DIR}/assets/anime_black.png"
+        TEXTURE_WHITE="${CMAKE_SOURCE_DIR}/assets/anime_white.png"
+)
 
 # Setup project settings
 set_target_configuration(${targetName} Config::Default)

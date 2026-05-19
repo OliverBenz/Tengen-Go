@@ -16,7 +16,7 @@ add_executable(${targetName}
     "${CMAKE_CURRENT_LIST_DIR}/Logging.cpp"
 )
 
-target_link_libraries(${targetName} 
+target_link_libraries(${targetName}
     PRIVATE
         Logger::Logger
         tengen::game::runtime
@@ -24,9 +24,10 @@ target_link_libraries(${targetName}
         Qt6::Widgets
 )
 
-set_target_properties(${targetName} PROPERTIES AUTOMOC ON) # Auto handling of QT Meta-Object Compiler
-target_compile_definitions(${targetName} PRIVATE TEXTURE_BLACK="${CMAKE_SOURCE_DIR}/assets/anime_black.png")
-target_compile_definitions(${targetName} PRIVATE TEXTURE_WHITE="${CMAKE_SOURCE_DIR}/assets/anime_white.png")
+set_target_properties(${targetName}
+    PROPERTIES
+        AUTOMOC ON # Auto handling of QT Meta-Object Compiler
+)
 
 # Setup project settings
 set_target_configuration(${targetName} Config::Default)
