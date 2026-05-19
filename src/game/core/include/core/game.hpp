@@ -17,7 +17,7 @@ using EventQueue = SafeQueue<GameEvent>;
 class Game {
 public:
 	//! Setup a game of certain board size without starting the game loop.
-	Game(std::size_t boardSize);
+	Game(std::size_t boardSize); // TODO: Will be extended to take a game configuration(timer type, board size, ruleset, etc).
 
 	void run();                      //!< Run the main game loop/start handling the event loop (blocking).
 	void pushEvent(GameEvent event); //!< Push an event to the event queue.
