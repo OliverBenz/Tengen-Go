@@ -6,6 +6,7 @@
 #include <QObject>
 
 #include <vector>
+#include <format>
 
 namespace tengen {
 

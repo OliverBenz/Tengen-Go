@@ -37,14 +37,11 @@ static QString gameStateText(const tengen::GameStatus status) {
 	}
 }
 
-GamePresenter::GamePresenter(app::IGameSession& game, app::IChatSession* chat, gui::GameWidget& gameWidget) : m_game(game), m_gameWidget(gameWidget) {
+GamePresenter::GamePresenter(app::IGameSession& game, gui::GameWidget& gameWidget) : m_game(game), m_gameWidget(gameWidget) {
 	QObject::connect(&m_gameWidget, &gui::GameWidget::passEvent, &m_gameWidget, [this]() { this->onPassRequested(); });
 	QObject::connect(&m_gameWidget, &gui::GameWidget::resignEvent, &m_gameWidget, [this]() { this->onResignRequested(); });
 
 	m_boardPresenter = std::make_unique<BoardPresenter>(m_game, m_gameWidget.boardWidget());
-	if(chat) {
-	    m_chatPresenter  = std::make_unique<ChatPresenter>(chat, m_gameWidget.chatWidget());
-	}
 
 	m_gameWidget.setCurrentPlayerText(currentPlayerText(m_game.currentPlayer()));
 	m_gameWidget.setGameStateText(gameStateText(m_game.status()));
@@ -54,6 +51,10 @@ GamePresenter::GamePresenter(app::IGameSession& game, app::IChatSession* chat, g
 
 GamePresenter::~GamePresenter() {
 	m_game.unsubscribe(this);
+}
+
+void GamePresenter::addChatWindow(app::IChatSession& chat) {
+    m_chatPresenter  = std::make_unique<ChatPresenter>(chat, m_gameWidget.chatWidget());
 }
 
 void GamePresenter::onAppEvent(const app::AppSignal signal) {

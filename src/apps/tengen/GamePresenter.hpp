@@ -12,8 +12,10 @@ namespace tengen {
 
 class GamePresenter : public app::IAppSignalListener {
 public:
-	GamePresenter(app::IGameSession& game, app::IChatSession* chat, gui::GameWidget& gameWidget);
+	GamePresenter(app::IGameSession& game, gui::GameWidget& gameWidget);
 	~GamePresenter() override;
+
+	void addChatWindow(app::IChatSession& chat);
 
 	void onAppEvent(app::AppSignal signal) override; //!< Called by the game thread. Ensure not blocking.
 	void onPassRequested();                          //!< Handle pass event from Board Widget.

@@ -21,8 +21,8 @@ private: // slots
 
 private:
 	gui::MainWindow& m_mainWindow;
-	std::unique_ptr<app::IGameSession> m_game;
-	std::unique_ptr<GamePresenter> m_gamePresenter = nullptr;
+	std::unique_ptr<app::IGameSession> m_game{nullptr};
+	std::unique_ptr<GamePresenter> m_gamePresenter{nullptr};
 };
 
 } // namespace tengen
