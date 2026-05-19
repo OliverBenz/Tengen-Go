@@ -15,17 +15,17 @@ enum AppSignal : uint64_t {
 
 class IAppSignalListener {
 public:
-	virtual ~IAppSignalListener()             = default;
+	virtual ~IAppSignalListener() = default;
 
 	virtual void onAppEvent(AppSignal signal) = 0;
 };
 
 class IAppSignalSource {
 public:
-    virtual ~IAppSignalSource() = default;
+	virtual ~IAppSignalSource() = default;
 
-    virtual void subscribe(app::IAppSignalListener* listener, uint64_t mask) = 0;
-    virtual void unsubscribe(app::IAppSignalListener* listener) = 0;
+	virtual void subscribe(app::IAppSignalListener* listener, uint64_t mask) = 0;
+	virtual void unsubscribe(app::IAppSignalListener* listener)              = 0;
 };
 
 } // namespace tengen::app

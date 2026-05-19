@@ -1,9 +1,9 @@
 #pragma once
 
-#include "tengen/IChatSession.hpp"
-#include "tengen/IGameSession.hpp"
 #include "network/client.hpp"
 #include "tengen/IAppSignal.hpp"
+#include "tengen/IChatSession.hpp"
+#include "tengen/IGameSession.hpp"
 #include "tengen/eventHub.hpp"
 #include "tengen/position.hpp"
 

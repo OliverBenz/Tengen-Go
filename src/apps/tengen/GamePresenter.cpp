@@ -54,7 +54,7 @@ GamePresenter::~GamePresenter() {
 }
 
 void GamePresenter::addChatWindow(app::IChatSession& chat) {
-    m_chatPresenter  = std::make_unique<ChatPresenter>(chat, m_gameWidget.chatWidget());
+	m_chatPresenter = std::make_unique<ChatPresenter>(chat, m_gameWidget.chatWidget());
 }
 
 void GamePresenter::onAppEvent(const app::AppSignal signal) {

@@ -5,8 +5,8 @@
 #include <QMetaObject>
 #include <QObject>
 
-#include <vector>
 #include <format>
+#include <vector>
 
 namespace tengen {
 

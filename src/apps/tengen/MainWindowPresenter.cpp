@@ -7,7 +7,8 @@
 namespace tengen {
 
 MainWindowPresenter::MainWindowPresenter(gui::MainWindow& mainWindow) : m_mainWindow(mainWindow) {
-	QObject::connect(&m_mainWindow, &gui::MainWindow::connectRequested, &m_mainWindow, [this](const QString& hostIp) { onConnectRequested(hostIp.toStdString()); });
+	QObject::connect(&m_mainWindow, &gui::MainWindow::connectRequested, &m_mainWindow,
+	                 [this](const QString& hostIp) { onConnectRequested(hostIp.toStdString()); });
 	QObject::connect(&m_mainWindow, &gui::MainWindow::hostRequested, &m_mainWindow, [this](const unsigned boardSize) { onHostRequested(boardSize); });
 	QObject::connect(&m_mainWindow, &gui::MainWindow::shutdownRequested, &m_mainWindow, [this]() { onShutdownRequested(); });
 }
@@ -23,8 +24,8 @@ void MainWindowPresenter::onConnectRequested(const std::string& hostIp) {
 	auto session = std::make_unique<app::NetworkSession>();
 	session->connect(hostIp);
 
-	auto& game = static_cast<app::IGameSession&>(*session);
-	auto& chat = static_cast<app::IChatSession&>(*session);
+	auto& game      = static_cast<app::IGameSession&>(*session);
+	auto& chat      = static_cast<app::IChatSession&>(*session);
 	m_gamePresenter = std::make_unique<GamePresenter>(game, m_mainWindow.gameWidget());
 	m_gamePresenter->addChatWindow(chat);
 	m_game = std::move(session);
@@ -39,8 +40,8 @@ void MainWindowPresenter::onHostRequested(const unsigned boardSize) {
 	auto session = std::make_unique<app::NetworkSession>();
 	session->host(boardSize);
 
-	auto& game = static_cast<app::IGameSession&>(*session);
-	auto& chat = static_cast<app::IChatSession&>(*session);
+	auto& game      = static_cast<app::IGameSession&>(*session);
+	auto& chat      = static_cast<app::IChatSession&>(*session);
 	m_gamePresenter = std::make_unique<GamePresenter>(game, m_mainWindow.gameWidget());
 	m_gamePresenter->addChatWindow(chat);
 	m_game = std::move(session);

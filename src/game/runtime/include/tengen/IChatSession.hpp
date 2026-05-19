@@ -1,10 +1,10 @@
 #pragma once
 
-#include "tengen/IAppSignal.hpp"
 #include "model/player.hpp"
+#include "tengen/IAppSignal.hpp"
 
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace tengen::app {
 
@@ -16,10 +16,10 @@ struct ChatEntry {
 
 class IChatSession : public IAppSignalSource {
 public:
-    virtual ~IChatSession() = default;
+	virtual ~IChatSession() = default;
 
-    virtual void chat(const std::string& message) = 0;
-    virtual std::vector<ChatEntry> getChatSince(unsigned messageId) const = 0;
+	virtual void chat(const std::string& message)                         = 0;
+	virtual std::vector<ChatEntry> getChatSince(unsigned messageId) const = 0;
 };
 
-}
+} // namespace tengen::app
