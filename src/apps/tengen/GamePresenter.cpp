@@ -1,4 +1,5 @@
 #include "GamePresenter.hpp"
+#include "tengen/IGameSession.hpp"
 
 #include <QMetaObject>
 #include <QObject>
@@ -36,7 +37,7 @@ static QString gameStateText(const tengen::GameStatus status) {
 	}
 }
 
-GamePresenter::GamePresenter(app::SessionManager& game, gui::GameWidget& gameWidget) : m_game(game), m_gameWidget(gameWidget) {
+GamePresenter::GamePresenter(app::IGameSession& game, gui::GameWidget& gameWidget) : m_game(game), m_gameWidget(gameWidget) {
 	QObject::connect(&m_gameWidget, &gui::GameWidget::passEvent, &m_gameWidget, [this]() { this->onPassRequested(); });
 	QObject::connect(&m_gameWidget, &gui::GameWidget::resignEvent, &m_gameWidget, [this]() { this->onResignRequested(); });
 

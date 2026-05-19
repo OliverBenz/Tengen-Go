@@ -2,8 +2,9 @@
 
 #include "GamePresenter.hpp"
 #include "MainWindow.hpp"
-#include "tengen/sessionManager.hpp"
+#include "tengen/IGameSession.hpp"
 
+#include <string>
 #include <memory>
 
 namespace tengen {
@@ -13,9 +14,14 @@ public:
 	explicit MainWindowPresenter(gui::MainWindow& mainWindow);
 	~MainWindowPresenter();
 
+private: // slots
+    void onConnectRequested(const std::string& hostIp);
+    void onHostRequested(const unsigned boardSize);
+    void onShutdownRequested();
+
 private:
 	gui::MainWindow& m_mainWindow;
-	app::SessionManager m_game;
+	std::unique_ptr<app::IGameSession> m_game;
 	std::unique_ptr<GamePresenter> m_gamePresenter = nullptr;
 };
 

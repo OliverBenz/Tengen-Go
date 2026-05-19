@@ -1,16 +1,16 @@
 #include "ChatPresenter.hpp"
 
 #include "gui/chatWidget.hpp"
+#include "tengen/IGameSession.hpp"
 
 #include <QMetaObject>
 #include <QObject>
 
-#include <format>
 #include <vector>
 
 namespace tengen {
 
-ChatPresenter::ChatPresenter(app::SessionManager& game, gui::ChatWidget& chatWidget) : m_game(game), m_chatWidget(chatWidget) {
+ChatPresenter::ChatPresenter(app::IGameSession& game, gui::ChatWidget& chatWidget) : m_game(game), m_chatWidget(chatWidget) {
 	QObject::connect(&m_chatWidget, &gui::ChatWidget::chatEvent, &m_chatWidget, [this](const std::string& message) { this->m_game.chat(message); });
 
 	m_game.subscribe(this, app::AS_NewChat);

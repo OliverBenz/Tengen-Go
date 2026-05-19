@@ -4,8 +4,9 @@ set(targetName gameRuntime)
 
 # Get files to build
 set(headers
-    "${CMAKE_CURRENT_LIST_DIR}/include/tengen/sessionManager.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/include/tengen/networkSession.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/include/tengen/IAppSignalListener.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/include/tengen/IGameSession.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/include/tengen/eventHub.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/include/tengen/position.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/include/tengen/gameServer.hpp"
@@ -13,7 +14,7 @@ set(headers
 )
 
 set(sources
-    "${CMAKE_CURRENT_LIST_DIR}/sessionManager.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/networkSession.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/eventHub.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/position.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/gameServer.cpp"

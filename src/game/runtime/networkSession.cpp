@@ -1,4 +1,4 @@
-#include "tengen/sessionManager.hpp"
+#include "tengen/networkSession.hpp"
 
 #include "logging.hpp"
 #include "tengen/gameServer.hpp"
@@ -8,23 +8,23 @@
 
 namespace tengen::app {
 
-SessionManager::SessionManager() {
+NetworkSession::NetworkSession() {
 	m_network.registerHandler(this);
 }
-SessionManager::~SessionManager() {
+NetworkSession::~NetworkSession() {
 	disconnect();
 }
 
-void SessionManager::subscribe(IAppSignalListener* listener, uint64_t signalMask) {
+void NetworkSession::subscribe(IAppSignalListener* listener, uint64_t signalMask) {
 	m_eventHub.subscribe(listener, signalMask);
 }
 
-void SessionManager::unsubscribe(IAppSignalListener* listener) {
+void NetworkSession::unsubscribe(IAppSignalListener* listener) {
 	m_eventHub.unsubscribe(listener);
 }
 
 
-void SessionManager::connect(const std::string& hostIp) {
+void NetworkSession::connect(const std::string& hostIp) {
 	{
 		std::lock_guard<std::mutex> lock(m_stateMutex);
 		m_position.reset(9u);
@@ -41,7 +41,7 @@ void SessionManager::connect(const std::string& hostIp) {
 	m_eventHub.signal(AS_StateChange);
 }
 
-void SessionManager::host(unsigned boardSize) {
+void NetworkSession::host(unsigned boardSize) {
 	disconnect();
 
 	{
@@ -62,7 +62,7 @@ void SessionManager::host(unsigned boardSize) {
 	m_eventHub.signal(AS_StateChange);
 }
 
-void SessionManager::disconnect() {
+void NetworkSession::disconnect() {
 	m_network.disconnect();
 	if (m_localServer) {
 		m_localServer->stop();
@@ -82,7 +82,7 @@ void SessionManager::disconnect() {
 	m_eventHub.signal(AS_StateChange);
 }
 
-void SessionManager::shutdown() {
+void NetworkSession::shutdown() {
 	if (m_localServer) {
 		m_localServer->stop();
 		m_localServer.reset();
@@ -99,32 +99,32 @@ void SessionManager::shutdown() {
 }
 
 
-void SessionManager::tryPlace(unsigned x, unsigned y) {
+void NetworkSession::tryPlace(unsigned x, unsigned y) {
 	m_network.send(network::ClientPutStone{.c = {x, y}});
 }
-void SessionManager::tryResign() {
+void NetworkSession::tryResign() {
 	m_network.send(network::ClientResign{});
 }
-void SessionManager::tryPass() {
+void NetworkSession::tryPass() {
 	m_network.send(network::ClientPass{});
 }
-void SessionManager::chat(const std::string& message) {
+void NetworkSession::chat(const std::string& message) {
 	m_network.send(network::ClientChat{message});
 }
 
-GameStatus SessionManager::status() const {
+GameStatus NetworkSession::status() const {
 	std::lock_guard<std::mutex> lock(m_stateMutex);
 	return m_position.getStatus();
 }
-Board SessionManager::board() const {
+Board NetworkSession::board() const {
 	std::lock_guard<std::mutex> lock(m_stateMutex);
 	return m_position.getBoard();
 }
-Player SessionManager::currentPlayer() const {
+Player NetworkSession::currentPlayer() const {
 	std::lock_guard<std::mutex> lock(m_stateMutex);
 	return m_position.getPlayer();
 }
-std::vector<ChatEntry> SessionManager::getChatSince(const unsigned messageId) const {
+std::vector<ChatEntry> NetworkSession::getChatSince(const unsigned messageId) const {
 	std::lock_guard<std::mutex> lock(m_stateMutex);
 
 	// Find first entry with id > messageId
@@ -134,7 +134,7 @@ std::vector<ChatEntry> SessionManager::getChatSince(const unsigned messageId) co
 	return {it, m_chatHistory.end()};
 }
 
-void SessionManager::onGameUpdate(const network::ServerDelta& event) {
+void NetworkSession::onGameUpdate(const network::ServerDelta& event) {
 	GameStatus status         = GameStatus::Active;
 	GameStatus previousStatus = GameStatus::Active;
 	bool applied              = false;
@@ -168,7 +168,7 @@ void SessionManager::onGameUpdate(const network::ServerDelta& event) {
 		m_eventHub.signal(AS_StateChange);
 	}
 }
-void SessionManager::onGameConfig(const network::ServerGameConfig& event) {
+void NetworkSession::onGameConfig(const network::ServerGameConfig& event) {
 	bool initialized = false;
 	{
 		std::lock_guard<std::mutex> lock(m_stateMutex);
@@ -181,7 +181,7 @@ void SessionManager::onGameConfig(const network::ServerGameConfig& event) {
 	m_eventHub.signal(AS_PlayerChange);
 	m_eventHub.signal(AS_StateChange);
 }
-void SessionManager::onChatMessage(const network::ServerChat& event) {
+void NetworkSession::onChatMessage(const network::ServerChat& event) {
 	bool appended = false;
 	{
 		std::lock_guard<std::mutex> lock(m_stateMutex);
@@ -212,7 +212,7 @@ void SessionManager::onChatMessage(const network::ServerChat& event) {
 		m_eventHub.signal(AS_NewChat);
 	}
 }
-void SessionManager::onDisconnected() {
+void NetworkSession::onDisconnected() {
 	{
 		std::lock_guard<std::mutex> lock(m_stateMutex);
 		m_position.reset(9u);
