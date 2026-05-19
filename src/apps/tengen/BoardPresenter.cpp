@@ -1,4 +1,5 @@
 #include "BoardPresenter.hpp"
+#include "tengen/IGameSession.hpp"
 
 #include <QMetaObject>
 #include <QObject>
@@ -7,7 +8,7 @@
 
 namespace tengen {
 
-BoardPresenter::BoardPresenter(app::SessionManager& game, gui::BoardWidget& boardWidget) : m_game(game), m_boardWidget(boardWidget) {
+BoardPresenter::BoardPresenter(app::IGameSession& game, gui::BoardWidget& boardWidget) : m_game(game), m_boardWidget(boardWidget) {
 	QObject::connect(&m_boardWidget, &gui::BoardWidget::boardEvent, &m_boardWidget, [this](const gui::BoardWidgetEvent& event) { this->onBoardEvent(event); });
 	m_boardWidget.setBoard(m_game.board());
 	m_game.subscribe(this, app::AS_BoardChange);

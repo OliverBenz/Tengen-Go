@@ -1,5 +1,6 @@
 #pragma once
 
+#include "tengen/IGameSession.hpp"
 #include "network/client.hpp"
 #include "tengen/IAppSignalListener.hpp"
 #include "tengen/eventHub.hpp"
@@ -22,35 +23,36 @@ struct ChatEntry {
 
 //! Gets game stat delta and constructs a local representation of the game.
 //! Listeners can subscribe to certain signals, get notification when happens.
-//! Listeners then check which signal and query the updated data from this SessionManager.
-//! SessionManager is the local source of truth about the game state, GUI is just dumb renderer of this state.
-class SessionManager : public network::IClientHandler {
+//! Listeners then check which signal and query the updated data from this NetworkSession.
+//! NetworkSession is the local source of truth about the game state, GUI is just dumb renderer of this state.
+class NetworkSession : public network::IClientHandler, public IGameSession {
 public:
-	SessionManager();
-	~SessionManager();
+	NetworkSession();
+	~NetworkSession();
 
-	void subscribe(IAppSignalListener* listener, uint64_t signalMask);
-	void unsubscribe(IAppSignalListener* listener);
+	void subscribe(IAppSignalListener* listener, uint64_t signalMask) override;
+	void unsubscribe(IAppSignalListener* listener) override;
 
+	// TODO: Maybe the UI elements should have a const reference to 'Position'. (Position is data layer; NetworkSession is application layer)
+	//       Then position only has public getters and NetworkSession is a friend so it can update.
+	//       Then we could remove these getters.
+	//       NetworkSession updates Position. Position emits signals. Listeners query position for new data.
+	// Getters
+	GameStatus status() const override;
+	Board board() const override;
+	Player currentPlayer() const override;
+
+	void tryPlace(unsigned x, unsigned y) override;
+	void tryResign() override;
+	void tryPass() override;
+	void shutdown() override;
+
+	// Network interface
 	void connect(const std::string& hostIp);
 	void host(unsigned boardSize);
 	void disconnect();
-	void shutdown();
-
-	// Setters
-	void tryPlace(unsigned x, unsigned y);
-	void tryResign();
-	void tryPass();
 	void chat(const std::string& message);
 
-	// TODO: Maybe the UI elements should have a const reference to 'Position'. (Position is data layer; SessionManager is application layer)
-	//       Then position only has public getters and SessionManager is a friend so it can update.
-	//       Then we could remove these getters.
-	//       SessionManager updates Position. Position emits signals. Listeners query position for new data.
-	// Getters
-	GameStatus status() const;
-	Board board() const;
-	Player currentPlayer() const;
 	std::vector<ChatEntry> getChatSince(unsigned messageId) const;
 
 public: // Client listener handlers
