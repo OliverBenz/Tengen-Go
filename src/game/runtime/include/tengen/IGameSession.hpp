@@ -1,17 +1,14 @@
 #pragma once
 
-#include "tengen/IAppSignalListener.hpp"
+#include "tengen/IAppSignal.hpp"
 #include "model/board.hpp"
 #include "model/gameStatus.hpp"
 
 namespace tengen::app {
 
-class IGameSession {
+class IGameSession : public IAppSignalSource {
 public:
     virtual ~IGameSession() = default;
-
-    virtual void subscribe(app::IAppSignalListener* listener, uint64_t mask) = 0;
-    virtual void unsubscribe(app::IAppSignalListener* listener) = 0;
 
     virtual GameStatus status() const = 0;
     virtual Board board() const = 0;

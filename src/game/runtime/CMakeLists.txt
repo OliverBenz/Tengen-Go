@@ -5,7 +5,7 @@ set(targetName gameRuntime)
 # Get files to build
 set(headers
     "${CMAKE_CURRENT_LIST_DIR}/include/tengen/networkSession.hpp"
-    "${CMAKE_CURRENT_LIST_DIR}/include/tengen/IAppSignalListener.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/include/tengen/IAppSignal.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/include/tengen/IGameSession.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/include/tengen/IChatSession.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/include/tengen/eventHub.hpp"

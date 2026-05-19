@@ -3,7 +3,7 @@
 #include "tengen/IChatSession.hpp"
 #include "tengen/IGameSession.hpp"
 #include "network/client.hpp"
-#include "tengen/IAppSignalListener.hpp"
+#include "tengen/IAppSignal.hpp"
 #include "tengen/eventHub.hpp"
 #include "tengen/position.hpp"
 
