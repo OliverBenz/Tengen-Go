@@ -20,6 +20,9 @@ private: // slots
 	void onShutdownRequested();
 
 private:
+	void startOpenPlay();
+
+private:
 	gui::MainWindow& m_mainWindow;
 	std::unique_ptr<app::IGameSession> m_game{nullptr};
 	std::unique_ptr<GamePresenter> m_gamePresenter{nullptr};
