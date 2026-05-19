@@ -1,5 +1,6 @@
 #pragma once
 
+#include "tengen/IChatSession.hpp"
 #include "tengen/IGameSession.hpp"
 #include "network/client.hpp"
 #include "tengen/IAppSignalListener.hpp"
@@ -10,22 +11,15 @@
 #include <mutex>
 #include <string>
 #include <unordered_map>
-#include <vector>
 
 namespace tengen::app {
 class GameServer;
-
-struct ChatEntry {
-	Player player;
-	unsigned messageId;
-	std::string message;
-};
 
 //! Gets game stat delta and constructs a local representation of the game.
 //! Listeners can subscribe to certain signals, get notification when happens.
 //! Listeners then check which signal and query the updated data from this NetworkSession.
 //! NetworkSession is the local source of truth about the game state, GUI is just dumb renderer of this state.
-class NetworkSession : public network::IClientHandler, public IGameSession {
+class NetworkSession : public network::IClientHandler, public IGameSession, public IChatSession {
 public:
 	NetworkSession();
 	~NetworkSession();
@@ -51,9 +45,10 @@ public:
 	void connect(const std::string& hostIp);
 	void host(unsigned boardSize);
 	void disconnect();
-	void chat(const std::string& message);
 
-	std::vector<ChatEntry> getChatSince(unsigned messageId) const;
+	// Chat
+	void chat(const std::string& message) override;
+	std::vector<ChatEntry> getChatSince(unsigned messageId) const override;
 
 public: // Client listener handlers
 	void onGameUpdate(const network::ServerDelta& event) override;

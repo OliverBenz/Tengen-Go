@@ -7,6 +7,7 @@ set(headers
     "${CMAKE_CURRENT_LIST_DIR}/include/tengen/networkSession.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/include/tengen/IAppSignalListener.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/include/tengen/IGameSession.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/include/tengen/IChatSession.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/include/tengen/eventHub.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/include/tengen/position.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/include/tengen/gameServer.hpp"
