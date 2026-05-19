@@ -1,8 +1,11 @@
 #include "MainWindowPresenter.hpp"
 
+#include "GamePresenter.hpp"
 #include "tengen/networkSession.hpp"
+#include "tengen/openSession.hpp"
 
 #include <QObject>
+#include <memory>
 
 namespace tengen {
 
@@ -11,15 +14,19 @@ MainWindowPresenter::MainWindowPresenter(gui::MainWindow& mainWindow) : m_mainWi
 	                 [this](const QString& hostIp) { onConnectRequested(hostIp.toStdString()); });
 	QObject::connect(&m_mainWindow, &gui::MainWindow::hostRequested, &m_mainWindow, [this](const unsigned boardSize) { onHostRequested(boardSize); });
 	QObject::connect(&m_mainWindow, &gui::MainWindow::shutdownRequested, &m_mainWindow, [this]() { onShutdownRequested(); });
+
+	startOpenPlay();
 }
 
 MainWindowPresenter::~MainWindowPresenter() = default;
 
+void MainWindowPresenter::startOpenPlay() {
+	m_game          = std::make_unique<app::OpenSession>(9u);
+	m_gamePresenter = std::make_unique<GamePresenter>(*m_game, m_mainWindow.gameWidget());
+}
+
 void MainWindowPresenter::onConnectRequested(const std::string& hostIp) {
-	if (m_game) {
-		// Session already in progress
-		return;
-	}
+	onShutdownRequested();
 
 	auto session = std::make_unique<app::NetworkSession>();
 	session->connect(hostIp);
@@ -32,10 +39,7 @@ void MainWindowPresenter::onConnectRequested(const std::string& hostIp) {
 }
 
 void MainWindowPresenter::onHostRequested(const unsigned boardSize) {
-	if (m_game) {
-		// Session already in progress
-		return;
-	}
+	onShutdownRequested();
 
 	auto session = std::make_unique<app::NetworkSession>();
 	session->host(boardSize);
