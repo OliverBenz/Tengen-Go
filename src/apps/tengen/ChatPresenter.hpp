@@ -16,7 +16,7 @@ public:
 	void onAppEvent(app::AppSignal signal) override; //!< Called by the game thread. Ensure not blocking.
 
 private:
-	app::IChatSession& m_game;
+	app::IChatSession& m_chat;
 	gui::ChatWidget& m_chatWidget;
 
 	unsigned m_lastChatMessageId = 0u;
