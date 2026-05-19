@@ -4,8 +4,8 @@
 #include "MainWindow.hpp"
 #include "tengen/IGameSession.hpp"
 
-#include <string>
 #include <memory>
+#include <string>
 
 namespace tengen {
 
@@ -15,9 +15,9 @@ public:
 	~MainWindowPresenter();
 
 private: // slots
-    void onConnectRequested(const std::string& hostIp);
-    void onHostRequested(const unsigned boardSize);
-    void onShutdownRequested();
+	void onConnectRequested(const std::string& hostIp);
+	void onHostRequested(const unsigned boardSize);
+	void onShutdownRequested();
 
 private:
 	gui::MainWindow& m_mainWindow;
