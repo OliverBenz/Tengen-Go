@@ -1,6 +1,6 @@
 #pragma once
 
-#include "tengen/IGameSession.hpp"
+#include "tengen/IChatSession.hpp"
 
 namespace tengen {
 
@@ -10,13 +10,13 @@ class ChatWidget;
 
 class ChatPresenter : public app::IAppSignalListener {
 public:
-	ChatPresenter(app::IGameSession& game, gui::ChatWidget& chatWidget);
+	ChatPresenter(app::IChatSession& chat, gui::ChatWidget& chatWidget);
 	~ChatPresenter() override;
 
 	void onAppEvent(app::AppSignal signal) override; //!< Called by the game thread. Ensure not blocking.
 
 private:
-	app::IGameSession& m_game;
+	app::IChatSession& m_game;
 	gui::ChatWidget& m_chatWidget;
 
 	unsigned m_lastChatMessageId = 0u;

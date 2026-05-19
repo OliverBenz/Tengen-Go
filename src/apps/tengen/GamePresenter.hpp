@@ -3,6 +3,7 @@
 #include "BoardPresenter.hpp"
 #include "ChatPresenter.hpp"
 #include "gui/gameWidget.hpp"
+#include "tengen/IChatSession.hpp"
 #include "tengen/IGameSession.hpp"
 
 #include <memory>
@@ -11,7 +12,7 @@ namespace tengen {
 
 class GamePresenter : public app::IAppSignalListener {
 public:
-	GamePresenter(app::IGameSession& game, gui::GameWidget& gameWidget);
+	GamePresenter(app::IGameSession& game, app::IChatSession* chat, gui::GameWidget& gameWidget);
 	~GamePresenter() override;
 
 	void onAppEvent(app::AppSignal signal) override; //!< Called by the game thread. Ensure not blocking.
@@ -20,6 +21,8 @@ public:
 
 private:
 	app::IGameSession& m_game;
+	app::IChatSession* m_chat{nullptr};
+
 	gui::GameWidget& m_gameWidget;
 	std::unique_ptr<BoardPresenter> m_boardPresenter = nullptr;
 	std::unique_ptr<ChatPresenter> m_chatPresenter   = nullptr;
