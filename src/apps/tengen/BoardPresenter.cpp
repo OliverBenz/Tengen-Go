@@ -9,7 +9,7 @@
 namespace tengen {
 
 BoardPresenter::BoardPresenter(app::IGameSession& game, gui::BoardWidget& boardWidget) : m_game(game), m_boardWidget(boardWidget) {
-	QObject::connect(&m_boardWidget, &gui::BoardWidget::boardEvent, &m_boardWidget, [this](const gui::BoardWidgetEvent& event) { this->onBoardEvent(event); });
+	QObject::connect(&m_boardWidget, &gui::BoardWidget::boardEvent, this, &BoardPresenter::onBoardEvent);
 	m_boardWidget.setBoard(m_game.board());
 	m_game.subscribe(this, app::AS_BoardChange);
 }
