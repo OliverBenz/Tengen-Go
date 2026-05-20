@@ -12,7 +12,7 @@ void Position::reset(const std::size_t boardSize) {
 	m_board  = Board{boardSize};
 }
 
-bool Position::init(const network::ServerGameConfig& event) {
+bool Position::init(const std::size_t boardSize) {
 	if (m_status == GameStatus::Active) {
 		return false;
 	}
@@ -21,24 +21,24 @@ bool Position::init(const network::ServerGameConfig& event) {
 	m_moveId = 0u;
 	m_status = GameStatus::Active;
 	m_player = Player::Black;
-	m_board  = Board{event.boardSize};
+	m_board  = Board{boardSize};
 	return true;
 }
 
-bool Position::apply(const network::ServerDelta& delta) {
+bool Position::apply(const GameDelta& delta) {
 	if (!isDeltaApplicable(delta)) {
 		return false;
 	}
 
-	m_moveId = delta.turn;
-	m_status = delta.status == network::GameStatus::Active ? GameStatus::Active : GameStatus::Done;
-	m_player = delta.next == network::Seat::Black ? Player::Black : Player::White;
+	m_moveId = delta.moveId;
+	m_status = delta.gameActive ? GameStatus::Active : GameStatus::Done;
+	m_player = delta.nextPlayer;
 
-	if (delta.action == network::ServerAction::Place) {
+	if (delta.action == GameAction::Place) {
 		if (delta.coord) {
-			m_board.place(Coord{delta.coord->x, delta.coord->y}, delta.seat == network::Seat::Black ? Board::Stone::Black : Board::Stone::White);
+			m_board.place(Coord{delta.coord->x, delta.coord->y}, toStone(delta.player));
 			for (const auto c: delta.captures) {
-				m_board.remove({c.x, c.y});
+				m_board.remove(c);
 			}
 		} else {
 			Logger().Log(Logging::LogLevel::Warning, "Game delta missing place coordinate; skipping board update.");
@@ -62,7 +62,7 @@ Player Position::getPlayer() const {
 	return m_player;
 }
 
-bool Position::isDeltaApplicable(const network::ServerDelta& delta) {
+bool Position::isDeltaApplicable(const GameDelta& delta) {
 	// No gamestate updates before game is active (received game configuration).
 	if (m_status != GameStatus::Active) {
 		Logger().Log(Logging::LogLevel::Error, "Received game update before game is active.");
@@ -70,19 +70,13 @@ bool Position::isDeltaApplicable(const network::ServerDelta& delta) {
 	}
 
 	// Game delta for the proper move.
-	if (delta.turn <= m_moveId) {
+	if (delta.moveId <= m_moveId) {
 		Logger().Log(Logging::LogLevel::Error, "Game delta sent to client twice.");
 		return false;
-	} else if (delta.turn > m_moveId + 1) {
+	} else if (delta.moveId > m_moveId + 1) {
 		Logger().Log(Logging::LogLevel::Error, "Game delta missing updates; applying latest update only.");
 
 		// TODO: Query missing move and apply update first.
-		return false;
-	}
-
-	// Player values valid
-	if (!network::isPlayer(delta.seat) || !network::isPlayer(delta.next)) {
-		Logger().Log(Logging::LogLevel::Error, "Received game update from non player seat.");
 		return false;
 	}
 

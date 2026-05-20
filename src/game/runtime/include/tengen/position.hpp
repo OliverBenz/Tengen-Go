@@ -1,9 +1,9 @@
 #pragma once
 
+#include "core/gameEvent.hpp"
 #include "model/board.hpp"
 #include "model/gameStatus.hpp"
 #include "model/player.hpp"
-#include "network/nwEvents.hpp"
 
 namespace tengen::app {
 
@@ -11,17 +11,19 @@ class Position {
 public:
 	Position() = default;
 
-	void reset(std::size_t boardSize);                 //!< Reset the position to some default data.
-	bool init(const network::ServerGameConfig& event); //!< Initialize the given position. Returns true if it changed state.
-	bool apply(const network::ServerDelta& delta);     //!< Apply a delta to the current position if ok.
-	void setStatus(GameStatus status);                 //!< Update the status.
+	void reset(std::size_t boardSize); //!< Reset the position to some default data.
+
+	// TODO: This init will become GameConfig onece we handle Rulesets, clock type, etc.
+	bool init(const std::size_t boardSize); //!< Initialize the given position. Returns true if it changed state.
+	bool apply(const GameDelta& delta);     //!< Apply a delta to the current position if ok.
+	void setStatus(GameStatus status);      //!< Update the status.
 
 	const Board& getBoard() const;
 	GameStatus getStatus() const;
 	Player getPlayer() const;
 
 private:
-	bool isDeltaApplicable(const network::ServerDelta& delta); //!< Check if the delta is ok to use for the position update.
+	bool isDeltaApplicable(const GameDelta& delta); //!< Check if the delta is ok to use for the position update.
 
 private:
 	unsigned m_moveId{0};                  //!< Last move id in game.
