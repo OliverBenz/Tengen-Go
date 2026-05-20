@@ -23,6 +23,7 @@ public:
 
 	void setCurrentPlayerText(const QString& text);
 	void setGameStateText(const QString& text);
+	void setChatEnabled(bool enabled);
 
 signals:
 	void passEvent();
@@ -36,6 +37,7 @@ private:
 	BoardWidget* m_boardWidget = nullptr;
 	ChatWidget* m_chatWidget   = nullptr;
 	QTabWidget* m_sideTabs     = nullptr;
+	int m_chatTabIndex         = -1;
 
 	QLabel* m_statusLabel     = nullptr; //!< Game status text (active, finished).
 	QLabel* m_currPlayerLabel = nullptr; //!< Current player text.

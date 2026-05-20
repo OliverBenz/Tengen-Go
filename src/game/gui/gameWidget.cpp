@@ -36,6 +36,19 @@ void GameWidget::setGameStateText(const QString& text) {
 	m_statusLabel->setText(text);
 }
 
+void GameWidget::setChatEnabled(const bool enabled) {
+	if (!m_sideTabs || !m_chatWidget || m_chatTabIndex < 0) {
+		return;
+	}
+
+	if (!enabled && m_sideTabs->currentIndex() == m_chatTabIndex) {
+		m_sideTabs->setCurrentIndex(0);
+	}
+
+	m_sideTabs->setTabEnabled(m_chatTabIndex, enabled);
+	m_chatWidget->setEnabled(enabled);
+}
+
 void GameWidget::buildNetworkLayout() {
 	auto* mainLayout = new QVBoxLayout(this);
 	mainLayout->setContentsMargins(12, 12, 12, 12);
@@ -64,7 +77,7 @@ void GameWidget::buildNetworkLayout() {
 	chatLayout->setContentsMargins(0, 0, 0, 0);
 	m_chatWidget = new ChatWidget(chatTab);
 	chatLayout->addWidget(m_chatWidget, 1);
-	m_sideTabs->addTab(chatTab, "Chat");
+	m_chatTabIndex = m_sideTabs->addTab(chatTab, "Chat");
 
 	contentLayout->addWidget(m_sideTabs, 1);
 	mainLayout->addLayout(contentLayout, 1);
