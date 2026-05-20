@@ -6,11 +6,15 @@
 #include "tengen/IChatSession.hpp"
 #include "tengen/IGameSession.hpp"
 
+#include <QObject>
+
 #include <memory>
 
 namespace tengen {
 
-class GamePresenter : public app::IAppSignalListener {
+class GamePresenter : public QObject, public app::IAppSignalListener {
+	Q_OBJECT
+
 public:
 	GamePresenter(app::IGameSession& game, gui::GameWidget& gameWidget);
 	~GamePresenter() override;
@@ -18,8 +22,10 @@ public:
 	void addChatWindow(app::IChatSession& chat);
 
 	void onAppEvent(app::AppSignal signal) override; //!< Called by the game thread. Ensure not blocking.
-	void onPassRequested();                          //!< Handle pass event from Board Widget.
-	void onResignRequested();                        //!< Handle resign event from Board Widget.
+
+private slots:
+	void onPassRequested();   //!< Handle pass event from Board Widget.
+	void onResignRequested(); //!< Handle resign event from Board Widget.
 
 private:
 	app::IGameSession& m_game;

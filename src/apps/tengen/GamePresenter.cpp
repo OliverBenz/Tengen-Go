@@ -38,8 +38,8 @@ static QString gameStateText(const tengen::GameStatus status) {
 }
 
 GamePresenter::GamePresenter(app::IGameSession& game, gui::GameWidget& gameWidget) : m_game(game), m_gameWidget(gameWidget) {
-	QObject::connect(&m_gameWidget, &gui::GameWidget::passEvent, &m_gameWidget, [this]() { this->onPassRequested(); });
-	QObject::connect(&m_gameWidget, &gui::GameWidget::resignEvent, &m_gameWidget, [this]() { this->onResignRequested(); });
+	QObject::connect(&m_gameWidget, &gui::GameWidget::passEvent, this, &GamePresenter::onPassRequested);
+	QObject::connect(&m_gameWidget, &gui::GameWidget::resignEvent, this, &GamePresenter::onResignRequested);
 
 	m_boardPresenter = std::make_unique<BoardPresenter>(m_game, m_gameWidget.boardWidget());
 	m_gameWidget.setChatEnabled(false);
@@ -51,6 +51,8 @@ GamePresenter::GamePresenter(app::IGameSession& game, gui::GameWidget& gameWidge
 }
 
 GamePresenter::~GamePresenter() {
+	m_chatPresenter.reset();
+	m_boardPresenter.reset();
 	m_game.unsubscribe(this);
 }
 

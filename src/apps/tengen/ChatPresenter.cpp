@@ -11,7 +11,7 @@
 namespace tengen {
 
 ChatPresenter::ChatPresenter(app::IChatSession& chat, gui::ChatWidget& chatWidget) : m_chat(chat), m_chatWidget(chatWidget) {
-	QObject::connect(&m_chatWidget, &gui::ChatWidget::chatEvent, &m_chatWidget, [this](const std::string& message) { m_chat.chat(message); });
+	QObject::connect(&m_chatWidget, &gui::ChatWidget::chatEvent, this, &ChatPresenter::onChatRequested);
 
 	m_chat.subscribe(this, app::AS_NewChat);
 	onAppEvent(app::AS_NewChat);
@@ -19,6 +19,10 @@ ChatPresenter::ChatPresenter(app::IChatSession& chat, gui::ChatWidget& chatWidge
 
 ChatPresenter::~ChatPresenter() {
 	m_chat.unsubscribe(this);
+}
+
+void ChatPresenter::onChatRequested(const std::string& message) {
+	m_chat.chat(message);
 }
 
 void ChatPresenter::onAppEvent(const app::AppSignal signal) {
