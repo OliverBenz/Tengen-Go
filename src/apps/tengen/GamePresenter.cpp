@@ -42,6 +42,7 @@ GamePresenter::GamePresenter(app::IGameSession& game, gui::GameWidget& gameWidge
 	QObject::connect(&m_gameWidget, &gui::GameWidget::resignEvent, &m_gameWidget, [this]() { this->onResignRequested(); });
 
 	m_boardPresenter = std::make_unique<BoardPresenter>(m_game, m_gameWidget.boardWidget());
+	m_gameWidget.setChatEnabled(false);
 
 	m_gameWidget.setCurrentPlayerText(currentPlayerText(m_game.currentPlayer()));
 	m_gameWidget.setGameStateText(gameStateText(m_game.status()));
@@ -55,6 +56,7 @@ GamePresenter::~GamePresenter() {
 
 void GamePresenter::addChatWindow(app::IChatSession& chat) {
 	m_chatPresenter = std::make_unique<ChatPresenter>(chat, m_gameWidget.chatWidget());
+	m_gameWidget.setChatEnabled(true);
 }
 
 void GamePresenter::onAppEvent(const app::AppSignal signal) {
