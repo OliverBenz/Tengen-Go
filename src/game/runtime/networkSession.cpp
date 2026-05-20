@@ -1,12 +1,40 @@
 #include "tengen/networkSession.hpp"
 
+#include "core/gameEvent.hpp"
 #include "logging.hpp"
+#include "network/types.hpp"
 #include "tengen/gameServer.hpp"
 
 #include <algorithm>
 #include <cassert>
 
 namespace tengen::app {
+
+// TODO: Don't like this copying. Find better way.
+GameDelta toGameDelta(const network::ServerDelta& event) {
+	GameAction action = GameAction::Place;
+	switch (event.action) {
+	case network::ServerAction::Place:
+		action = GameAction::Place;
+		break;
+	case network::ServerAction::Pass:
+		action = GameAction::Pass;
+		break;
+	case network::ServerAction::Resign:
+		action = GameAction::Resign;
+		break;
+	default:
+		assert(false);
+	}
+
+	return {.moveId     = event.turn,
+	        .action     = action,
+	        .player     = event.seat == network::Seat::Black ? Player::Black : Player::White,
+	        .coord      = event.coord,
+	        .captures   = event.captures,
+	        .nextPlayer = event.next == network::Seat::Black ? Player::Black : Player::White,
+	        .gameActive = event.status == network::GameStatus::Active};
+}
 
 NetworkSession::NetworkSession() {
 	m_network.registerHandler(this);
@@ -135,13 +163,20 @@ std::vector<ChatEntry> NetworkSession::getChatSince(const unsigned messageId) co
 }
 
 void NetworkSession::onGameUpdate(const network::ServerDelta& event) {
+	// Player values valid
+	if (!network::isPlayer(event.seat) || !network::isPlayer(event.next)) {
+		Logger().Log(Logging::LogLevel::Error, "Received game update from non player seat.");
+		return;
+	}
+
+	// Update Position
 	GameStatus status         = GameStatus::Active;
 	GameStatus previousStatus = GameStatus::Active;
 	bool applied              = false;
 	{
 		std::lock_guard<std::mutex> lock(m_stateMutex);
 		previousStatus = m_position.getStatus();
-		applied        = m_position.apply(event);
+		applied        = m_position.apply(toGameDelta(event));
 		status         = m_position.getStatus(); // For signalling later
 	}
 
@@ -172,7 +207,7 @@ void NetworkSession::onGameConfig(const network::ServerGameConfig& event) {
 	bool initialized = false;
 	{
 		std::lock_guard<std::mutex> lock(m_stateMutex);
-		initialized = m_position.init(event);
+		initialized = m_position.init(event.boardSize);
 	}
 	if (!initialized) {
 		return;
