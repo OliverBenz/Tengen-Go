@@ -4,18 +4,20 @@
 #include "MainWindow.hpp"
 #include "tengen/IGameSession.hpp"
 
+#include <QObject>
 #include <memory>
-#include <string>
 
 namespace tengen {
 
-class MainWindowPresenter {
+class MainWindowPresenter : public QObject {
+	Q_OBJECT
+
 public:
 	explicit MainWindowPresenter(gui::MainWindow& mainWindow);
-	~MainWindowPresenter();
+	~MainWindowPresenter() override;
 
-private: // slots
-	void onConnectRequested(const std::string& hostIp);
+private slots:
+	void onConnectRequested(const QString& hostIp);
 	void onHostRequested(const unsigned boardSize);
 	void onShutdownRequested();
 

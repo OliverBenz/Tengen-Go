@@ -9,11 +9,10 @@
 
 namespace tengen {
 
-MainWindowPresenter::MainWindowPresenter(gui::MainWindow& mainWindow) : m_mainWindow(mainWindow) {
-	QObject::connect(&m_mainWindow, &gui::MainWindow::connectRequested, &m_mainWindow,
-	                 [this](const QString& hostIp) { onConnectRequested(hostIp.toStdString()); });
-	QObject::connect(&m_mainWindow, &gui::MainWindow::hostRequested, &m_mainWindow, [this](const unsigned boardSize) { onHostRequested(boardSize); });
-	QObject::connect(&m_mainWindow, &gui::MainWindow::shutdownRequested, &m_mainWindow, [this]() { onShutdownRequested(); });
+MainWindowPresenter::MainWindowPresenter(gui::MainWindow& mainWindow) : QObject(nullptr), m_mainWindow(mainWindow) {
+	QObject::connect(&m_mainWindow, &gui::MainWindow::connectRequested, this, &MainWindowPresenter::onConnectRequested);
+	QObject::connect(&m_mainWindow, &gui::MainWindow::hostRequested, this, &MainWindowPresenter::onHostRequested);
+	QObject::connect(&m_mainWindow, &gui::MainWindow::shutdownRequested, this, &MainWindowPresenter::onShutdownRequested);
 
 	startOpenPlay();
 }
@@ -25,11 +24,11 @@ void MainWindowPresenter::startOpenPlay() {
 	m_gamePresenter = std::make_unique<GamePresenter>(*m_game, m_mainWindow.gameWidget());
 }
 
-void MainWindowPresenter::onConnectRequested(const std::string& hostIp) {
+void MainWindowPresenter::onConnectRequested(const QString& hostIp) {
 	onShutdownRequested();
 
 	auto session = std::make_unique<app::NetworkSession>();
-	session->connect(hostIp);
+	session->connect(hostIp.toStdString());
 
 	auto& game      = static_cast<app::IGameSession&>(*session);
 	auto& chat      = static_cast<app::IChatSession&>(*session);
