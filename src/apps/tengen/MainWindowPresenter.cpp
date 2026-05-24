@@ -18,7 +18,9 @@ MainWindowPresenter::MainWindowPresenter(gui::MainWindow& mainWindow) : m_mainWi
 	startOpenPlay();
 }
 
-MainWindowPresenter::~MainWindowPresenter() = default;
+MainWindowPresenter::~MainWindowPresenter() {
+	onShutdownRequested();
+}
 
 void MainWindowPresenter::startOpenPlay() {
 	m_game          = std::make_unique<app::OpenSession>(9u, m_dispatcher);
@@ -53,9 +55,10 @@ void MainWindowPresenter::onHostRequested(const unsigned boardSize) {
 
 void MainWindowPresenter::onShutdownRequested() {
 	if (m_game) {
-		m_gamePresenter = nullptr; // Destroy before m_game
+		m_gamePresenter.reset(); // Destroy before m_game
 		m_game->shutdown();
-		m_game = nullptr;
+		m_dispatcher.flush();
+		m_game.reset();
 	}
 }
 

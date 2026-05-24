@@ -40,7 +40,7 @@ NetworkSession::NetworkSession(const IDispatcher& dispatcher) : m_eventHub(dispa
 	m_network.registerHandler(this);
 }
 NetworkSession::~NetworkSession() {
-	disconnect();
+	shutdown();
 }
 
 void NetworkSession::subscribe(IAppSignalListener* listener, uint64_t signalMask) {

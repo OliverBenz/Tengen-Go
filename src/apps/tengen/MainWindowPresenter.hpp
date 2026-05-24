@@ -25,10 +25,9 @@ private:
 
 private:
 	gui::MainWindow& m_mainWindow;
+	QtDispatcher m_dispatcher; // Declare before game to ensure proper lifetime.
 	std::unique_ptr<app::IGameSession> m_game{nullptr};
 	std::unique_ptr<GamePresenter> m_gamePresenter{nullptr};
-
-	QtDispatcher m_dispatcher;
 };
 
 } // namespace tengen
