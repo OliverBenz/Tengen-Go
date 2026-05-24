@@ -67,12 +67,18 @@ void BoardRenderer::updateStoneTextures() {
 	m_scaledWhite = m_textureWhite.scaled(targetSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
 }
 
-void BoardRenderer::draw(QPainter& painter, const Board& board) const {
+void BoardRenderer::draw(QPainter& painter, const Board& board, const Ghost& ghost) const {
 	if (!isReady()) {
 		return;
 	}
 
 	drawBackground(painter);
+	if (ghost.draw) {
+		painter.save();
+		painter.setOpacity(0.45);
+		drawStone(painter, ghost.coord.x, ghost.coord.y, ghost.colour);
+		painter.restore();
+	}
 	drawStones(painter, board);
 }
 
@@ -133,7 +139,7 @@ bool BoardRenderer::pixelToCoord(int pX, int pY, Coord& coord) const {
 }
 
 bool BoardRenderer::pixelToCoord(const int px, unsigned& coord) const {
-	static constexpr float TOLERANCE = 0.3f; // To avoid accidental placement of stones.
+	static constexpr float TOLERANCE = 0.4f; // To avoid accidental placement of stones.
 
 	if (m_stoneSize == 0) {
 		return false;

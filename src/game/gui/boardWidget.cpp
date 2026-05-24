@@ -29,7 +29,7 @@ BoardWidgetEvent BoardWidgetEvent::resign() {
 BoardWidget::BoardWidget(QWidget* parent)
     : QWidget(parent), m_board(9u), m_boardRenderer{std::make_unique<BoardRenderer>(static_cast<unsigned>(m_board.size()))} {
 	setFocusPolicy(Qt::StrongFocus); // Required to get key events.
-	setMouseTracking(false);
+	setMouseTracking(true);
 }
 
 BoardWidget::~BoardWidget() = default;
@@ -48,6 +48,18 @@ void BoardWidget::setBoard(const Board& board) {
 	update();
 }
 
+void BoardWidget::setCurrentPlayer(const Player player) {
+	const auto currentPlayer = toStone(player);
+	if (m_currentPlayer == currentPlayer) {
+		return;
+	}
+
+	m_currentPlayer = currentPlayer;
+	if (m_ghostStoneDraw) {
+		update();
+	}
+}
+
 void BoardWidget::resizeEvent(QResizeEvent* event) {
 	QWidget::resizeEvent(event);
 
@@ -63,6 +75,26 @@ void BoardWidget::mouseReleaseEvent(QMouseEvent* event) {
 	}
 
 	QWidget::mouseReleaseEvent(event);
+}
+
+void BoardWidget::mouseMoveEvent(QMouseEvent* event) {
+	const auto sizePx = boardPixelSize();
+	const auto local  = event->pos() - boardOffset(sizePx);
+
+	Coord newGhost{};
+	// Ghost is valid when 1) mouse in board area 2) Mouse maps to a valid coordinate.
+	bool ghostValid = sizePx != 0u && local.x() >= 0 && local.y() >= 0 && local.x() < static_cast<int>(sizePx) && local.y() < static_cast<int>(sizePx);
+	if (ghostValid) {
+		ghostValid &= m_boardRenderer->pixelToCoord(local.x(), local.y(), newGhost);
+	}
+
+	// Update only if old state differs from new
+	if (m_ghostStoneDraw != ghostValid || (ghostValid && (m_ghostStone.x != newGhost.x || m_ghostStone.y != newGhost.y))) {
+		m_ghostStone     = newGhost;
+		m_ghostStoneDraw = ghostValid;
+		update();
+	}
+	event->accept();
 }
 
 void BoardWidget::keyReleaseEvent(QKeyEvent* event) {
@@ -123,7 +155,7 @@ void BoardWidget::renderBoard() {
 	painter.fillRect(rect(), QColor(20, 20, 20));
 	painter.save();
 	painter.translate(offset); // Center in drawing area
-	m_boardRenderer->draw(painter, m_board);
+	m_boardRenderer->draw(painter, m_board, {m_ghostStone, m_currentPlayer, m_ghostStoneDraw});
 	painter.restore();
 }
 

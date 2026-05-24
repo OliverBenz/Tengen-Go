@@ -11,10 +11,17 @@ class BoardRenderer {
 public:
 	explicit BoardRenderer(unsigned nodes);
 
+	//! Ghost stone -> Opacity stone where mouse is positioned.
+	struct Ghost {
+		Coord coord;         //!< Coord of ghost stone if exists.
+		Board::Stone colour; //!< Colour of ghost stone.
+		bool draw;           //!< Draw a ghost stone or not.
+	};
+
 	unsigned nodes() const;
 	void setNodes(unsigned nodes);
 	void setBoardSizePx(unsigned boardSizePx);
-	void draw(QPainter& painter, const Board& board) const;
+	void draw(QPainter& painter, const Board& board, const Ghost& ghost) const;
 	bool isReady() const;
 
 	//! Try to convert pixel values to a board coordinate.
