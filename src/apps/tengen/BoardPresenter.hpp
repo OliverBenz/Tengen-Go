@@ -14,7 +14,7 @@ public:
 	BoardPresenter(app::IGameSession& game, gui::BoardWidget& boardWidget);
 	~BoardPresenter() override;
 
-	void onAppEvent(app::AppSignal signal) override; //!< Called by the game thread. Ensure not blocking.
+	void onAppEvent(app::AppSignalMask signal) override; //!< Called by the game thread. Ensure not blocking.
 
 private slots:
 	void onBoardEvent(const gui::BoardWidgetEvent& event);

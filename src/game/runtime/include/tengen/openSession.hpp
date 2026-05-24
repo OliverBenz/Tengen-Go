@@ -14,7 +14,7 @@ namespace tengen::app {
 //! Free play locally you control both players.
 class OpenSession : public IGameSession, public IGameStateListener {
 public:
-	OpenSession(std::size_t boardSize);
+	OpenSession(std::size_t boardSize, const IDispatcher& dispatcher);
 	~OpenSession() override;
 
 	// GameSession Interface

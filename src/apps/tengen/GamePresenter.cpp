@@ -1,4 +1,5 @@
 #include "GamePresenter.hpp"
+#include "tengen/IAppSignal.hpp"
 #include "tengen/IGameSession.hpp"
 
 #include <QMetaObject>
@@ -61,21 +62,15 @@ void GamePresenter::addChatWindow(app::IChatSession& chat) {
 	m_gameWidget.setChatEnabled(true);
 }
 
-void GamePresenter::onAppEvent(const app::AppSignal signal) {
-	auto* widget = &m_gameWidget;
-	switch (signal) {
-	case app::AS_PlayerChange: {
+void GamePresenter::onAppEvent(const app::AppSignalMask signal) {
+	if (signal & app::AS_PlayerChange) {
 		const auto text = currentPlayerText(m_game.currentPlayer());
-		QMetaObject::invokeMethod(widget, [widget, text]() { widget->setCurrentPlayerText(text); }, Qt::QueuedConnection);
-		return;
+		m_gameWidget.setCurrentPlayerText(text);
 	}
-	case app::AS_StateChange: {
+
+	if (signal & app::AS_StateChange) {
 		const auto text = gameStateText(m_game.status());
-		QMetaObject::invokeMethod(widget, [widget, text]() { widget->setGameStateText(text); }, Qt::QueuedConnection);
-		return;
-	}
-	default:
-		return;
+		m_gameWidget.setGameStateText(text);
 	}
 }
 

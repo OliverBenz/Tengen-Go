@@ -17,7 +17,7 @@ public:
 	ChatPresenter(app::IChatSession& chat, gui::ChatWidget& chatWidget);
 	~ChatPresenter() override;
 
-	void onAppEvent(app::AppSignal signal) override; //!< Called by the game thread. Ensure not blocking.
+	void onAppEvent(app::AppSignalMask signal) override; //!< Called by the game thread. Ensure not blocking.
 
 private slots:
 	void onChatRequested(const std::string& message);

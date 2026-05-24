@@ -21,14 +21,14 @@ MainWindowPresenter::MainWindowPresenter(gui::MainWindow& mainWindow) : m_mainWi
 MainWindowPresenter::~MainWindowPresenter() = default;
 
 void MainWindowPresenter::startOpenPlay() {
-	m_game          = std::make_unique<app::OpenSession>(9u);
+	m_game          = std::make_unique<app::OpenSession>(9u, m_dispatcher);
 	m_gamePresenter = std::make_unique<GamePresenter>(*m_game, m_mainWindow.gameWidget());
 }
 
 void MainWindowPresenter::onConnectRequested(const std::string& hostIp) {
 	onShutdownRequested();
 
-	auto session = std::make_unique<app::NetworkSession>();
+	auto session = std::make_unique<app::NetworkSession>(m_dispatcher);
 	session->connect(hostIp);
 
 	auto& game      = static_cast<app::IGameSession&>(*session);
@@ -41,7 +41,7 @@ void MainWindowPresenter::onConnectRequested(const std::string& hostIp) {
 void MainWindowPresenter::onHostRequested(const unsigned boardSize) {
 	onShutdownRequested();
 
-	auto session = std::make_unique<app::NetworkSession>();
+	auto session = std::make_unique<app::NetworkSession>(m_dispatcher);
 	session->host(boardSize);
 
 	auto& game      = static_cast<app::IGameSession&>(*session);

@@ -21,7 +21,7 @@ class GameServer;
 //! NetworkSession is the local source of truth about the game state, GUI is just dumb renderer of this state.
 class NetworkSession : public network::IClientHandler, public IGameSession, public IChatSession {
 public:
-	NetworkSession();
+	NetworkSession(const IDispatcher& dispatcher);
 	~NetworkSession();
 
 	void subscribe(IAppSignalListener* listener, uint64_t signalMask) override;

@@ -18,14 +18,10 @@ BoardPresenter::~BoardPresenter() {
 	m_game.unsubscribe(this);
 }
 
-void BoardPresenter::onAppEvent(const app::AppSignal signal) {
-	if (signal != app::AS_BoardChange) {
-		return;
+void BoardPresenter::onAppEvent(const app::AppSignalMask signal) {
+	if (signal & app::AS_BoardChange) {
+		m_boardWidget.setBoard(m_game.board());
 	}
-
-	const Board board = m_game.board();
-	auto* widget      = &m_boardWidget;
-	QMetaObject::invokeMethod(widget, [widget, board]() { widget->setBoard(board); }, Qt::QueuedConnection);
 }
 
 void BoardPresenter::onBoardEvent(const gui::BoardWidgetEvent& event) {

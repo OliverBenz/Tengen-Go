@@ -4,7 +4,7 @@
 
 namespace tengen::app {
 
-OpenSession::OpenSession(const std::size_t boardSize) : m_game(boardSize) {
+OpenSession::OpenSession(const std::size_t boardSize, const IDispatcher& dispatcher) : m_game(boardSize), m_eventHub(dispatcher) {
 	m_position.init(boardSize);
 	m_game.subscribeState(this);
 	m_gameThread = std::thread([this] { m_game.run(); });

@@ -36,7 +36,7 @@ GameDelta toGameDelta(const network::ServerDelta& event) {
 	        .gameActive = event.status == network::GameStatus::Active};
 }
 
-NetworkSession::NetworkSession() {
+NetworkSession::NetworkSession(const IDispatcher& dispatcher) : m_eventHub(dispatcher) {
 	m_network.registerHandler(this);
 }
 NetworkSession::~NetworkSession() {

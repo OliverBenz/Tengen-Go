@@ -25,16 +25,18 @@ void ChatPresenter::onChatRequested(const std::string& message) {
 	m_chat.chat(message);
 }
 
-void ChatPresenter::onAppEvent(const app::AppSignal signal) {
-	if (signal != app::AS_NewChat) {
+void ChatPresenter::onAppEvent(const app::AppSignalMask signal) {
+	if ((signal & app::AS_NewChat) == 0) {
 		return;
 	}
 
+	// Get new messages
 	const auto messageEntries = m_chat.getChatSince(m_lastChatMessageId);
 	if (messageEntries.empty()) {
 		return;
 	}
 
+	// Construct new chat messages
 	std::vector<std::string> lines;
 	lines.reserve(messageEntries.size());
 	for (const auto& entry: messageEntries) {
@@ -43,15 +45,10 @@ void ChatPresenter::onAppEvent(const app::AppSignal signal) {
 		m_lastChatMessageId = entry.messageId;
 	}
 
-	auto* widget = &m_chatWidget;
-	QMetaObject::invokeMethod(
-	        widget,
-	        [widget, lines = std::move(lines)]() {
-		        for (const auto& line: lines) {
-			        widget->appendMessage(line);
-		        }
-	        },
-	        Qt::QueuedConnection);
+	// Append in GUI
+	for (const auto& line: lines) {
+		m_chatWidget.appendMessage(line);
+	}
 }
 
 } // namespace tengen
