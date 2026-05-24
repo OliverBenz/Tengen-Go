@@ -30,6 +30,7 @@ public:
 
 	const Board& board() const;
 	void setBoard(const Board& board);
+	void setCurrentPlayer(Player player);
 
 signals:
 	void boardEvent(const BoardWidgetEvent& event);
@@ -37,6 +38,7 @@ signals:
 protected:
 	void resizeEvent(QResizeEvent* event) override;
 	void paintEvent(QPaintEvent* event) override;
+	void mouseMoveEvent(QMouseEvent* event) override;
 	void mouseReleaseEvent(QMouseEvent* event) override;
 	void keyReleaseEvent(QKeyEvent* event) override;
 
@@ -52,7 +54,12 @@ private:
 
 private:
 	Board m_board;
+	Board::Stone m_currentPlayer{Board::Stone::Black};
 	std::unique_ptr<BoardRenderer> m_boardRenderer;
+
+	// Ghost stone: A translucent stone on mouse position to show where the placement is done.
+	Coord m_ghostStone{0u, 0u};
+	bool m_ghostStoneDraw = false;
 };
 
 } // namespace tengen::gui

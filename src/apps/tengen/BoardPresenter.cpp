@@ -11,7 +11,8 @@ namespace tengen {
 BoardPresenter::BoardPresenter(app::IGameSession& game, gui::BoardWidget& boardWidget) : m_game(game), m_boardWidget(boardWidget) {
 	QObject::connect(&m_boardWidget, &gui::BoardWidget::boardEvent, this, &BoardPresenter::onBoardEvent);
 	m_boardWidget.setBoard(m_game.board());
-	m_game.subscribe(this, app::AS_BoardChange);
+	m_boardWidget.setCurrentPlayer(m_game.currentPlayer());
+	m_game.subscribe(this, app::AS_BoardChange | app::AS_PlayerChange);
 }
 
 BoardPresenter::~BoardPresenter() {
@@ -19,13 +20,21 @@ BoardPresenter::~BoardPresenter() {
 }
 
 void BoardPresenter::onAppEvent(const app::AppSignal signal) {
-	if (signal != app::AS_BoardChange) {
+	auto* widget      = &m_boardWidget;
+	switch (signal) {
+	case app::AS_BoardChange: {
+		const Board board = m_game.board();
+		QMetaObject::invokeMethod(widget, [widget, board]() { widget->setBoard(board); }, Qt::QueuedConnection);
 		return;
 	}
-
-	const Board board = m_game.board();
-	auto* widget      = &m_boardWidget;
-	QMetaObject::invokeMethod(widget, [widget, board]() { widget->setBoard(board); }, Qt::QueuedConnection);
+	case app::AS_PlayerChange: {
+		const auto player = m_game.currentPlayer();
+		QMetaObject::invokeMethod(widget, [widget, player]() { widget->setCurrentPlayer(player); }, Qt::QueuedConnection);
+		return;
+	}
+	default:
+		return;
+	}
 }
 
 void BoardPresenter::onBoardEvent(const gui::BoardWidgetEvent& event) {
