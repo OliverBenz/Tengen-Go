@@ -4,6 +4,7 @@
 #include "core/game.hpp"
 #include "tengen/IGameSession.hpp"
 #include "tengen/eventHub.hpp"
+#include "tengen/position.hpp"
 
 #include <mutex>
 #include <thread>
@@ -40,12 +41,7 @@ private:
 	std::thread m_gameThread; //!< Runs the game loop.
 	mutable std::mutex m_stateMutex;
 
-	// TODO: Position class should not be server dependent.
-	//       Then we can reuse it here.
-	// Game State
-	Board m_board;
-	Player m_currentPlayer{Player::Black};
-	GameStatus m_status{GameStatus::Active};
+	Position m_position{};
 };
 
 } // namespace tengen::app

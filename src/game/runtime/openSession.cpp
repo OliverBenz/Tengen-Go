@@ -4,7 +4,8 @@
 
 namespace tengen::app {
 
-OpenSession::OpenSession(const std::size_t boardSize) : m_game(boardSize), m_board(boardSize) {
+OpenSession::OpenSession(const std::size_t boardSize) : m_game(boardSize) {
+	m_position.init(boardSize);
 	m_game.subscribeState(this);
 	m_gameThread = std::thread([this] { m_game.run(); });
 }
@@ -15,15 +16,15 @@ OpenSession::~OpenSession() {
 
 GameStatus OpenSession::status() const {
 	std::lock_guard<std::mutex> lock(m_stateMutex);
-	return m_status;
+	return m_position.getStatus();
 }
 Board OpenSession::board() const {
 	std::lock_guard<std::mutex> lock(m_stateMutex);
-	return m_board;
+	return m_position.getBoard();
 }
 Player OpenSession::currentPlayer() const {
 	std::lock_guard<std::mutex> lock(m_stateMutex);
-	return m_currentPlayer;
+	return m_position.getPlayer();
 }
 
 void OpenSession::tryPlace(const unsigned x, const unsigned y) {
@@ -52,26 +53,32 @@ void OpenSession::unsubscribe(IAppSignalListener* listener) {
 }
 
 void OpenSession::onGameDelta(const GameDelta& delta) {
+	GameStatus status         = GameStatus::Active;
 	GameStatus previousStatus = GameStatus::Active;
+	bool applied              = false;
 	{
 		std::lock_guard<std::mutex> lock(m_stateMutex);
-		previousStatus  = m_status;
-		m_currentPlayer = delta.nextPlayer;
-		m_status        = delta.gameActive ? GameStatus::Active : GameStatus::Done;
-
-		if (delta.action == GameAction::Place && delta.coord) {
-			m_board.place(*delta.coord, toStone(delta.player));
-			for (const auto capture: delta.captures) {
-				m_board.remove(capture);
-			}
-		}
+		previousStatus = m_position.getStatus();
+		applied        = m_position.apply(delta);
+		status         = m_position.getStatus();
 	}
 
-	if (delta.action == GameAction::Place) {
+	if (!applied) {
+		return;
+	}
+
+	switch (delta.action) {
+	case GameAction::Place:
 		m_eventHub.signal(AS_BoardChange);
+		m_eventHub.signal(AS_PlayerChange);
+		break;
+	case GameAction::Pass:
+		m_eventHub.signal(AS_PlayerChange);
+		break;
+	case GameAction::Resign:
+		break;
 	}
-	m_eventHub.signal(AS_PlayerChange);
-	if (previousStatus != m_status) {
+	if (previousStatus != status) {
 		m_eventHub.signal(AS_StateChange);
 	}
 }
