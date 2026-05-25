@@ -52,7 +52,11 @@ void MainWindow::buildLayout() {
 	tools->addAction(actStartCameraDetection);
 	tools->addAction(actCalibrateDetection);
 
-	[[maybe_unused]] auto* help = menuBar()->addMenu(tr("&Help"));
+	auto* help     = menuBar()->addMenu(tr("&Help"));
+	auto* actRules = new QAction("&Rules", this);
+	auto* actAbout = new QAction("&About", this);
+	help->addAction(actRules);
+	help->addAction(actAbout);
 
 	m_gameWidget = new GameWidget();
 	setCentralWidget(m_gameWidget);
