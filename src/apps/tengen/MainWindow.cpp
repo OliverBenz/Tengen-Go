@@ -11,7 +11,7 @@ namespace tengen::gui {
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
 	// Setup Window
-	setWindowTitle("Go Game");
+	setWindowTitle("Tengen Go");
 	setWindowFlags(windowFlags() | Qt::Tool | Qt::WindowStaysOnTopHint);
 	setAttribute(Qt::WA_QuitOnClose, true);
 	buildLayout();
