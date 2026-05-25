@@ -2,6 +2,7 @@
 
 #include <QImageReader>
 #include <QPainter>
+#include <array>
 #include <cassert>
 #include <cmath>
 #include <format>
@@ -109,7 +110,41 @@ void BoardRenderer::drawBackground(QPainter& painter) const {
 		painter.drawLine(coordStart, offset, coordEnd, offset);
 		painter.drawLine(offset, coordStart, offset, coordEnd);
 	}
+	drawStarPoints(painter);
 	painter.restore();
+}
+
+void BoardRenderer::drawStarPoints(QPainter& painter) const {
+	if (m_nodes != 9u && m_nodes != 13u && m_nodes != 19u) {
+		return;
+	}
+
+	const unsigned inset  = m_nodes >= 13u ? 3u : 2u;
+	const unsigned center = m_nodes / 2u;
+	const std::array<unsigned, 3> points{inset, center, m_nodes - 1u - inset};
+	const int radius = std::max(2, static_cast<int>(m_stoneSize / 10u));
+
+	painter.setBrush(Qt::black);
+	painter.setPen(Qt::NoPen);
+
+	const auto drawPoint = [this, &painter, radius](const unsigned x, const unsigned y) {
+		const int centerX = static_cast<int>(m_coordStart + x * m_stoneSize);
+		const int centerY = static_cast<int>(m_coordStart + y * m_stoneSize);
+		painter.drawEllipse(QPoint{centerX, centerY}, radius, radius);
+	};
+
+	drawPoint(points[0], points[0]);
+	drawPoint(points[0], points[2]);
+	drawPoint(points[2], points[0]);
+	drawPoint(points[2], points[2]);
+	drawPoint(points[1], points[1]);
+
+	if (m_nodes == 19u) {
+		drawPoint(points[0], points[1]);
+		drawPoint(points[1], points[0]);
+		drawPoint(points[1], points[2]);
+		drawPoint(points[2], points[1]);
+	}
 }
 
 void BoardRenderer::drawStone(QPainter& painter, unsigned x, unsigned y, const Board::Stone player) const {
