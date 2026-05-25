@@ -163,7 +163,7 @@ void BoardWidget::renderBoard() {
 		m_boardRenderer->setBoardSizePx(size);
 	}
 	QPainter painter(this);
-	painter.fillRect(rect(), QColor(20, 20, 20));
+	painter.fillRect(rect(), QColor(220, 179, 92));
 	painter.save();
 	painter.translate(offset); // Center in drawing area
 	m_boardRenderer->draw(painter, m_board, {m_ghostStone, m_currentPlayer, m_ghostStoneDraw});
