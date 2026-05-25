@@ -31,6 +31,8 @@ public:
 private:
 	//! Draw the board background.
 	void drawBackground(QPainter& painter) const;
+	//! Draw star points for standard board sizes.
+	void drawStarPoints(QPainter& painter) const;
 	//! Draw all stones given a board.
 	void drawStones(QPainter& painter, const Board& board) const;
 	//! Draw a single stone at a given index.
