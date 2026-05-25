@@ -22,6 +22,7 @@ public:
 	void setNodes(unsigned nodes);
 	void setBoardSizePx(unsigned boardSizePx);
 	void draw(QPainter& painter, const Board& board, const Ghost& ghost) const;
+	QRect stoneRect(Coord coord) const;
 	bool isReady() const;
 
 	//! Try to convert pixel values to a board coordinate.

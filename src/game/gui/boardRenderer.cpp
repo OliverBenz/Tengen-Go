@@ -82,6 +82,12 @@ void BoardRenderer::draw(QPainter& painter, const Board& board, const Ghost& gho
 	drawStones(painter, board);
 }
 
+QRect BoardRenderer::stoneRect(const Coord coord) const {
+	const int drawX = static_cast<int>((m_coordStart - m_drawStepPx) + coord.x * m_stoneSize);
+	const int drawY = static_cast<int>((m_coordStart - m_drawStepPx) + coord.y * m_stoneSize);
+	return {drawX, drawY, static_cast<int>(m_stoneSize), static_cast<int>(m_stoneSize)};
+}
+
 bool BoardRenderer::isReady() const {
 	return m_ready && m_boardSize > 0 && m_stoneSize > 0 && !m_scaledBlack.isNull() && !m_scaledWhite.isNull();
 }

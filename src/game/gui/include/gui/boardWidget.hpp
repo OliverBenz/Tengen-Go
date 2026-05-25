@@ -45,6 +45,7 @@ protected:
 private:
 	//! Resolve click position to board coordinate and emit an event if valid.
 	void handleClick(const QPoint& pos);
+	QRect stoneRect(Coord coord) const; //!< Get the rectangle around a stone at given coordinates.
 	void renderBoard();
 
 	//! Get the board size in pixels.
