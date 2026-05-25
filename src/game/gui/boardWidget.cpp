@@ -56,7 +56,7 @@ void BoardWidget::setCurrentPlayer(const Player player) {
 
 	m_currentPlayer = currentPlayer;
 	if (m_ghostStoneDraw) {
-		update();
+		update(stoneRect(m_ghostStone));
 	}
 }
 
@@ -90,9 +90,16 @@ void BoardWidget::mouseMoveEvent(QMouseEvent* event) {
 
 	// Update only if old state differs from new
 	if (m_ghostStoneDraw != ghostValid || (ghostValid && (m_ghostStone.x != newGhost.x || m_ghostStone.y != newGhost.y))) {
-		m_ghostStone     = newGhost;
-		m_ghostStoneDraw = ghostValid;
-		update();
+		const auto oldGhost     = m_ghostStone;
+		const bool oldGhostDraw = m_ghostStoneDraw;
+		m_ghostStone            = newGhost;
+		m_ghostStoneDraw        = ghostValid;
+		if (oldGhostDraw) {
+			update(stoneRect(oldGhost));
+		}
+		if (m_ghostStoneDraw) {
+			update(stoneRect(m_ghostStone));
+		}
 	}
 	event->accept();
 }
@@ -132,6 +139,10 @@ void BoardWidget::handleClick(const QPoint& pos) {
 	if (m_boardRenderer->pixelToCoord(local.x(), local.y(), coord)) {
 		emit boardEvent(BoardWidgetEvent::place(coord));
 	}
+}
+
+QRect BoardWidget::stoneRect(const Coord coord) const {
+	return m_boardRenderer->stoneRect(coord).translated(boardOffset(boardPixelSize()));
 }
 
 void BoardWidget::paintEvent(QPaintEvent* event) {
