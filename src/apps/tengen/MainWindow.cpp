@@ -26,13 +26,33 @@ GameWidget& MainWindow::gameWidget() {
 
 void MainWindow::buildLayout() {
 	// Menu Bar
-	auto* menu          = menuBar()->addMenu(tr("&Menu"));
-	auto* connectAction = new QAction("&Connect to Server", this);
-	auto* hostAction    = new QAction("&Host Server", this);
-	menu->addAction(connectAction);
-	menu->addAction(hostAction);
-	connect(connectAction, &QAction::triggered, this, &MainWindow::openConnectDialog);
-	connect(hostAction, &QAction::triggered, this, &MainWindow::openHostDialog);
+	auto* game            = menuBar()->addMenu(tr("&Game"));
+	auto* actNewLocalGame = new QAction("&New Local Game", this);
+	auto* actSaveGame     = new QAction("&Save Game", this);
+	auto* actLoadGame     = new QAction("&Load Game", this);
+	game->addAction(actNewLocalGame);
+	game->addAction(actSaveGame);
+	game->addAction(actLoadGame);
+
+	auto* network            = menuBar()->addMenu(tr("&Network"));
+	auto* actConnectToServer = new QAction("&Connect to Server", this);
+	auto* actHostServer      = new QAction("&Host Server", this);
+	auto* actDisconnect      = new QAction("&Disconnect", this);
+	network->addAction(actConnectToServer);
+	network->addAction(actHostServer);
+	network->addAction(actDisconnect);
+	connect(actConnectToServer, &QAction::triggered, this, &MainWindow::openConnectDialog);
+	connect(actHostServer, &QAction::triggered, this, &MainWindow::openHostDialog);
+
+	auto* tools                   = menuBar()->addMenu(tr("&Tools"));
+	auto* actImportBoardImage     = new QAction("&Import Board Image", this);
+	auto* actStartCameraDetection = new QAction("&Start Camera Detection", this);
+	auto* actCalibrateDetection   = new QAction("&Calibrate Detection", this);
+	tools->addAction(actImportBoardImage);
+	tools->addAction(actStartCameraDetection);
+	tools->addAction(actCalibrateDetection);
+
+	[[maybe_unused]] auto* help = menuBar()->addMenu(tr("&Help"));
 
 	m_gameWidget = new GameWidget();
 	setCentralWidget(m_gameWidget);
