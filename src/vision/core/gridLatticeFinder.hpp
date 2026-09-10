@@ -13,12 +13,13 @@ namespace tengen::vision::core {
  * \param [in]  hCenters        Sorted y-coordinates of candidate horizontal line centers (pixels, rectified image space).
  * \param [out] vGrid           Output x-coordinates of the selected vertical grid lines (size = N).
  * \param [out] hGrid           Output y-coordinates of the selected horizontal grid lines (size = N).
- * \param [in]  expectedExtentV Known/expected physical span of the board along the x-axis (pixels, e.g. the B_0
- *                              canvas width). Used to reject candidate Ns whose implied board span badly over- or
- *                              undershoots the physical board, which otherwise happens whenever occlusion (e.g. many
- *                              stones) shrinks the detected line count: a smaller N can "fully explain" the reduced
- *                              detections and would otherwise be preferred over the true, larger N. Pass <= 0 to
- *                              disable this check.
+ * \param [in]  expectedExtentV Expected span of the grid along the x-axis (pixels, e.g. the B_0 canvas width).
+ *                              Penalises candidate Ns whose implied board span over- or undershoots it, which is what
+ *                              keeps occlusion from winning: when stones hide grid lines, a smaller N can "fully
+ *                              explain" the reduced detections, but only the true N implies a span matching the
+ *                              physical board. Weighed against fit quality rather than applied as a hard filter,
+ *                              since the caller's estimate is only as good as the coarse warp it comes from.
+ *                              Pass <= 0 to disable this check.
  * \param [in]  expectedExtentH Same as \p expectedExtentV but for the y-axis (e.g. the B_0 canvas height).
  * \return      True if a consistent NxN grid (N in {9,13,19}) was found; false otherwise.
  */
