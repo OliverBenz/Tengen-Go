@@ -23,16 +23,6 @@ static StoneState toStoneState(const Board::Stone stone) {
 	return StoneState::Empty;
 }
 
-static std::vector<cv::Point2f> parsePoints(const nlohmann::json& array) {
-	std::vector<cv::Point2f> points;
-	points.reserve(array.size());
-	for (const auto& p: array) {
-		points.emplace_back(p.at(0).get<float>(), p.at(1).get<float>());
-	}
-	return points;
-}
-
-
 TestResult runPipeline(const std::filesystem::path& imgPath) {
 	std::cout << "Running test: " << imgPath.string() << '\n';
 
@@ -79,33 +69,14 @@ void expectStonesMatchBoard(const std::vector<StoneState>& stones, unsigned boar
 	}
 }
 
-GeometryGroundTruth loadGeometryGroundTruth(const std::filesystem::path& imagePath) {
-	GeometryGroundTruth truth{};
-
-	std::filesystem::path jsonPath = imagePath;
-	jsonPath.replace_extension(".json");
-
-	std::ifstream file(jsonPath);
-	EXPECT_TRUE(file.is_open()) << jsonPath.string();
-	if (!file.is_open())
-		return truth;
-
-	const nlohmann::json j = nlohmann::json::parse(file, nullptr, /*allow_exceptions=*/false);
-	EXPECT_FALSE(j.is_discarded()) << "Invalid JSON: " << jsonPath.string();
-
-	truth.boardSize    = j.value("boardSize", 0u);
-	truth.boardCorners = parsePoints(j.at("boardCorners"));
-	truth.gridCorners  = parsePoints(j.at("gridCorners"));
-	return truth;
-}
 
 //! Permutation of \p actual minimizing the total matching distance to \p expected.
-static std::vector<std::size_t> bestMatchPermutation(const std::vector<cv::Point2f>& expected, const std::vector<cv::Point2f>& actual) {
-	std::vector<std::size_t> perm(actual.size());
+static std::array<std::size_t, 4> bestMatchPermutation(const std::vector<cv::Point2f>& expected, const std::vector<cv::Point2f>& actual) {
+	std::array<std::size_t, 4> perm;
 	std::iota(perm.begin(), perm.end(), std::size_t{0});
 
-	std::vector<std::size_t> bestPerm = perm;
-	double bestCost                   = std::numeric_limits<double>::max();
+	std::array<std::size_t, 4> bestPerm = perm;
+	double bestCost                     = std::numeric_limits<double>::max();
 	do {
 		double cost = 0.0;
 		for (std::size_t i = 0; i < expected.size(); ++i) {
@@ -123,7 +94,7 @@ static std::vector<std::size_t> bestMatchPermutation(const std::vector<cv::Point
 void expectPointsMatch(const std::vector<cv::Point2f>& expected, const std::vector<cv::Point2f>& actual, float tolerance, std::string_view context) {
 	ASSERT_EQ(expected.size(), actual.size()) << context;
 
-	const std::vector<std::size_t> bestPerm = bestMatchPermutation(expected, actual);
+	const auto bestPerm = bestMatchPermutation(expected, actual);
 	for (std::size_t i = 0; i < expected.size(); ++i) {
 		const double distance = cv::norm(expected[i] - actual[bestPerm[i]]);
 		EXPECT_LE(distance, tolerance) << context << ": point " << i << " off by " << distance << "px (tolerance " << tolerance << "px)";
@@ -135,7 +106,7 @@ double maxMatchedPointDistance(const std::vector<cv::Point2f>& expected, const s
 		return std::numeric_limits<double>::infinity();
 	}
 
-	const std::vector<std::size_t> bestPerm = bestMatchPermutation(expected, actual);
+	const auto bestPerm = bestMatchPermutation(expected, actual);
 
 	double worst = 0.0;
 	for (std::size_t i = 0; i < expected.size(); ++i) {
@@ -144,7 +115,7 @@ double maxMatchedPointDistance(const std::vector<cv::Point2f>& expected, const s
 	return worst;
 }
 
-double quadIoU(const std::vector<cv::Point2f>& lhs, const std::vector<cv::Point2f>& rhs) {
+double quadIoU(const std::vector<cv::Point2f>& lhs, const std::array<cv::Point2f,4>& rhs) {
 	if (lhs.size() < 3u || rhs.size() < 3u) {
 		return 0.0;
 	}

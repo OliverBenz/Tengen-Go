@@ -95,7 +95,11 @@ WarpResult warpToBoard(const cv::Mat& image, DebugVisualizer* debugger) {
 		debugger->endStage();
 	}
 
-	return {warped, H};
+	// We keep the contour corners mainly for testing
+	std::array<cv::Point2f, 4> contourCorners{};
+	std::copy(bestCandidate->quad.begin(), bestCandidate->quad.end(), contourCorners.begin());
+
+	return {warped, H, contourCorners};
 }
 
 bool isValidBoard(const WarpResult& board) {
