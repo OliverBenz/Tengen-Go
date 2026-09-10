@@ -11,6 +11,25 @@
 namespace tengen::vision::core {
 namespace gtest {
 
+std::vector<std::filesystem::path> getImagesInDirectory(const std::filesystem::path& directory) {
+	std::vector<std::filesystem::path> pngFiles{};
+
+	for (const auto& entry: std::filesystem::directory_iterator(directory)) {
+		if (entry.is_regular_file() && entry.path().extension() == ".jpeg") {
+			pngFiles.push_back(entry.path());
+		}
+	}
+
+	return pngFiles;
+}
+
+void ensureJsonExists(const std::vector<std::filesystem::path>& images) {
+	for (const auto& image: images) {
+		const auto jsonFilePath = std::filesystem::path(image).replace_extension(".json");
+		ASSERT_TRUE(std::filesystem::exists(jsonFilePath));
+	}
+}
+
 static StoneState toStoneState(const Board::Stone stone) {
 	switch (stone) {
 	case Board::Stone::Black:
@@ -115,7 +134,7 @@ double maxMatchedPointDistance(const std::vector<cv::Point2f>& expected, const s
 	return worst;
 }
 
-double quadIoU(const std::vector<cv::Point2f>& lhs, const std::array<cv::Point2f,4>& rhs) {
+double quadIoU(const std::vector<cv::Point2f>& lhs, const std::array<cv::Point2f, 4>& rhs) {
 	if (lhs.size() < 3u || rhs.size() < 3u) {
 		return 0.0;
 	}

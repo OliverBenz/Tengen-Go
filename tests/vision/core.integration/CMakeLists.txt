@@ -11,6 +11,7 @@ add_executable(${targetName}
   "${CMAKE_CURRENT_LIST_DIR}/process.gtest.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/geometryReport.gtest.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/boardFinder.gtest.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/gridFinder.gtest.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/stoneFinder.gtest.cpp"
 )
 
