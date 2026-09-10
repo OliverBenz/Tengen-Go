@@ -2,13 +2,15 @@
 
 #include "vision/core/debugVisualizer.hpp"
 
+#include <array>
 #include <opencv2/core/mat.hpp>
 
 namespace tengen::vision::core {
 
 struct WarpResult {
-	cv::Mat imageB0; //!< Image in B_0 space (warped to fit the rough board contour).
-	cv::Mat H0;      //!< Homography H_0 used to apply the rough warping.
+	cv::Mat imageB0;                           //!< Image in B_0 space (warped to fit the rough board contour).
+	cv::Mat H0;                                //!< Homography H_0 used to apply the rough warping.
+	std::array<cv::Point2f, 4> contourCorners; //!< The 4 corners of the contour that we matched (in image space).
 };
 
 //! Detect rough Go board outline in an image and warp to center the board. Cut out background
