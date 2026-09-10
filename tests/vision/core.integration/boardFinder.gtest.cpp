@@ -1,6 +1,7 @@
 #include "vision/core/gridFinder.hpp"
 
 #include "geometryGroundTruth.hpp"
+#include "testDataHelpers.hpp"
 
 #include <cmath>
 #include <filesystem>
@@ -26,26 +27,6 @@ static float boundingBoxMinDim(const std::array<cv::Point2f, 4>& points) {
 	return std::min(maxX - minX, maxY - minY);
 }
 
-//! Get all image files contained in a directory.
-std::vector<std::filesystem::path> getImagesInDirectory(const std::filesystem::path& directory) {
-	std::vector<std::filesystem::path> pngFiles{};
-
-	for (const auto& entry: std::filesystem::directory_iterator(directory)) {
-		if (entry.is_regular_file() && entry.path().extension() == ".jpeg") {
-			pngFiles.push_back(entry.path());
-		}
-	}
-
-	return pngFiles;
-}
-
-//! Verify the json file for each image exist.
-void ensureJsonExists(const std::vector<std::filesystem::path>& images) {
-	for (const auto& image: images) {
-		const auto jsonFilePath = std::filesystem::path(image).replace_extension(".json");
-		ASSERT_TRUE(std::filesystem::exists(jsonFilePath));
-	}
-}
 
 //! Load the png files in the given resource subdirectory.
 void runTest(std::string testSetName, unsigned imageCount) {

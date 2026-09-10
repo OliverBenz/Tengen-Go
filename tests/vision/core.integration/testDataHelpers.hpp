@@ -11,6 +11,11 @@
 namespace tengen::vision::core {
 namespace gtest {
 
+std::vector<std::filesystem::path> getImagesInDirectory(const std::filesystem::path& directory); //!< Get all image files contained in a directory.
+void ensureJsonExists(const std::vector<std::filesystem::path>& images);                         //!< Verify the json file for each image exist.
+
+// OLD
+
 //! Expected test results (result of each step in the pipeline).
 struct TestResult {
 	WarpResult warped;
