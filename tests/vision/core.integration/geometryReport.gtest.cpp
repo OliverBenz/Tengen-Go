@@ -1,3 +1,4 @@
+#include "geometryGroundTruth.hpp"
 #include "testDataHelpers.hpp"
 
 #include <algorithm>

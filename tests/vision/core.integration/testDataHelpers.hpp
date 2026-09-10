@@ -28,16 +28,6 @@ Board loadExpectedBoard(const std::filesystem::path& imagePath);
 void expectStonesMatchBoard(const std::vector<StoneState>& stones, unsigned boardSize, const Board& expected);
 
 
-//! Manually labeled board geometry. All points are in the original image space.
-struct GeometryGroundTruth {
-	unsigned boardSize{};
-	std::vector<cv::Point2f> boardCorners; //!< Outer edge of the physical board (4 points, unordered).
-	std::vector<cv::Point2f> gridCorners;  //!< Outermost grid-line intersections (4 points, unordered).
-};
-
-//! Load the geometry ground truth matching an image path (same file name, ".json" extension).
-GeometryGroundTruth loadGeometryGroundTruth(const std::filesystem::path& imagePath);
-
 //! Match two equally-sized point sets without assuming a fixed order (a board photographed at a
 //! strong angle has no well-defined "top-left" corner), then check every matched pair is within
 //! tolerance. Brute-forces all permutations, which is fine for the small (<=4) point sets we use this for.
@@ -51,7 +41,7 @@ double maxMatchedPointDistance(const std::vector<cv::Point2f>& expected, const s
 //! Intersection-over-union of two quads. Both are convex-hulled first, so corner order does not matter
 //! (ground truth corners are stored unordered, see resources/README.md).
 //! \returns IoU in [0, 1], or 0.0 if either quad is degenerate.
-double quadIoU(const std::vector<cv::Point2f>& lhs, const std::vector<cv::Point2f>& rhs);
+double quadIoU(const std::vector<cv::Point2f>& lhs, const std::array<cv::Point2f, 4>& rhs);
 
 } // namespace gtest
 } // namespace tengen::vision::core

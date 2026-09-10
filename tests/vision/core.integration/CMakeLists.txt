@@ -3,6 +3,8 @@ include_guard(GLOBAL)
 set(targetName visionCore.integration)
 
 add_executable(${targetName}
+  "${CMAKE_CURRENT_LIST_DIR}/geometryGroundTruth.hpp"
+  "${CMAKE_CURRENT_LIST_DIR}/geometryGroundTruth.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/testDataHelpers.hpp"
   "${CMAKE_CURRENT_LIST_DIR}/testDataHelpers.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/rectifier.gtest.cpp"
