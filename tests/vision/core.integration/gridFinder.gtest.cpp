@@ -20,19 +20,6 @@ namespace gtest {
 
 static constexpr float TOLERANCE_FRACTION = 0.1f; //!< Percentage of acceptable error relative to the contour bounding box / spacing.
 
-//! Min-dimension of the axis-aligned bounding box of 4 points, in image-space pixels.
-static float boundingBoxMinDim(const std::array<cv::Point2f, 4>& points) {
-	float minX = points[0].x, maxX = points[0].x;
-	float minY = points[0].y, maxY = points[0].y;
-	for (const auto& p: points) {
-		minX = std::min(minX, p.x);
-		maxX = std::max(maxX, p.x);
-		minY = std::min(minY, p.y);
-		maxY = std::max(maxY, p.y);
-	}
-	return std::min(maxX - minX, maxY - minY);
-}
-
 //! Given the original image and the four defined corner points of the board, computes the boardFinder transformation.
 WarpResult prepareIdealImage(const cv::Mat& image, std::array<cv::Point2f, 4> corners) {
 	// TODO: This constant is from boardFinder internal. Make public so we can use the same on.
@@ -46,32 +33,6 @@ WarpResult prepareIdealImage(const cv::Mat& image, std::array<cv::Point2f, 4> co
 	cv::Mat warped;
 	cv::warpPerspective(image, warped, H, cv::Size(static_cast<int>(WARP_SIZE), static_cast<int>(WARP_SIZE)));
 	return {warped, H, corners};
-}
-
-//! Expected grid spacing: ground-truth grid corners warped by \p H (which straightens the grid to an axis-aligned square), spread over boardSize-1 cells.
-static double groundTruthSpacing(const GeometryGroundTruth& geometry, const cv::Mat& H) {
-	// perspectiveTransform() needs a resizable point container; a fixed-size std::array as input trips an
-	// OpenCV 5.0 assertion (NAryMatIterator size check) when it allocates the output.
-	const std::vector<cv::Point2f> gridCorners(geometry.gridCorners.begin(), geometry.gridCorners.end());
-	std::vector<cv::Point2f> warpedCorners;
-	cv::perspectiveTransform(gridCorners, warpedCorners, H);
-
-	const std::array<cv::Point2f, 4> corners = {warpedCorners[0], warpedCorners[1], warpedCorners[2], warpedCorners[3]};
-	return boundingBoxMinDim(corners) / (geometry.boardSize - 1);
-}
-
-//! Check the geometry found by analyseGeometry(): same board size as the ground truth, and a spacing consistent with
-//! the ground truth grid corners warped through the found homography.
-void verifyBoardGeometry(const BoardGeometry& result, const GeometryGroundTruth& geometry) {
-	EXPECT_EQ(result.boardSize, geometry.boardSize);
-
-	const double spacing = groundTruthSpacing(geometry, result.H);
-	EXPECT_NEAR(result.spacing, spacing, TOLERANCE_FRACTION * spacing);
-}
-
-//! Same check as verifyBoardGeometry(), against the geometry carried by the rectified board.
-void verifyRectifiedBoard(const RectifiedBoard& board, const GeometryGroundTruth& geometry) {
-	verifyBoardGeometry(board.geometry, geometry);
 }
 
 
@@ -92,8 +53,9 @@ void runIdealTest(std::string testSetName, unsigned imageCount) {
 		ASSERT_FALSE(image.empty());
 
 		// Load geometry information
-		GeometryGroundTruth geometry = loadGeometryGroundTruth(imagePath);
-		const float boardTolerance   = TOLERANCE_FRACTION * boundingBoxMinDim(geometry.boardCorners);
+		const auto jsonPath          = std::filesystem::path(imagePath).replace_extension(".json");
+		GeometryGroundTruth geometry = GeometryGroundTruth::loadFromFile(jsonPath);
+		const float boardTolerance   = TOLERANCE_FRACTION * minimumCornerPointDistance(geometry.boardCorners);
 
 		// Transform with known corners
 		const WarpResult warpResult = prepareIdealImage(image, geometry.boardCorners);
@@ -102,7 +64,7 @@ void runIdealTest(std::string testSetName, unsigned imageCount) {
 		// B) Start of the geometry test
 		const BoardGeometry result = analyseGeometry(warpResult);
 		EXPECT_TRUE(isValidGeometry(result));
-		verifyBoardGeometry(result, geometry);
+		verifyBoardGeometry(result, geometry, TOLERANCE_FRACTION);
 
 		// TODO: Can we do some tests on the transformed image?
 		const RectifiedBoard board = transformImage(image, result);
@@ -128,8 +90,9 @@ void runFullTest(std::string testSetName, unsigned imageCount) {
 		ASSERT_FALSE(image.empty());
 
 		// Load geometry information
-		GeometryGroundTruth geometry = loadGeometryGroundTruth(imagePath);
-		const float boardTolerance   = TOLERANCE_FRACTION * boundingBoxMinDim(geometry.boardCorners);
+		const auto jsonPath          = std::filesystem::path(imagePath).replace_extension(".json");
+		GeometryGroundTruth geometry = GeometryGroundTruth::loadFromFile(jsonPath);
+		const float boardTolerance   = TOLERANCE_FRACTION * minimumCornerPointDistance(geometry.boardCorners);
 
 		// Transform with known corners
 		const WarpResult warpResult = warpToBoard(image);
@@ -138,7 +101,7 @@ void runFullTest(std::string testSetName, unsigned imageCount) {
 		// B) Start of the geometry test
 		const BoardGeometry result = analyseGeometry(warpResult);
 		EXPECT_TRUE(isValidGeometry(result));
-		verifyBoardGeometry(result, geometry);
+		verifyBoardGeometry(result, geometry, TOLERANCE_FRACTION);
 
 		// TODO: Can we do some tests on the transformed image?
 		const RectifiedBoard board = transformImage(image, result);

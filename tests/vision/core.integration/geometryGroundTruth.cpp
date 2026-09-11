@@ -9,7 +9,7 @@ namespace tengen::vision::core {
 namespace gtest {
 
 static std::array<cv::Point2f, 4> parsePoints(const nlohmann::json& array) {
-	assert(array.size()== 4); // Malformed json data. Invalid test.
+	assert(array.size() == 4); // Malformed json data. Invalid test.
 
 	std::size_t id = 0u;
 	std::array<cv::Point2f, 4> points{};
@@ -41,11 +41,8 @@ static std::array<std::size_t, 4> bestMatchPermutation(const std::array<cv::Poin
 	return bestPerm;
 }
 
-GeometryGroundTruth loadGeometryGroundTruth(const std::filesystem::path& imagePath) {
+GeometryGroundTruth GeometryGroundTruth::loadFromFile(const std::filesystem::path& jsonPath) {
 	GeometryGroundTruth geometry{};
-
-	std::filesystem::path jsonPath = imagePath;
-	jsonPath.replace_extension(".json");
 
 	std::ifstream file(jsonPath);
 	if (!file.is_open()) {
@@ -73,6 +70,45 @@ bool pointSetsMatch(const std::array<cv::Point2f, 4>& expected, const std::array
 	}
 	return match;
 }
+
+
+//! Get the grid line spacing of the specified board geometry.
+static double groundTruthSpacing(const GeometryGroundTruth& geometry, const cv::Mat& H) {
+	// perspectiveTransform() needs a resizable point container; a fixed-size std::array as input trips an
+	// OpenCV 5.0 assertion (NAryMatIterator size check) when it allocates the output.
+	const std::vector<cv::Point2f> gridCorners(geometry.gridCorners.begin(), geometry.gridCorners.end());
+	std::vector<cv::Point2f> warpedCorners;
+	cv::perspectiveTransform(gridCorners, warpedCorners, H);
+
+	const std::array<cv::Point2f, 4> corners = {warpedCorners[0], warpedCorners[1], warpedCorners[2], warpedCorners[3]};
+	return minimumCornerPointDistance(corners) / (geometry.boardSize - 1);
+}
+
+void verifyBoardGeometry(const BoardGeometry& result, const GeometryGroundTruth& geometry, const float pointDeviationPercentage) {
+	EXPECT_EQ(result.boardSize, geometry.boardSize);
+
+	const double spacing = groundTruthSpacing(geometry, result.H);
+	EXPECT_NEAR(result.spacing, spacing, pointDeviationPercentage * spacing);
+}
+
+void verifyRectifiedBoard(const RectifiedBoard& board, const GeometryGroundTruth& geometry) {
+	// TODO: Can we test more maybe based on the image?
+	verifyBoardGeometry(board.geometry, geometry);
+}
+
+//! Min-dimension of the axis-aligned bounding box of 4 points, in image-space pixels.
+float minimumCornerPointDistance(const std::array<cv::Point2f, 4>& points) {
+	float minX = points[0].x, maxX = points[0].x;
+	float minY = points[0].y, maxY = points[0].y;
+	for (const auto& p: points) {
+		minX = std::min(minX, p.x);
+		maxX = std::max(maxX, p.x);
+		minY = std::min(minY, p.y);
+		maxY = std::max(maxY, p.y);
+	}
+	return std::min(maxX - minX, maxY - minY);
+}
+
 
 } // namespace gtest
 } // namespace tengen::vision::core
