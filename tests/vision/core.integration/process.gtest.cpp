@@ -92,8 +92,9 @@ TEST(Process, Board_Detect_Easy) {
 		ASSERT_EQ(geometryTruth.boardSize, BOARD_SIZE);
 
 		// Stage 1 (BoardFinder): ground truth board corners, warped by H0, should land on imageB0's canvas corners.
+		const std::vector<cv::Point2f> boardCorners(geometryTruth.boardCorners.begin(), geometryTruth.boardCorners.end());
 		std::vector<cv::Point2f> boardCornersWarped;
-		cv::perspectiveTransform(geometryTruth.boardCorners, boardCornersWarped, result.warped.H0);
+		cv::perspectiveTransform(boardCorners, boardCornersWarped, result.warped.H0);
 		const std::vector<cv::Point2f> canvasCorners = {
 		        {0.f, 0.f},
 		        {static_cast<float>(result.warped.imageB0.cols - 1), 0.f},
@@ -106,8 +107,9 @@ TEST(Process, Board_Detect_Easy) {
 
 		// Stage 2 (GridFinder): ground truth grid corners, warped by the refined H, should land on the
 		// algorithm's own outermost detected intersections (index = x * boardSize + y).
+		const std::vector<cv::Point2f> gridCorners(geometryTruth.gridCorners.begin(), geometryTruth.gridCorners.end());
 		std::vector<cv::Point2f> gridCornersWarped;
-		cv::perspectiveTransform(geometryTruth.gridCorners, gridCornersWarped, result.rectified.geometry.H);
+		cv::perspectiveTransform(gridCorners, gridCornersWarped, result.rectified.geometry.H);
 		const unsigned n                                   = result.rectified.geometry.boardSize;
 		const auto& intersections                          = result.rectified.geometry.intersections;
 		const std::vector<cv::Point2f> intersectionCorners = {
