@@ -1,31 +1,22 @@
-#include "katagoProcess.hpp"
+#include "subProcess.hpp"
 
 #include <cassert>
 #include <chrono>
+#include <csignal>
+#include <cstdlib>
 #include <fcntl.h>
 #include <sys/wait.h>
 #include <thread>
 #include <unistd.h>
 #include <vector>
 
-#include <filesystem>
-
-static bool validConfig(const LaunchConfig& config) {
-	return std::filesystem::exists(config.executable) && std::filesystem::exists(config.model) && std::filesystem::exists(config.config) && std::filesystem::exists(config.modelHuman);
-}
-
-KatagoProcess::~KatagoProcess() {
-	stop();
-}
-
-bool KatagoProcess::start(const LaunchConfig& config) {
+bool SubProcess::start(const std::vector<std::string>& argv) {
 	if (m_pid >= 0) {
 		assert(false);
 		return false; // Already running
 	}
 
-	// Check valid config
-	if (!validConfig(config)) {
+	if (argv.empty()) {
 		return false;
 	}
 
@@ -62,17 +53,14 @@ bool KatagoProcess::start(const LaunchConfig& config) {
 		close(m_outPipe[0]);
 		close(m_outPipe[1]);
 
-		// Replace current process with katago
-		const std::vector<char*> argv = {const_cast<char*>(config.executable.c_str()),
-		                                 const_cast<char*>("gtp"),
-		                                 const_cast<char*>("-model"),
-		                                 const_cast<char*>(config.model.c_str()),
-		                                 const_cast<char*>("-human-model"),
-		                                 const_cast<char*>(config.modelHuman.c_str()),
-		                                 const_cast<char*>("-config"),
-		                                 const_cast<char*>(config.config.c_str()),
-		                                 nullptr};
-		execvp(config.executable.c_str(), argv.data());
+		// Replace current process with the requested executable.
+		std::vector<char*> childArgv;
+		childArgv.reserve(argv.size() + 1);
+		for (const std::string& arg: argv) {
+			childArgv.push_back(const_cast<char*>(arg.c_str()));
+		}
+		childArgv.push_back(nullptr);
+		execvp(childArgv[0], childArgv.data());
 
 		// If  execvp command failed
 		perror("execvp failed");
@@ -93,14 +81,8 @@ bool KatagoProcess::start(const LaunchConfig& config) {
 	return true;
 }
 
-void KatagoProcess::stop() {
-	// Request stop from KataGo
-	if (m_pid >= 0 && m_inPipe[1] >= 0) {
-		const std::string quit = "quit\n";
-		write(m_inPipe[1], quit.c_str(), quit.size());
-	}
-
-	// Cleanup pipes
+void SubProcess::stop() {
+	// Cleanup pipes. Closing the child's stdin signals it to shut down.
 	if (m_inPipe[0] >= 0) {
 		close(m_inPipe[0]);
 		m_inPipe[0] = -1;
@@ -141,7 +123,7 @@ void KatagoProcess::stop() {
 }
 
 //! Send a command and wait for the response.
-bool KatagoProcess::sendCommand(const std::string& command, std::string& response) {
+bool SubProcess::sendCommand(const std::string& command, std::string& response) {
 	response = "";
 
 	const std::string line = command + '\n';

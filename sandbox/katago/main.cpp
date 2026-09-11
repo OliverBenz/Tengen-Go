@@ -110,10 +110,13 @@ private:
 	}
 
 private:
+	// Bot specifics
 	std::atomic<Status> m_status{Status::Idle}; //!< Also written from the engine thread.
-	MoveCallback m_moveCallback;                //!< Attached by the owner of the session.
 	KatagoProcess m_engine;                     //!< The engine process. Only touched by one thread at a time.
 	std::thread m_engineThread;                 //!< Runs the in flight move request.
+
+	// TODO: Replace this guy with the event hub.
+	MoveCallback m_moveCallback; //!< Attached by the owner of the session.
 };
 
 int main(int argc, char** argv) {
