@@ -49,7 +49,8 @@ void runTest(std::string testSetName, unsigned imageCount) {
 		EXPECT_TRUE(isValidBoard(warpResult));
 
 		// Load the real geometry from the json file
-		GeometryGroundTruth geometry = loadGeometryGroundTruth(imagePath);
+		const auto jsonPath          = std::filesystem::path(imagePath).replace_extension(".json");
+		GeometryGroundTruth geometry = GeometryGroundTruth::loadFromFile(jsonPath);
 
 		// Check the found contour corners align with the ones defined in the json file
 		// It may be the case that we find the grid contour instead of the board contour. This is suboptimal but not wrong. We output and continue

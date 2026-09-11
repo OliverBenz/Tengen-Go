@@ -88,7 +88,8 @@ TEST(Process, Board_Detect_Easy) {
 		EXPECT_TRUE(result.stoneStep.success);
 		expectStonesMatchBoard(result.stoneStep.stones, BOARD_SIZE, expected);
 
-		const GeometryGroundTruth geometryTruth = loadGeometryGroundTruth(TEST_PATH / fileName);
+		const auto jsonPath                     = std::filesystem::path(TEST_PATH / fileName).replace_extension(".json");
+		const GeometryGroundTruth geometryTruth = GeometryGroundTruth::loadFromFile(jsonPath);
 		ASSERT_EQ(geometryTruth.boardSize, BOARD_SIZE);
 
 		// Stage 1 (BoardFinder): ground truth board corners, warped by H0, should land on imageB0's canvas corners.
