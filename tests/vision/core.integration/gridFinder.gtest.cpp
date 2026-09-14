@@ -116,16 +116,21 @@ TEST(GridFinder, Ideal_Angled_Easy) {
 	runIdealTest("angled_easy", 6u);
 }
 TEST(GridFinder, Ideal_Angled_Hard) {
-	runIdealTest("angled_hard", 6u);
+	runIdealTest("angled_hard", 8u);
 }
-
+TEST(GridFinder, Ideal_Angled_Hard_Lighting) {
+	runIdealTest("angled_hard_lighting", 6u);
+}
 
 // Full tests
 TEST(GridFinder, Full_Angled_Easy) {
 	runFullTest("angled_easy", 6u);
 }
-TEST(GridFinder, Full_Angled_Hard) {
-	runFullTest("angled_hard", 6u);
+TEST_(GridFinder, Full_Angled_Hard) {
+	runFullTest("angled_hard", 8u);
+}
+TEST(GridFinder, Full_Angled_Hard_Lighting) {
+	runFullTest("angled_hard_lighting", 6u);
 }
 
 } // namespace gtest

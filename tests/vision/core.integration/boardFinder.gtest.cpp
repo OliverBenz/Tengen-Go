@@ -77,7 +77,10 @@ TEST(BoardFinder, Angled_Easy) {
 }
 
 TEST(BoardFinder, Angled_Hard) {
-	runTest("angled_hard", 6u);
+	runTest("angled_hard", 8u);
+}
+TEST(BoardFinder, Angled_Hard_Lighting) {
+	runTest("angled_hard_lighting", 6u);
 }
 
 TEST(BoardFinder, Empty_Angle_None) {
