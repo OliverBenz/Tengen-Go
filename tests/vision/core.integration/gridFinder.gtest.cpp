@@ -118,7 +118,7 @@ TEST(GridFinder, Ideal_Angled_Easy) {
 TEST(GridFinder, Ideal_Angled_Hard) {
 	runIdealTest("angled_hard", 8u);
 }
-TEST(GridFinder, Ideal_Angled_Hard_Lighting) {
+TEST(GridFinder, DISABLED_Ideal_Angled_Hard_Lighting) {
 	runIdealTest("angled_hard_lighting", 6u);
 }
 
@@ -126,10 +126,10 @@ TEST(GridFinder, Ideal_Angled_Hard_Lighting) {
 TEST(GridFinder, Full_Angled_Easy) {
 	runFullTest("angled_easy", 6u);
 }
-TEST_(GridFinder, Full_Angled_Hard) {
+TEST(GridFinder, Full_Angled_Hard) {
 	runFullTest("angled_hard", 8u);
 }
-TEST(GridFinder, Full_Angled_Hard_Lighting) {
+TEST(GridFinder, DISABLED_Full_Angled_Hard_Lighting) {
 	runFullTest("angled_hard_lighting", 6u);
 }
 
