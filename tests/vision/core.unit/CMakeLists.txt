@@ -9,13 +9,13 @@ add_executable(${targetName}
 )
 
 target_link_libraries(${targetName}
-  PRIVATE
-    tengen::vision::core
-    GTest::gtest_main
+    PRIVATE
+        tengen::vision::core
+        GTest::gtest_main
 )
 set_target_properties(${targetName}
-  PROPERTIES
-    FOLDER "${ideFolderSource}"
+    PROPERTIES
+        FOLDER "${IDE_FOLDER_TESTS}/vision"
 )
 
 # Setup project settings

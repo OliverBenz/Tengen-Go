@@ -27,7 +27,8 @@ target_link_libraries(${targetName}
 
 set_target_properties(${targetName}
     PROPERTIES
-        AUTOMOC ON # Auto handling of QT Meta-Object Compiler
+      AUTOMOC ON # Auto handling of QT Meta-Object Compiler
+      FOLDER "${IDE_FOLDER_SOURCE}/apps"
 )
 
 # Copy help files to output

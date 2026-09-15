@@ -14,7 +14,7 @@ target_link_libraries(${targetName}
 )
 set_target_properties(${targetName}
     PROPERTIES
-        FOLDER "${ideFolderSource}"
+        FOLDER "${IDE_FOLDER_TESTS}/vision"
 )
 
 target_compile_definitions(${targetName} PRIVATE PATH_TEST_IMG="${CMAKE_CURRENT_LIST_DIR}/../resources/")

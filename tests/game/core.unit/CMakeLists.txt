@@ -14,8 +14,8 @@ target_link_libraries(${targetName}
         GTest::gtest_main
 )
 set_target_properties(${targetName}
-    PROPERTIES
-        FOLDER "${ideFolderSource}"
+     PROPERTIES
+         FOLDER "${IDE_FOLDER_TESTS}/game"
 )
 
 # Setup project settings

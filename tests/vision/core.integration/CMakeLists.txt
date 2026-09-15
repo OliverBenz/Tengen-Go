@@ -3,31 +3,30 @@ include_guard(GLOBAL)
 set(targetName visionCore.integration)
 
 add_executable(${targetName}
-  "${CMAKE_CURRENT_LIST_DIR}/geometryGroundTruth.hpp"
-  "${CMAKE_CURRENT_LIST_DIR}/geometryGroundTruth.cpp"
-  "${CMAKE_CURRENT_LIST_DIR}/testDataHelpers.hpp"
-  "${CMAKE_CURRENT_LIST_DIR}/testDataHelpers.cpp"
-  "${CMAKE_CURRENT_LIST_DIR}/process.gtest.cpp"
-  "${CMAKE_CURRENT_LIST_DIR}/boardFinder.gtest.cpp"
-  "${CMAKE_CURRENT_LIST_DIR}/gridFinder.gtest.cpp"
-  "${CMAKE_CURRENT_LIST_DIR}/stoneFinder.gtest.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/geometryGroundTruth.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/geometryGroundTruth.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/testDataHelpers.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/testDataHelpers.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/process.gtest.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/boardFinder.gtest.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/gridFinder.gtest.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/stoneFinder.gtest.cpp"
 )
 
 target_link_libraries(${targetName}
-  PRIVATE
-    tengen::vision::core
-    tengen::game::core
-    nlohmann_json::nlohmann_json
-    GTest::gtest_main
+    PRIVATE
+        tengen::vision::core tengen::game::core
+        nlohmann_json::nlohmann_json
+        GTest::gtest_main
 )
 set_target_properties(${targetName}
-  PROPERTIES
-    FOLDER "${ideFolderSource}"
+    PROPERTIES
+        FOLDER "${IDE_FOLDER_TESTS}/vision"
 )
 
 target_compile_definitions(${targetName}
-  PRIVATE
-    PATH_TEST_IMG="${CMAKE_CURRENT_LIST_DIR}/../resources/"
+    PRIVATE
+        PATH_TEST_IMG="${CMAKE_CURRENT_LIST_DIR}/../resources/"
 )
 
 # Setup project settings

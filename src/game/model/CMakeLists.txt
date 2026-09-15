@@ -22,6 +22,11 @@ target_include_directories(${targetName}
         "${CMAKE_CURRENT_LIST_DIR}/include"
 )
 
+set_target_properties(${targetName}
+    PROPERTIES
+        FOLDER "${IDE_FOLDER_SOURCE}/game"
+)
+
 # Setup project settings
 set_target_configuration(${targetName} Config::Default)
 set_output_directory(${targetName})
