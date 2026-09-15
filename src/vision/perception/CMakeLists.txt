@@ -19,13 +19,18 @@ add_library(tengen::vision::perception ALIAS ${targetName})
 
 target_include_directories(${targetName}
 	PUBLIC
-        "${CMAKE_CURRENT_LIST_DIR}/include"
+		"${CMAKE_CURRENT_LIST_DIR}/include"
 )
 target_link_libraries(${targetName}
 	PRIVATE
 		tengen::vision::core
 	PUBLIC
 		tengen::game::model
+)
+
+set_target_properties(${targetName}
+	PROPERTIES
+		FOLDER "${IDE_FOLDER_SOURCE}/vision"
 )
 
 # Setup project settings

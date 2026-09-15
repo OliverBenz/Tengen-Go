@@ -16,7 +16,7 @@ target_link_libraries(${targetName}
 )
 set_target_properties(${targetName}
     PROPERTIES
-        FOLDER "${ideFolderSource}"
+        FOLDER "${IDE_FOLDER_TESTS}/net"
 )
 
 # Setup project settings

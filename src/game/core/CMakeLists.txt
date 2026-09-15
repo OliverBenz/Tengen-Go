@@ -33,9 +33,14 @@ target_include_directories(${targetName}
     PUBLIC
         "${CMAKE_CURRENT_LIST_DIR}/include"
 )
-target_link_libraries(${targetName} 
+target_link_libraries(${targetName}
     PUBLIC
         tengen::game::model
+)
+
+set_target_properties(${targetName}
+    PROPERTIES
+        FOLDER "${IDE_FOLDER_SOURCE}/game"
 )
 
 # Setup project settings

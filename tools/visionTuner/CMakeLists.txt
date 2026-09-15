@@ -33,6 +33,7 @@ target_compile_definitions(${targetName}
 )
 set_target_properties(${targetName}
 	PROPERTIES
+	  FOLDER "${IDE_FOLDER_TOOLS}"
 		AUTOMOC ON
 )
 

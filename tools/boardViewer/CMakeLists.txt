@@ -23,10 +23,13 @@ target_link_libraries(${targetName}
 		nlohmann_json::nlohmann_json
 		Qt6::Widgets
 )
+
 set_target_properties(${targetName}
 	PROPERTIES
+	  FOLDER "${IDE_FOLDER_TOOLS}"
 		AUTOMOC ON
 )
+
 target_compile_definitions(${targetName}
 	PRIVATE
 		PATH_TEST_IMG="${CMAKE_SOURCE_DIR}/tests/vision/resources/"

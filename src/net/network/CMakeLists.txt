@@ -36,6 +36,11 @@ target_link_libraries(${targetName}
         nlohmann_json::nlohmann_json
 )
 
+set_target_properties(${targetName}
+     PROPERTIES
+         FOLDER "${IDE_FOLDER_SOURCE}/net"
+)
+
 # Setup project settings
 set_target_configuration(${targetName} Config::Default)
 set_output_directory(${targetName})

@@ -30,6 +30,11 @@ target_link_libraries(${targetName}
         asio
 )
 
+set_target_properties(${targetName}
+    PROPERTIES
+        FOLDER "${IDE_FOLDER_SOURCE}/net"
+)
+
 # Setup project settings
 set_target_configuration(${targetName} Config::Default)
 set_output_directory(${targetName})
