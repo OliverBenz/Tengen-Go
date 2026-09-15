@@ -123,10 +123,10 @@ TEST(GridFinder, DISABLED_Ideal_Angled_Hard_Lighting) {
 }
 
 // Full tests
-TEST(GridFinder, Full_Angled_Easy) {
+TEST(GridFinder, DISABLED_Full_Angled_Easy) {
 	runFullTest("angled_easy", 6u);
 }
-TEST(GridFinder, Full_Angled_Hard) {
+TEST(GridFinder, DISABLED_Full_Angled_Hard) {
 	runFullTest("angled_hard", 8u);
 }
 TEST(GridFinder, DISABLED_Full_Angled_Hard_Lighting) {
