@@ -3,28 +3,25 @@
 #include "geometryGroundTruth.hpp"
 #include "testDataHelpers.hpp"
 
-#include <cmath>
+#include <array>
 #include <filesystem>
+#include <format>
 #include <gtest/gtest.h>
 #include <opencv2/opencv.hpp>
-#include <vector>
+#include <string>
 
 // The boardFinder tests only verify that, given an image of a go board, we can detect the board in the image.
 // This is done using the .json files next to each image containing the board and grid coordiantes.
 namespace tengen::vision::core {
 namespace gtest {
 
-//! Min-dimension of the axis-aligned bounding box of 4 points, in image-space pixels.
-static float boundingBoxMinDim(const std::array<cv::Point2f, 4>& points) {
-	float minX = points[0].x, maxX = points[0].x;
-	float minY = points[0].y, maxY = points[0].y;
+//! Format a corner set for a failure message.
+static std::string formatCorners(const std::array<cv::Point2f, 4>& points) {
+	std::string text;
 	for (const auto& p: points) {
-		minX = std::min(minX, p.x);
-		maxX = std::max(maxX, p.x);
-		minY = std::min(minY, p.y);
-		maxY = std::max(maxY, p.y);
+		text += std::format(" ({:.1f}, {:.1f})", p.x, p.y);
 	}
-	return std::min(maxX - minX, maxY - minY);
+	return text;
 }
 
 
@@ -39,35 +36,33 @@ void runTest(std::string testSetName, unsigned imageCount) {
 
 	static constexpr float TOLERANCE_FRACTION = 0.1f; //!< Percentage of acceptable pixel position error relative to the contour bounding box.
 
+	// NOTE: Every per-image check below is non-fatal and skips to the next image, so one bad image reports
+	//       itself instead of aborting the sweep and hiding whether the remaining images pass.
 	for (const auto& imagePath: images) {
 		// Load image
 		cv::Mat image = cv::imread(imagePath.string());
-		ASSERT_FALSE(image.empty());
+		if (image.empty()) {
+			ADD_FAILURE() << "Could not load " << imagePath << "\n";
+			continue;
+		}
 
 		// Find the Go board
 		const auto warpResult = warpToBoard(image);
-		EXPECT_TRUE(isValidBoard(warpResult));
+		if (!isValidBoard(warpResult)) {
+			ADD_FAILURE() << "BoardFinder produced no valid board for " << imagePath << "\n";
+			continue;
+		}
 
 		// Load the real geometry from the json file
 		const auto jsonPath          = std::filesystem::path(imagePath).replace_extension(".json");
 		GeometryGroundTruth geometry = GeometryGroundTruth::loadFromFile(jsonPath);
 
-		// Check the found contour corners align with the ones defined in the json file
-		// It may be the case that we find the grid contour instead of the board contour. This is suboptimal but not wrong. We output and continue
-		const float boardTolerance = TOLERANCE_FRACTION * boundingBoxMinDim(geometry.boardCorners);
-		if (!pointSetsMatch(warpResult.contourCorners, geometry.boardCorners, boardTolerance)) {
-			std::cout << std::format("Board Corners not matched in '{}'!\n", imagePath.string());
-
-			const float gridTolerance = TOLERANCE_FRACTION * boundingBoxMinDim(geometry.gridCorners);
-			if (!pointSetsMatch(warpResult.contourCorners, geometry.gridCorners, gridTolerance)) {
-				for (std::size_t i = 0; i < 4; ++i)
-					std::cout << "  contourCorners[" << i << "]=" << warpResult.contourCorners[i] << '\n';
-				for (std::size_t i = 0; i < 4; ++i)
-					std::cout << "  boardCorners[" << i << "]=" << geometry.boardCorners[i] << '\n';
-				for (std::size_t i = 0; i < 4; ++i)
-					std::cout << "  gridCorners[" << i << "]=" << geometry.gridCorners[i] << '\n';
-				EXPECT_TRUE(false);
-			}
+		// Check that we found either the board contour or the grid contour.
+		if (!boardContourMatchesEitherOutline(warpResult.contourCorners, geometry, TOLERANCE_FRACTION)) {
+			ADD_FAILURE() << "Contour matches neither the board nor the grid outline in '" << imagePath.string() << "'.\n"
+			              << "  contour:" << formatCorners(warpResult.contourCorners) << "\n"
+			              << "  board:  " << formatCorners(geometry.boardCorners) << "\n"
+			              << "  grid:   " << formatCorners(geometry.gridCorners);
 		}
 	}
 }
