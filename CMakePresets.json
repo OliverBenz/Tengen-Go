@@ -1,0 +1,102 @@
+{
+	"version": 6,
+	"cmakeMinimumRequired": {
+		"major": 3,
+		"minor": 27,
+		"patch": 0
+	},
+	"configurePresets": [
+		{
+			"name": "base",
+			"hidden": true,
+			"binaryDir": "${sourceDir}/build/${presetName}",
+			"installDir": "${sourceDir}/build/install/${presetName}"
+		},
+		{
+			"name": "Win64",
+			"displayName": "Windows x64",
+			"description": "Windows x64 configuration with Debug, Release, and RelWithDebInfo (multi-config generator).",
+			"inherits": "base",
+			"generator": "Visual Studio 17 2022",
+			"architecture": {
+				"value": "x64",
+				"strategy": "set"
+			},
+			"condition": {
+				"type": "equals",
+				"lhs": "${hostSystemName}",
+				"rhs": "Windows"
+			},
+			"cacheVariables": {
+				"OpenCV_DIR": "C:/opencv/build"
+			}
+		},
+		{
+			"name": "Linux64",
+			"hidden": true,
+			"inherits": "base",
+			"generator": "Ninja",
+			"condition": {
+				"type": "equals",
+				"lhs": "${hostSystemName}",
+				"rhs": "Linux"
+			}
+		},
+		{
+			"name": "Linux64-Debug",
+			"displayName": "Linux x64 Debug",
+			"description": "Linux x64 Debug configuration.",
+			"inherits": "Linux64",
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "Debug"
+			}
+		},
+		{
+			"name": "Linux64-Release",
+			"displayName": "Linux x64 Release",
+			"description": "Linux x64 Release configuration.",
+			"inherits": "Linux64",
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "Release"
+			}
+		},
+		{
+			"name": "Linux64-RelWithDebInfo",
+			"displayName": "Linux x64 RelWithDebInfo",
+			"description": "Linux x64 Release configuration with debug info.",
+			"inherits": "Linux64",
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "RelWithDebInfo"
+			}
+		}
+	],
+	"buildPresets": [
+		{
+			"name": "Win64-Debug",
+			"configurePreset": "Win64",
+			"configuration": "Debug"
+		},
+		{
+			"name": "Win64-Release",
+			"configurePreset": "Win64",
+			"configuration": "Release"
+		},
+		{
+			"name": "Win64-RelWithDebInfo",
+			"configurePreset": "Win64",
+			"configuration": "RelWithDebInfo"
+		},
+		{
+			"name": "Linux64-Debug",
+			"configurePreset": "Linux64-Debug"
+		},
+		{
+			"name": "Linux64-Release",
+			"configurePreset": "Linux64-Release"
+		},
+		{
+			"name": "Linux64-RelWithDebInfo",
+			"configurePreset": "Linux64-RelWithDebInfo"
+		}
+	]
+}
