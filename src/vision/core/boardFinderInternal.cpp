@@ -274,6 +274,37 @@ double boardLineCountScore(const int count, const LineCountScoreSettings& settin
 	return std::clamp(1.0 - static_cast<double>(best) / settings.distanceForZeroScore, 0.0, 1.0);
 }
 
+//! Score how evenly spaced a set of line centers is, from 1 (periodic enough to be a grid) to 0.
+double lineSpacingPeriodicityScore(const std::vector<double>& centers, const double residualForFullScore, const double residualForZeroScore) {
+	if (centers.size() < 3u || residualForZeroScore <= residualForFullScore) {
+		return 0.0;
+	}
+
+	std::vector<double> gaps;
+	gaps.reserve(centers.size() - 1u);
+	for (std::size_t i = 0u; i + 1u < centers.size(); ++i) {
+		gaps.push_back(centers[i + 1u] - centers[i]);
+	}
+
+	std::vector<double> sorted = gaps;
+	const auto middle          = sorted.begin() + static_cast<std::ptrdiff_t>(sorted.size() / 2u);
+	std::nth_element(sorted.begin(), middle, sorted.end());
+	const double spacing = *middle;
+	if (spacing <= 0.0) {
+		return 0.0;
+	}
+
+	double sumSq = 0.0;
+	for (const double gap: gaps) {
+		const double multiple = std::max(1.0, std::round(gap / spacing)); // A gap spanning missing lines is a multiple.
+		const double residual = (gap - multiple * spacing) / spacing;
+		sumSq += residual * residual;
+	}
+
+	const double rms = std::sqrt(sumSq / static_cast<double>(gaps.size()));
+	return std::clamp((residualForZeroScore - rms) / (residualForZeroScore - residualForFullScore), 0.0, 1.0);
+}
+
 //! Evaluate grid-line evidence for one board candidate using a fast line-count check on the warped candidate.
 GridEvidence evaluateGridEvidence(const cv::Mat& image, const std::vector<cv::Point2f>& quad, const GridEvidenceSettings& evidenceSettings,
                                   const LineCountScoreSettings& lineCountSettings) {
@@ -350,8 +381,13 @@ GridEvidence evaluateGridEvidence(const cv::Mat& image, const std::vector<cv::Po
 	const double segmentSupport =
 	        std::clamp((static_cast<double>(vertical.size()) + static_cast<double>(horizontal.size())) / evidenceSettings.segmentSupportForFullScore, 0.0, 1.0);
 
-	evidence.score =
-	        evidenceSettings.pairFitWeight * pairFit + evidenceSettings.balanceWeight * balance + evidenceSettings.segmentSupportWeight * segmentSupport;
+	// Line counts alone cannot tell a tight board quad from an oversized one that happens to catch a legal count.
+	evidence.periodicity = std::sqrt(
+	        lineSpacingPeriodicityScore(vCenters, evidenceSettings.periodicityResidualForFullScore, evidenceSettings.periodicityResidualForZeroScore) *
+	        lineSpacingPeriodicityScore(hCenters, evidenceSettings.periodicityResidualForFullScore, evidenceSettings.periodicityResidualForZeroScore));
+
+	evidence.score = evidenceSettings.pairFitWeight * pairFit + evidenceSettings.balanceWeight * balance +
+	                 evidenceSettings.segmentSupportWeight * segmentSupport + evidenceSettings.periodicityWeight * evidence.periodicity;
 	return evidence;
 }
 
@@ -536,8 +572,9 @@ std::optional<BoardCandidate> selectBestBoardCandidate(const std::vector<std::ve
 		current.verticalCount       = evidence.verticalCount;
 		current.horizontalCount     = evidence.horizontalCount;
 		const double finalScore     = current.score + gridScoreWeight * evidence.score;
-		DEBUG_LOG("[board-debug] refine idx=" << current.contourIdx << " geom=" << current.score << " grid=" << evidence.score << " final=" << finalScore
-		                                      << " v=" << evidence.verticalCount << " h=" << evidence.horizontalCount << '\n');
+		DEBUG_LOG("[board-debug] refine idx=" << current.contourIdx << " geom=" << current.score << " grid=" << evidence.score
+		                                      << " periodicity=" << evidence.periodicity << " final=" << finalScore << " v=" << evidence.verticalCount
+		                                      << " h=" << evidence.horizontalCount << '\n');
 		if (finalScore > bestFinalScore) {
 			bestFinalScore = finalScore;
 			best           = current;

@@ -35,9 +35,7 @@ namespace tengen::vision::core {
 
 /*! Estimate the dominant adjacent gap (grid spacing) using a coarse histogram.
  *  Using a mode (instead of a mean) is fast and robust against outlier gaps introduced by missing/spurious lines.
- *  The histogram only *locates* the dominant cluster; the returned spacing is the mean of the gaps in it, so the
- *  estimate is not quantised to the bin grid. Returning a bin center instead would bias every spacing by up to
- *  half a bin - a systematic error that the reconstructed lattice multiplies by N-1 into its span.
+ *  The histogram only locates the dominant cluster; the returned spacing is the mean of the gaps in it.
  *
  * \param [in] gaps     Adjacent differences between sorted candidate centers (pixels).
  * \param [in] binWidth Histogram bin width (pixels).
@@ -71,10 +69,8 @@ double modeGap(const std::vector<double>& gaps, double binWidth) {
 	// 3. Pick the most populated bin.
 	const auto bestBin = static_cast<std::size_t>(std::max_element(hist.begin(), hist.end()) - hist.begin()); //!< argmax(hist)
 
-	// 4. Average the gaps forming that cluster. The immediate neighbour bins are included because the bin grid is
-	//    anchored at gmin - typically the smallest, least representative gap - so the cluster can straddle a bin
-	//    boundary and split its votes. At realistic bin widths an adjacent bin is far too close to hold a
-	//    different spacing (a gap spanning a missing line lands many bins away).
+	// 4. Average the gaps forming that cluster. Neighbour bins are included because the bin grid is anchored at
+	//    gmin, so a cluster can straddle a bin boundary and split its votes.
 	double sum        = 0.0; //!< Sum of the gaps in the dominant cluster (px)
 	std::size_t count = 0u;  //!< Number of gaps in the dominant cluster
 	for (double g: gaps) {
@@ -493,12 +489,8 @@ bool findGrid(const std::vector<double>& vCenters, const std::vector<double>& hC
 		return n == 9u || n == 13u || n == 19u;
 	};
 
-	// Score how well a candidate's implied physical span (its outermost fitted grid lines) matches the
-	// known/expected axis extent (e.g. the B_0 canvas size, which the board is warped to fill). 1.0 = perfect
-	// match, falling off symmetrically as the candidate over- or under-shoots. This is what lets us reject a
-	// smaller N that "fully explains" a reduced set of detections (e.g. because many stones occluded some grid
-	// lines) in favor of the true, larger N whose implied span actually matches the physical board.
-	// expectedExtent <= 0 disables the check (returns a neutral 1.0), e.g. for callers without extent knowledge.
+	// Score how well a candidate's implied span matches the expected axis extent. 1.0 = perfect match.
+	// Rejects a smaller N that only "explains" the detections because occlusion removed some. 0 disables it.
 	auto extentFitScore = [](double span, double expectedExtent) -> double {
 		if (!(expectedExtent > 0.0) || !std::isfinite(span)) {
 			return 1.0;
@@ -615,15 +607,8 @@ bool findGrid(const std::vector<double>& vCenters, const std::vector<double>& hC
 		const double spanH     = hTmp.back() - hTmp.front();
 		const double extentFit = harmonicMean(extentFitScore(spanV, expectedExtentV), extentFitScore(spanH, expectedExtentH));
 
-		// Both factors have to hold at once:
-		//  - extentFit rejects a smaller N that "fully explains" an occlusion-shrunk set of detections,
-		//    because its implied board span would fall well short of the physical board.
-		//  - balanced rejects a larger N that only fits by extrapolating lattice lines no detection
-		//    supports.
-		// They are multiplied rather than ranked lexicographically: expectedExtent comes from BoardFinder's
-		// canvas and is therefore only as good as its framing (the grid can span anywhere from ~60% to
-		// ~120% of that canvas in practice), so letting extentFit decide on its own lets a poorly framed
-		// coarse warp override otherwise conclusive line evidence.
+		// Multiplied rather than ranked one after the other: expectedExtent depends on how BoardFinder framed
+		// the board, which varies too much for it to overrule the line evidence on its own.
 		const double score = extentFit * balanced;
 
 		DEBUG_LOG(std::format(" - Joint N={}: spanV={:.1f}/{:.1f} spanH={:.1f}/{:.1f} extentFit={:.3f} balanced={:.3f} completeness={:.3f} coverage={:.3f} "
