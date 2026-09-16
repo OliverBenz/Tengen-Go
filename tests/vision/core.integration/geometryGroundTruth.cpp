@@ -66,7 +66,7 @@ bool pointSetsMatch(const std::array<cv::Point2f, 4>& expected, const std::array
 	bool match = true;
 	for (std::size_t i = 0; i < expected.size(); ++i) {
 		const double distance = cv::norm(expected[i] - actual[bestPerm[i]]);
-		match &= distance <= tolerance;
+		match &= distance <= static_cast<double>(tolerance);
 	}
 	return match;
 }
@@ -81,14 +81,14 @@ static double groundTruthSpacing(const GeometryGroundTruth& geometry, const cv::
 	cv::perspectiveTransform(gridCorners, warpedCorners, H);
 
 	const std::array<cv::Point2f, 4> corners = {warpedCorners[0], warpedCorners[1], warpedCorners[2], warpedCorners[3]};
-	return minimumCornerPointDistance(corners) / (geometry.boardSize - 1);
+	return static_cast<double>(minimumCornerPointDistance(corners)) / static_cast<double>(geometry.boardSize - 1);
 }
 
 void verifyBoardGeometry(const BoardGeometry& result, const GeometryGroundTruth& geometry, const float pointDeviationPercentage) {
 	EXPECT_EQ(result.boardSize, geometry.boardSize);
 
 	const double spacing = groundTruthSpacing(geometry, result.H);
-	EXPECT_NEAR(result.spacing, spacing, pointDeviationPercentage * spacing);
+	EXPECT_NEAR(result.spacing, spacing, static_cast<double>(pointDeviationPercentage) * spacing);
 }
 
 void verifyRectifiedBoard(const RectifiedBoard& board, const GeometryGroundTruth& geometry) {
