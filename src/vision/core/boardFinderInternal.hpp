@@ -59,9 +59,12 @@ struct GridEvidenceSettings {
 	double clusterEpsilonPx{15.0};
 	double balanceDiffForZeroScore{12.0};
 	double segmentSupportForFullScore{220.0};
+	double periodicityResidualForFullScore{0.05};
+	double periodicityResidualForZeroScore{0.25};
 	double pairFitWeight{2.0};
 	double balanceWeight{0.8};
 	double segmentSupportWeight{0.4};
+	double periodicityWeight{1.5};
 };
 
 //! Geometric scoring weights for candidate quadrilaterals.
@@ -129,6 +132,7 @@ double parallelCosine(const cv::Point2f& v0, const cv::Point2f& v1);
 //! Grid evidence extracted from a warped board candidate.
 struct GridEvidence {
 	double score{0.0};
+	double periodicity{0.0}; //!< 1 = evenly spaced lines on both axes, 0 = not periodic at all.
 	int verticalCount{0};
 	int horizontalCount{0};
 };
@@ -157,6 +161,10 @@ std::vector<double> clusterWeighted1D(std::vector<Line1D> values, double eps);
 
 //! Score how close a line-count is to legal Go board sizes.
 double boardLineCountScore(const int count, const LineCountScoreSettings& settings);
+
+//! Score how evenly spaced a set of line centers is, from 1 (periodic enough to be a grid) to 0.
+//! Gaps are measured against multiples of the median gap, so a line missing behind a stone costs nothing.
+double lineSpacingPeriodicityScore(const std::vector<double>& centers, double residualForFullScore, double residualForZeroScore);
 
 //! Evaluate grid-line evidence for one board candidate using a fast line-count check on the warped candidate.
 GridEvidence evaluateGridEvidence(const cv::Mat& image, const std::vector<cv::Point2f>& quad, const GridEvidenceSettings& evidenceSettings,

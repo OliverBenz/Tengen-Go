@@ -51,7 +51,8 @@ TEST(Process, Game_Simple_Size13) {
 
 	for (unsigned i = 0; i <= MOVES; ++i) {
 #ifdef SKIP_FAILING_TESTS
-		if (i == 20u || i == 23u || i == 24u || i == 25u || i == 27u) {
+		// move_24 misses the stone at (12, 8)
+		if (i == 24u) {
 			continue;
 		}
 #endif
