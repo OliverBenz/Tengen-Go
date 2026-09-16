@@ -21,6 +21,10 @@ struct GeometryGroundTruth {
 //! Check if two sets of points match given some tolerance. Takes into account that points arrays may be permuted.
 bool pointSetsMatch(const std::array<cv::Point2f, 4>& expected, const std::array<cv::Point2f, 4>& actual, float tolerance);
 
+//! Check a BoardFinder contour matches with either the board or grid geometry outline.
+//! \note The BoardFinder step in the vision pipeline can find either the board or grid border. Boath are valid.
+bool boardContourMatchesEitherOutline(const std::array<cv::Point2f, 4>& contourCorners, const GeometryGroundTruth& geometry, float toleranceFraction);
+
 //! Verify the board geometry resulting from the vision algorithm matches the test defined board geometry.
 void verifyBoardGeometry(const BoardGeometry& result, const GeometryGroundTruth& geometry, float pointDeviationPercentage = 0.1f);
 

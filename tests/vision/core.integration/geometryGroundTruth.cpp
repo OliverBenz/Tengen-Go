@@ -71,6 +71,14 @@ bool pointSetsMatch(const std::array<cv::Point2f, 4>& expected, const std::array
 	return match;
 }
 
+bool boardContourMatchesEitherOutline(const std::array<cv::Point2f, 4>& contourCorners, const GeometryGroundTruth& geometry, const float toleranceFraction) {
+	const auto matchesOutline = [&](const std::array<cv::Point2f, 4>& outline) {
+		return pointSetsMatch(outline, contourCorners, toleranceFraction * minimumCornerPointDistance(outline));
+	};
+
+	return matchesOutline(geometry.boardCorners) || matchesOutline(geometry.gridCorners);
+}
+
 
 //! Get the grid line spacing of the specified board geometry.
 static double groundTruthSpacing(const GeometryGroundTruth& geometry, const cv::Mat& H) {

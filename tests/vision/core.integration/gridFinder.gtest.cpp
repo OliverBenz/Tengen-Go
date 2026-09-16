@@ -50,16 +50,22 @@ void runIdealTest(std::string testSetName, unsigned imageCount) {
 		// A) Prepare the test
 		// Load image
 		cv::Mat image = cv::imread(imagePath.string());
-		ASSERT_FALSE(image.empty());
+		if (image.empty()) {
+			ADD_FAILURE() << "Could not load " << imagePath << "\n";
+			continue;
+		}
 
 		// Load geometry information
 		const auto jsonPath          = std::filesystem::path(imagePath).replace_extension(".json");
 		GeometryGroundTruth geometry = GeometryGroundTruth::loadFromFile(jsonPath);
 		const float boardTolerance   = TOLERANCE_FRACTION * minimumCornerPointDistance(geometry.boardCorners);
 
-		// Transform with known corners
+		// Check that we found either the board contour or the grid contour.
 		const WarpResult warpResult = prepareIdealImage(image, geometry.boardCorners);
-		ASSERT_TRUE(pointSetsMatch(warpResult.contourCorners, geometry.boardCorners, boardTolerance));
+		if (!pointSetsMatch(warpResult.contourCorners, geometry.boardCorners, boardTolerance)) {
+			ADD_FAILURE() << "Ideal warp did not reproduce the labelled board corners for " << imagePath << "\n";
+			continue;
+		}
 
 		// B) Start of the geometry test
 		const BoardGeometry result = analyseGeometry(warpResult);
@@ -87,16 +93,21 @@ void runFullTest(std::string testSetName, unsigned imageCount) {
 		// A) Prepare the test
 		// Load image
 		cv::Mat image = cv::imread(imagePath.string());
-		ASSERT_FALSE(image.empty());
+		if (image.empty()) {
+			ADD_FAILURE() << "Could not load " << imagePath << "\n";
+			continue;
+		}
 
 		// Load geometry information
 		const auto jsonPath          = std::filesystem::path(imagePath).replace_extension(".json");
 		GeometryGroundTruth geometry = GeometryGroundTruth::loadFromFile(jsonPath);
-		const float boardTolerance   = TOLERANCE_FRACTION * minimumCornerPointDistance(geometry.boardCorners);
 
-		// Transform with known corners
+		// Check that we found either the board contour or the grid contour.
 		const WarpResult warpResult = warpToBoard(image);
-		ASSERT_TRUE(pointSetsMatch(warpResult.contourCorners, geometry.boardCorners, boardTolerance));
+		if (!boardContourMatchesEitherOutline(warpResult.contourCorners, geometry, TOLERANCE_FRACTION)) {
+			ADD_FAILURE() << "BoardFinder contour matches neither the board nor the grid outline for " << imagePath << "\n";
+			continue;
+		}
 
 		// B) Start of the geometry test
 		const BoardGeometry result = analyseGeometry(warpResult);
@@ -118,15 +129,15 @@ TEST(GridFinder, Ideal_Angled_Easy) {
 TEST(GridFinder, Ideal_Angled_Hard) {
 	runIdealTest("angled_hard", 8u);
 }
-TEST(GridFinder, DISABLED_Ideal_Angled_Hard_Lighting) {
+TEST(GridFinder, Ideal_Angled_Hard_Lighting) {
 	runIdealTest("angled_hard_lighting", 6u);
 }
 
 // Full tests
-TEST(GridFinder, DISABLED_Full_Angled_Easy) {
+TEST(GridFinder, Full_Angled_Easy) {
 	runFullTest("angled_easy", 6u);
 }
-TEST(GridFinder, DISABLED_Full_Angled_Hard) {
+TEST(GridFinder, Full_Angled_Hard) {
 	runFullTest("angled_hard", 8u);
 }
 TEST(GridFinder, DISABLED_Full_Angled_Hard_Lighting) {
