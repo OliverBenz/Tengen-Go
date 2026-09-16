@@ -35,6 +35,9 @@ namespace tengen::vision::core {
 
 /*! Estimate the dominant adjacent gap (grid spacing) using a coarse histogram.
  *  Using a mode (instead of a mean) is fast and robust against outlier gaps introduced by missing/spurious lines.
+ *  The histogram only *locates* the dominant cluster; the returned spacing is the mean of the gaps in it, so the
+ *  estimate is not quantised to the bin grid. Returning a bin center instead would bias every spacing by up to
+ *  half a bin - a systematic error that the reconstructed lattice multiplies by N-1 into its span.
  *
  * \param [in] gaps     Adjacent differences between sorted candidate centers (pixels).
  * \param [in] binWidth Histogram bin width (pixels).
@@ -53,16 +56,36 @@ double modeGap(const std::vector<double>& gaps, double binWidth) {
 	const auto bins = static_cast<std::size_t>(std::ceil((gmax - gmin) / binWidth)) + 1u; //!< Number of bins (>= 1)
 	std::vector<int> hist(bins, 0);                                                       //!< Per-bin counts
 
+	//! \param [in] g One adjacent gap (px)
+	auto binOf = [&](const double g) {
+		return static_cast<std::size_t>(std::max(0, static_cast<int>(std::floor((g - gmin) / binWidth)))); //!< Bin index
+	};
+
 	// g = one adjacent gap (px)
 	for (double g: gaps) {
-		const auto b = static_cast<std::size_t>(std::max(0, static_cast<int>(std::floor((g - gmin) / binWidth)))); //!< Bin index
+		const auto b = binOf(g);
 		if (b < bins)
 			hist[b]++; // vote
 	}
 
-	// 3. Pick the most populated bin and return its center.
-	const int bestBin = static_cast<int>(std::max_element(hist.begin(), hist.end()) - hist.begin()); //!< argmax(hist)
-	return gmin + (bestBin + 0.5) * binWidth;                                                        // bin center (px)
+	// 3. Pick the most populated bin.
+	const auto bestBin = static_cast<std::size_t>(std::max_element(hist.begin(), hist.end()) - hist.begin()); //!< argmax(hist)
+
+	// 4. Average the gaps forming that cluster. The immediate neighbour bins are included because the bin grid is
+	//    anchored at gmin - typically the smallest, least representative gap - so the cluster can straddle a bin
+	//    boundary and split its votes. At realistic bin widths an adjacent bin is far too close to hold a
+	//    different spacing (a gap spanning a missing line lands many bins away).
+	double sum        = 0.0; //!< Sum of the gaps in the dominant cluster (px)
+	std::size_t count = 0u;  //!< Number of gaps in the dominant cluster
+	for (double g: gaps) {
+		const auto b = binOf(g);
+		if (b < bins && b + 1u >= bestBin && b <= bestBin + 1u) { // |b - bestBin| <= 1, without unsigned underflow
+			sum += g;
+			++count;
+		}
+	}
+
+	return sum / static_cast<double>(count); // count >= 1: bestBin is an argmax, so it holds at least one gap.
 }
 
 /*! Positive modulo helper in [0, period).
