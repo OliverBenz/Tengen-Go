@@ -145,32 +145,32 @@ bool Vision::setup(const Coord gaugeCoord) {
 			break;
 		case D4::Rot90:
 			cv::rotate(board.imageB, imageTransformed, cv::ROTATE_90_CLOCKWISE);
-			Tg = (cv::Mat_<double>(3, 3) << 0.0, -1.0, static_cast<double>(height - 1), 1.0, 0.0, 0.0, 0.0, 0.0, 1.0);
+			Tg = cv::Mat(cv::Matx33d(0.0, -1.0, static_cast<double>(height - 1), 1.0, 0.0, 0.0, 0.0, 0.0, 1.0));
 			break;
 		case D4::Rot180:
 			cv::rotate(board.imageB, imageTransformed, cv::ROTATE_180);
-			Tg = (cv::Mat_<double>(3, 3) << -1.0, 0.0, static_cast<double>(width - 1), 0.0, -1.0, static_cast<double>(height - 1), 0.0, 0.0, 1.0);
+			Tg = cv::Mat(cv::Matx33d(-1.0, 0.0, static_cast<double>(width - 1), 0.0, -1.0, static_cast<double>(height - 1), 0.0, 0.0, 1.0));
 			break;
 		case D4::Rot270:
 			cv::rotate(board.imageB, imageTransformed, cv::ROTATE_90_COUNTERCLOCKWISE);
-			Tg = (cv::Mat_<double>(3, 3) << 0.0, 1.0, 0.0, -1.0, 0.0, static_cast<double>(width - 1), 0.0, 0.0, 1.0);
+			Tg = cv::Mat(cv::Matx33d(0.0, 1.0, 0.0, -1.0, 0.0, static_cast<double>(width - 1), 0.0, 0.0, 1.0));
 			break;
 		case D4::FlipX:
 			cv::flip(board.imageB, imageTransformed, 1);
-			Tg = (cv::Mat_<double>(3, 3) << -1.0, 0.0, static_cast<double>(width - 1), 0.0, 1.0, 0.0, 0.0, 0.0, 1.0);
+			Tg = cv::Mat(cv::Matx33d(-1.0, 0.0, static_cast<double>(width - 1), 0.0, 1.0, 0.0, 0.0, 0.0, 1.0));
 			break;
 		case D4::FlipY:
 			cv::flip(board.imageB, imageTransformed, 0);
-			Tg = (cv::Mat_<double>(3, 3) << 1.0, 0.0, 0.0, 0.0, -1.0, static_cast<double>(height - 1), 0.0, 0.0, 1.0);
+			Tg = cv::Mat(cv::Matx33d(1.0, 0.0, 0.0, 0.0, -1.0, static_cast<double>(height - 1), 0.0, 0.0, 1.0));
 			break;
 		case D4::Diag:
 			cv::transpose(board.imageB, imageTransformed);
-			Tg = (cv::Mat_<double>(3, 3) << 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0);
+			Tg = cv::Mat(cv::Matx33d(0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0));
 			break;
 		case D4::AntiDiag:
 			cv::transpose(board.imageB, imageTransformed);
 			cv::flip(imageTransformed, imageTransformed, -1);
-			Tg = (cv::Mat_<double>(3, 3) << 0.0, -1.0, static_cast<double>(height - 1), -1.0, 0.0, static_cast<double>(width - 1), 0.0, 0.0, 1.0);
+			Tg = cv::Mat(cv::Matx33d(0.0, -1.0, static_cast<double>(height - 1), -1.0, 0.0, static_cast<double>(width - 1), 0.0, 0.0, 1.0));
 			break;
 		}
 

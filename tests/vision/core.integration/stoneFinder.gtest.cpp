@@ -28,7 +28,7 @@ static std::optional<StoneState> detectSingleStoneInImage(const std::filesystem:
 
 	WarpResult warped = warpToBoard(image);
 	if (!isValidBoard(warped)) {
-		warped = {image, cv::Mat::eye(3, 3, CV_64F)};
+		warped = {image, cv::Mat::eye(3, 3, CV_64F), {}};
 	}
 
 	const BoardGeometry geometry   = analyseGeometry(warped);

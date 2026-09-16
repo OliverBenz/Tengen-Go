@@ -197,7 +197,8 @@ TEST(GameNetMessages, ServerDeltaOmitsEmptyFields) {
 	EXPECT_FALSE(j.contains("captures"));
 }
 
-#if GTEST_HAS_DEATH_TEST
+// NDEBUG disables the assert() this death test relies on, so it can only run in debug builds.
+#if GTEST_HAS_DEATH_TEST && !defined(NDEBUG)
 TEST(GameNetMessages, ServerDeltaMissingXYSerialization) {
 	const auto build = [] {
 		network::toMessage(network::ServerDelta{
