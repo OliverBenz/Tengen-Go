@@ -36,8 +36,7 @@ void runTest(std::string testSetName, unsigned imageCount) {
 
 	static constexpr float TOLERANCE_FRACTION = 0.1f; //!< Percentage of acceptable pixel position error relative to the contour bounding box.
 
-	// NOTE: Every per-image check below is non-fatal and skips to the next image, so one bad image reports
-	//       itself instead of aborting the sweep and hiding whether the remaining images pass.
+	// Checks below are non-fatal so one bad image does not hide the results of the remaining ones.
 	for (const auto& imagePath: images) {
 		// Load image
 		cv::Mat image = cv::imread(imagePath.string());
