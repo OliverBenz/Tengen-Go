@@ -21,8 +21,8 @@ BoardRenderer::BoardRenderer(const unsigned nodes) : m_nodes(nodes) {
 		}
 	};
 
-	loadTexture(TEXTURE_BLACK, m_textureBlack);
-	loadTexture(TEXTURE_WHITE, m_textureWhite);
+	loadTexture(GUI_RESOURCES_DIR "/anime_black.png", m_textureBlack);
+	loadTexture(GUI_RESOURCES_DIR "/anime_white.png", m_textureWhite);
 }
 
 unsigned BoardRenderer::nodes() const {
