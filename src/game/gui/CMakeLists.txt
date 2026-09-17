@@ -39,10 +39,10 @@ set_target_properties(${targetName}
 		AUTOMOC ON # Auto handling of QT Meta-Object Compiler
 )
 
+set(resourcesDir "${CMAKE_CURRENT_LIST_DIR}/resources")
 target_compile_definitions(${targetName}
 	PRIVATE
-		TEXTURE_BLACK="${CMAKE_SOURCE_DIR}/assets/anime_black.png"
-		TEXTURE_WHITE="${CMAKE_SOURCE_DIR}/assets/anime_white.png"
+		GUI_RESOURCES_DIR="${resourcesDir}"
 )
 
 # Setup project settings
