@@ -513,12 +513,9 @@ bool findGrid(const std::vector<double>& vCenters, const std::vector<double>& hC
 	// have an exact valid count due to missing detections (e.g., 13x13 board with 9 detected lines).
 	struct JointCandidate {
 		std::size_t N{0u};                                   //!< Board size
-		std::size_t inliersTotal{0u};                        //!< ScoreV.inliers + scoreH.inliers
-		double completeness{0.0};                            //!< InliersTotal / (2*N)
-		double coverage{0.0};                                //!< InliersTotal / (vCenters+hCenters)
-		double balanced{0.0};                                //!< Harmonic mean of completeness+coverage
-		double extentFit{1.0};                               //!< How well this N's implied span matches the known board extent (1.0 = neutral/perfect)
+		double score{0.0};                                   //!< Combined ranking score; larger is better
 		double rms{std::numeric_limits<double>::infinity()}; //!< Combined weighted RMS (px)
+		std::size_t inliersTotal{0u};                        //!< ScoreV.inliers + scoreH.inliers
 		std::vector<double> v;                               //!< Fitted vertical grid for this N
 		std::vector<double> h;                               //!< Fitted horizontal grid for this N
 	};
@@ -536,30 +533,16 @@ bool findGrid(const std::vector<double>& vCenters, const std::vector<double>& hC
 		static constexpr double SCORE_EPS = 1e-12; //!< Epsilon for score comparisons.
 		static constexpr double RMS_EPS   = 1e-6;  //!< Epsilon for RMS comparisons.
 
-		// Physical plausibility comes first: a candidate N whose implied board span badly over- or
-		// undershoots the known canvas extent is very likely wrong, even if it "completely" explains a
-		// reduced, occlusion-shrunk set of detections (see extentFitScore() above).
-		const bool betterExtent = lhs.extentFit > rhs.extentFit + SCORE_EPS;            //!< Prefer a physically plausible board size first.
-		const bool equalExtent  = std::abs(lhs.extentFit - rhs.extentFit) <= SCORE_EPS; //!< Tie on extent fit.
-
-		const bool betterBalanced = lhs.balanced > rhs.balanced + SCORE_EPS;                    //!< Prefer jointly balanced fit quality.
-		const bool equalBalanced  = std::abs(lhs.balanced - rhs.balanced) <= SCORE_EPS;         //!< Tie on balanced score.
-		const bool betterComp     = lhs.completeness > rhs.completeness + SCORE_EPS;            //!< Prefer covering required lattice lines.
-		const bool equalComp      = std::abs(lhs.completeness - rhs.completeness) <= SCORE_EPS; //!< Tie on completeness.
-		const bool betterCover    = lhs.coverage > rhs.coverage + SCORE_EPS;                    //!< Prefer explaining observed detections.
-		const bool equalCover     = std::abs(lhs.coverage - rhs.coverage) <= SCORE_EPS;         //!< Tie on coverage.
-		const bool betterRms      = lhs.rms + RMS_EPS < rhs.rms;                                //!< Prefer smaller alignment error.
-		const bool equalRms       = std::abs(lhs.rms - rhs.rms) <= RMS_EPS;                     //!< Tie on RMS.
-		const bool betterInliers  = lhs.inliersTotal > rhs.inliersTotal;                        //!< Prefer more absolute inliers.
-		const bool equalInliers   = lhs.inliersTotal == rhs.inliersTotal;                       //!< Tie on inliers.
-		const bool preferSmallerN = (rhs.N == 0u) ? true : (lhs.N < rhs.N);                     //!< Deterministic tie-break.
-
-		return betterExtent ||
-		       (equalExtent &&
-		        (betterBalanced ||
-		         (equalBalanced &&
-		          (betterComp ||
-		           (equalComp && (betterCover || (equalCover && (betterRms || (equalRms && (betterInliers || (equalInliers && preferSmallerN)))))))))));
+		if (std::abs(lhs.score - rhs.score) > SCORE_EPS) {
+			return lhs.score > rhs.score;
+		}
+		if (std::abs(lhs.rms - rhs.rms) > RMS_EPS) {
+			return lhs.rms < rhs.rms; // Prefer smaller alignment error.
+		}
+		if (lhs.inliersTotal != rhs.inliersTotal) {
+			return lhs.inliersTotal > rhs.inliersTotal; // Prefer more absolute inliers.
+		}
+		return rhs.N == 0u || lhs.N < rhs.N; // Deterministic tie-break.
 	};
 
 	JointCandidate best{}; // best joint candidate so far
@@ -609,14 +592,26 @@ bool findGrid(const std::vector<double>& vCenters, const std::vector<double>& hC
 		const double spanH     = hTmp.back() - hTmp.front();
 		const double extentFit = harmonicMean(extentFitScore(spanV, expectedExtentV), extentFitScore(spanH, expectedExtentH));
 
+		// Both factors have to hold at once:
+		//  - extentFit rejects a smaller N that "fully explains" an occlusion-shrunk set of detections,
+		//    because its implied board span would fall well short of the physical board.
+		//  - balanced rejects a larger N that only fits by extrapolating lattice lines no detection
+		//    supports.
+		// They are multiplied rather than ranked lexicographically: expectedExtent comes from BoardFinder's
+		// canvas and is therefore only as good as its framing (the grid can span anywhere from ~60% to
+		// ~120% of that canvas in practice), so letting extentFit decide on its own lets a poorly framed
+		// coarse warp override otherwise conclusive line evidence.
+		const double score = extentFit * balanced;
+
+		DEBUG_LOG(std::format(" - Joint N={}: spanV={:.1f}/{:.1f} spanH={:.1f}/{:.1f} extentFit={:.3f} balanced={:.3f} completeness={:.3f} coverage={:.3f} "
+		                      "rms={:.3f}px inliers={} score={:.3f}\n",
+		                      N, spanV, expectedExtentV, spanH, expectedExtentH, extentFit, balanced, completeness, coverage, rms, totalInliers, score));
+
 		JointCandidate current{};
 		current.N            = N;
-		current.inliersTotal = totalInliers;
-		current.completeness = completeness;
-		current.coverage     = coverage;
-		current.balanced     = balanced;
-		current.extentFit    = extentFit;
+		current.score        = score;
 		current.rms          = rms;
+		current.inliersTotal = totalInliers;
 		current.v            = std::move(vTmp);
 		current.h            = std::move(hTmp);
 
