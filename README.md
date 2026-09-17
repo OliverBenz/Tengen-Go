@@ -90,7 +90,6 @@ On Linux, OpenCV is expected to come from the system package manager, so no manu
 
 ## General Documentation
 
-- [General](docs/Documentation.md) — entry point and general notes
 - [Core](docs/Core.md) — core rules/logic overview
 - [GUI](docs/GUI.md) — GUI architecture and rendering notes
 - [Networking](docs/Networking.md) — higher-level networking notes
