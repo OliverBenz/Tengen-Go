@@ -20,24 +20,8 @@ namespace gtest {
 
 static constexpr float TOLERANCE_FRACTION = 0.1f; //!< Percentage of acceptable error relative to the contour bounding box / spacing.
 
-//! Given the original image and the four defined corner points of the board, computes the boardFinder transformation.
-WarpResult prepareIdealImage(const cv::Mat& image, std::array<cv::Point2f, 4> corners) {
-	// TODO: This constant is from boardFinder internal. Make public so we can use the same on.
-	static constexpr float WARP_SIZE = 1000.f; // Size of the warped board.
-
-	// Desination rectangle
-	std::array<cv::Point2f, 4> dst = {cv::Point2f(0, 0), cv::Point2f(WARP_SIZE, 0), cv::Point2f(WARP_SIZE, WARP_SIZE), cv::Point2f(0, WARP_SIZE)};
-
-	cv::Mat H = cv::getPerspectiveTransform(corners.data(), dst.data());
-
-	cv::Mat warped;
-	cv::warpPerspective(image, warped, H, cv::Size(static_cast<int>(WARP_SIZE), static_cast<int>(WARP_SIZE)));
-	return {warped, H, corners};
-}
-
-
 //! 1) Given an input image, prepares the image based on the defined board corner coordinates, then tests the gridFinder step with this prepared image.
-void runIdealTest(std::string testSetName, unsigned imageCount) {
+static void runIdealTest(std::string testSetName, unsigned imageCount) {
 	const auto TEST_PATH = std::filesystem::path(PATH_TEST_IMG) / testSetName;
 
 	// Load images file
@@ -80,7 +64,7 @@ void runIdealTest(std::string testSetName, unsigned imageCount) {
 }
 
 //! 2) Given in input image, performs the boardFinder step, then tests the gridFinder step with the output of the boardFinder.
-void runFullTest(std::string testSetName, unsigned imageCount) {
+static void runFullTest(std::string testSetName, unsigned imageCount) {
 	const auto TEST_PATH = std::filesystem::path(PATH_TEST_IMG) / testSetName;
 
 	// Load images file

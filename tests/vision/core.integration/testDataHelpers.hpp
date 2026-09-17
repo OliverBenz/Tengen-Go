@@ -5,48 +5,38 @@
 #include "vision/core/gridFinder.hpp"
 #include "vision/core/stoneFinder.hpp"
 
-#include <nlohmann/json.hpp>
+#include <array>
+#include <filesystem>
 #include <opencv2/opencv.hpp>
+#include <string_view>
+#include <vector>
 
 namespace tengen::vision::core {
 namespace gtest {
 
-std::vector<std::filesystem::path> getImagesInDirectory(const std::filesystem::path& directory); //!< Get all image files contained in a directory.
-void ensureJsonExists(const std::vector<std::filesystem::path>& images);                         //!< Verify the json file for each image exist.
-
-// OLD
-
-//! Expected test results (result of each step in the pipeline).
-struct TestResult {
-	WarpResult warped;
-	RectifiedBoard rectified;
-	StoneResult stoneStep;
+//! Output of every stage of the vision pipeline.
+struct PipelineResult {
+	WarpResult warped;        //!< BoardFinder stage: image warped onto the rough board contour.
+	RectifiedBoard rectified; //!< GridFinder stage: rectified board image and its geometry.
+	StoneResult stoneStep;    //!< StoneFinder stage: stone state per grid intersection.
 };
 
-//! Run the stone detection pipeline. Ensure intermediate steps are generally valid. Return test result.
-TestResult runPipeline(const std::filesystem::path& imgPath);
+std::vector<std::filesystem::path> getImagesInDirectory(const std::filesystem::path& directory); //!< Get all image files in a directory, ordered by name.
+void ensureJsonExists(const std::vector<std::filesystem::path>& images);                         //!< Verify the json file for each image exists.
 
-//! Load the dotBW ground truth board matching an image path (same file name, ".txt" extension).
+//! Warp an image onto the given board corners, producing what an ideal BoardFinder stage would.
+WarpResult prepareIdealImage(const cv::Mat& image, const std::array<cv::Point2f, 4>& corners);
+
+PipelineResult runPipeline(const cv::Mat& image);                           //!< Run all pipeline stages: board, grid and stone detection.
+PipelineResult runPipeline(const cv::Mat& image, const WarpResult& warped); //!< Run the grid and stone detection stages on a given board warp.
+bool isValidPipelineResult(const PipelineResult& result);                   //!< True if every pipeline stage produced a usable result.
+
+//! Load the dotBW stone layout of an image: "<image>.txt", or the test sets "board.txt" if all its images show one and the same board.
 Board loadExpectedBoard(const std::filesystem::path& imagePath);
 
-//! Check every board coordinate  against a ground truth board.
-void expectStonesMatchBoard(const std::vector<StoneState>& stones, unsigned boardSize, const Board& expected);
-
-
-//! Match two equally-sized point sets without assuming a fixed order (a board photographed at a
-//! strong angle has no well-defined "top-left" corner), then check every matched pair is within
-//! tolerance. Brute-forces all permutations, which is fine for the small (<=4) point sets we use this for.
-void expectPointsMatch(const std::vector<cv::Point2f>& expected, const std::vector<cv::Point2f>& actual, float tolerance, std::string_view context);
-
-//! Non-asserting counterpart of expectPointsMatch(): the largest per-point distance under the same
-//! best-match permutation. Lets a caller report the error continuously instead of as pass/fail.
-//! \returns Worst matched distance in pixels, or infinity if the sets are empty or differently sized.
-double maxMatchedPointDistance(const std::vector<cv::Point2f>& expected, const std::vector<cv::Point2f>& actual);
-
-//! Intersection-over-union of two quads. Both are convex-hulled first, so corner order does not matter
-//! (ground truth corners are stored unordered, see resources/README.md).
-//! \returns IoU in [0, 1], or 0.0 if either quad is degenerate.
-double quadIoU(const std::vector<cv::Point2f>& lhs, const std::array<cv::Point2f, 4>& rhs);
+//! Check every board coordinate against a ground truth board.
+//! \note A photo does not tell us from which side the board was taken, so the layout is matched in all four rotations.
+void expectStonesMatchBoard(const std::vector<StoneState>& stones, const Board& expected, std::string_view context);
 
 } // namespace gtest
 } // namespace tengen::vision::core

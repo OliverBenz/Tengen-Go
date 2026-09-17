@@ -16,6 +16,9 @@ Whitespace is ignored. `.` is an empty intersection, `B` is a black stone, `W` i
 Each line is one board row; the number of characters per line defines the board size (9/13/19).
 See [`core/serializer.hpp`](../../../src/game/core/include/core/serializer.hpp) for the parser and `example.txt` for a filled-in 19x19 board.
 
+A directory whose images all show one and the same board holds a single `board.txt` instead of one file per image.
+Photos of that board may be taken from any side, so tests match a detected layout in all four board rotations.
+
 ## Geometry format (`.json`)
 
 All pixel coordinates below are given in the **original, unrectified photo** — not in any warped/rectified output. See `example.geometry.json`.
