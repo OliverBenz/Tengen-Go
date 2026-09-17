@@ -1,143 +1,93 @@
 #include "geometryGroundTruth.hpp"
 #include "testDataHelpers.hpp"
 
-#include "core/serializer.hpp"
-
-#include <gtest/gtest.h>
-#include <nlohmann/json.hpp>
-#include <opencv2/opencv.hpp>
-
-#include <algorithm>
 #include <filesystem>
-#include <fstream>
-#include <limits>
-#include <string_view>
+#include <gtest/gtest.h>
+#include <opencv2/opencv.hpp>
+#include <string>
 
+// The process tests verify the whole vision pipeline at once: board detection, grid detection and stone detection.
+// Nothing is prepared, so an image enters the pipeline exactly as the application would hand it over. The outcome is
+// checked against the labelled geometry (.json) and the stone layout (.txt) of each image.
+// These test sets require a triple: (<image>.jpeg, <image>.json, <layout>.txt) as documented in resources/README.md.
 namespace tengen::vision::core {
 namespace gtest {
 
-#define SKIP_FAILING_TESTS
+static constexpr float TOLERANCE_FRACTION = 0.1f; //!< Percentage of acceptable error relative to the contour bounding box / spacing.
 
-// Test the full image processing pipeline with stone detection at the end.
-TEST(Process, Game_Simple_Size9) {
-	const auto TEST_PATH = std::filesystem::path(PATH_TEST_IMG) / "game_simple/size_9";
+//! Runs the full pipeline on every image of the test set and verifies the detected board against the defined ground truth.
+static void runTest(std::string testSetName, unsigned imageCount) {
+	const auto TEST_PATH = std::filesystem::path(PATH_TEST_IMG) / testSetName;
 
-	// Game Information
-	static constexpr unsigned MOVES = 13; //!< This game image series has 13 moves.
-	// static constexpr double SPACING      = 76.; //!< Pixels between grid lines. Manually checked for this series.
-	static constexpr unsigned BOARD_SIZE = 9u; //!< Board size of this game.
+	// Get test images and ensure valid
+	const auto images = getImagesInDirectory(TEST_PATH);
+	ASSERT_EQ(images.size(), imageCount);
+	ensureJsonExists(images);
 
-	for (unsigned i = 0; i <= MOVES; ++i) {
-		std::string fileName = std::format("move_{}.png", i);
-		TestResult result    = runPipeline(TEST_PATH / fileName);
-
-		EXPECT_EQ(result.rectified.geometry.boardSize, BOARD_SIZE);
-		// EXPECT_NEAR(result.rectified.geometry.spacing, SPACING, SPACING * 0.1); // Allow 5% deviation from expected spacing.
-		EXPECT_TRUE(result.stoneStep.success);
-
-		const Board expected = loadExpectedBoard(TEST_PATH / fileName);
-		expectStonesMatchBoard(result.stoneStep.stones, BOARD_SIZE, expected);
-	}
-}
-
-// Test the full image processing pipeline with stone detection at the end.
-TEST(Process, Game_Simple_Size13) {
-	const auto TEST_PATH = std::filesystem::path(PATH_TEST_IMG) / "game_simple/size_13";
-
-	// Game Information
-	static constexpr unsigned MOVES = 27; //!< This game image series has 27 moves.
-	// static constexpr double SPACING      = 72.; //!< Pixels between grid lines. Manually checked for this series.
-	static constexpr unsigned BOARD_SIZE = 13u; //!< Board size of this game.
-
-	for (unsigned i = 0; i <= MOVES; ++i) {
-#ifdef SKIP_FAILING_TESTS
-		// move_24 misses the stone at (12, 8)
-		if (i == 24u) {
+	// Checks below are non-fatal so one bad image does not hide the results of the remaining ones.
+	for (const auto& imagePath: images) {
+		// Load image
+		const cv::Mat image = cv::imread(imagePath.string());
+		if (image.empty()) {
+			ADD_FAILURE() << "Could not load " << imagePath << "\n";
 			continue;
 		}
-#endif
 
-		std::string fileName = std::format("move_{}.png", i);
-		TestResult result    = runPipeline(TEST_PATH / fileName);
+		const PipelineResult result = runPipeline(image);
+		if (!isValidPipelineResult(result)) {
+			ADD_FAILURE() << "Pipeline produced no usable result for " << imagePath << "\n";
+			continue;
+		}
 
-		EXPECT_EQ(result.rectified.geometry.boardSize, BOARD_SIZE);
-		// EXPECT_NEAR(result.rectified.geometry.spacing, SPACING, SPACING * 0.1); // Allow 5% deviation from expected spacing.
+		// Load geometry information
+		const auto jsonPath                = std::filesystem::path(imagePath).replace_extension(".json");
+		const GeometryGroundTruth geometry = GeometryGroundTruth::loadFromFile(jsonPath);
 
-		EXPECT_TRUE(result.stoneStep.success);
+		// The detected board must match the labelled geometry.
+		EXPECT_TRUE(boardContourMatchesEitherOutline(result.warped.contourCorners, geometry, TOLERANCE_FRACTION))
+		        << "BoardFinder contour matches neither the board nor the grid outline for " << imagePath;
+		verifyRectifiedBoard(result.rectified, geometry);
 
-		const Board expected = loadExpectedBoard(TEST_PATH / fileName);
-		expectStonesMatchBoard(result.stoneStep.stones, BOARD_SIZE, expected);
+		// The detected stones are indexed by the detected grid, so a wrong board size makes the comparison meaningless.
+		if (result.rectified.geometry.boardSize != geometry.boardSize) {
+			continue;
+		}
+		expectStonesMatchBoard(result.stoneStep.stones, loadExpectedBoard(imagePath), imagePath.string());
 	}
 }
-TEST(Process, DISABLED_Game_Simple_Size13_Full) {
-	// TODO: This disabled test is just a placeholder note:
-	// In the test "Process, Game_Simple_Size13" above: We skip some test images with the macro SKIP_FAILING_TESTS
-	// Make the algorithm stronger, then enable these tests again (Delete all SKIP_FAILING_TESTS usages).
-	// We keep this disabled test to make this issue visible.
-	EXPECT_TRUE(false);
+
+
+TEST(Process, Empty_Angle_None) {
+	runTest("empty_angle_none", 3u);
 }
 
-// TODO: Add stone finder for angled_hard
-TEST(Process, DISABLED_Board_Detect_Easy) {
-	const auto TEST_PATH = std::filesystem::path(PATH_TEST_IMG) / "angled_easy";
+TEST(Process, Empty_Angle_Small) {
+	runTest("empty_angle_small", 3u);
+}
 
-	static constexpr unsigned IMG_COUNT  = 6u;
-	static constexpr unsigned BOARD_SIZE = 13u;
+// TODO: The stone detection fails on angle_3 and angle_4 (see StoneFinder.DISABLED_Ideal_Angled_Easy).
+TEST(Process, DISABLED_Angled_Easy) {
+	runTest("angled_easy", 6u);
+}
 
-	// BoardFinder is only ever rough (see src/vision/core/README.md), so its corner check gets a
-	// generous tolerance relative to the B_0 canvas size. GridFinder is expected to be precise, so its
-	// corner check gets a tight tolerance relative to one grid spacing (fractions of a stone width).
-	static constexpr float BOARD_CORNER_TOLERANCE_FRACTION = 0.10f;
-	static constexpr float GRID_CORNER_TOLERANCE_FRACTION  = 0.30f;
+// TODO: The pipeline does not survive the lighting of this test set yet (see GridFinder.DISABLED_Full_Angled_Hard_Lighting).
+TEST(Process, DISABLED_Angled_Hard_Lighting) {
+	runTest("angled_hard_lighting", 6u);
+}
 
-	// All angle images show the same physical board, so they share one ground truth file.
-	Board expected(0u);
-	ASSERT_TRUE(readBoard(TEST_PATH / "board.txt", expected));
+// TODO: This test set has no stone layout (board.txt) yet.
+TEST(Process, DISABLED_Angled_Hard) {
+	runTest("angled_hard", 8u);
+}
 
-	for (unsigned i = 1u; i <= IMG_COUNT; ++i) {
-		std::string fileName = std::format("angle_{}.jpeg", i);
-		TestResult result    = runPipeline(TEST_PATH / fileName);
+// TODO: The game series have no labelled geometry (.json) yet.
+TEST(Process, DISABLED_Game_Simple_Size9) {
+	runTest("game_simple/size_9", 14u);
+}
 
-		EXPECT_EQ(result.rectified.geometry.boardSize, BOARD_SIZE);
-
-		EXPECT_TRUE(result.stoneStep.success);
-		expectStonesMatchBoard(result.stoneStep.stones, BOARD_SIZE, expected);
-
-		const auto jsonPath                     = (TEST_PATH / fileName).replace_extension(".json");
-		const GeometryGroundTruth geometryTruth = GeometryGroundTruth::loadFromFile(jsonPath);
-		ASSERT_EQ(geometryTruth.boardSize, BOARD_SIZE);
-
-		// Stage 1 (BoardFinder): ground truth board corners, warped by H0, should land on imageB0's canvas corners.
-		const std::vector<cv::Point2f> boardCorners(geometryTruth.boardCorners.begin(), geometryTruth.boardCorners.end());
-		std::vector<cv::Point2f> boardCornersWarped;
-		cv::perspectiveTransform(boardCorners, boardCornersWarped, result.warped.H0);
-		const std::vector<cv::Point2f> canvasCorners = {
-		        {0.f, 0.f},
-		        {static_cast<float>(result.warped.imageB0.cols - 1), 0.f},
-		        {static_cast<float>(result.warped.imageB0.cols - 1), static_cast<float>(result.warped.imageB0.rows - 1)},
-		        {0.f, static_cast<float>(result.warped.imageB0.rows - 1)},
-		};
-		const float boardCornerTolerance =
-		        BOARD_CORNER_TOLERANCE_FRACTION * static_cast<float>(std::min(result.warped.imageB0.cols, result.warped.imageB0.rows));
-		expectPointsMatch(canvasCorners, boardCornersWarped, boardCornerTolerance, "BoardFinder corners");
-
-		// Stage 2 (GridFinder): ground truth grid corners, warped by the refined H, should land on the
-		// algorithm's own outermost detected intersections (index = x * boardSize + y).
-		const std::vector<cv::Point2f> gridCorners(geometryTruth.gridCorners.begin(), geometryTruth.gridCorners.end());
-		std::vector<cv::Point2f> gridCornersWarped;
-		cv::perspectiveTransform(gridCorners, gridCornersWarped, result.rectified.geometry.H);
-		const unsigned n                                   = result.rectified.geometry.boardSize;
-		const auto& intersections                          = result.rectified.geometry.intersections;
-		const std::vector<cv::Point2f> intersectionCorners = {
-		        intersections[0],
-		        intersections[n - 1],
-		        intersections[(n - 1) * n],
-		        intersections[n * n - 1],
-		};
-		ASSERT_GT(result.rectified.geometry.spacing, 0.0);
-		const float gridCornerTolerance = GRID_CORNER_TOLERANCE_FRACTION * static_cast<float>(result.rectified.geometry.spacing);
-		expectPointsMatch(intersectionCorners, gridCornersWarped, gridCornerTolerance, "GridFinder corners");
-	}
+// TODO: The game series have no labelled geometry (.json) yet. Once enabled, move_24 misses the stone at (12, 8).
+TEST(Process, DISABLED_Game_Simple_Size13) {
+	runTest("game_simple/size_13", 28u);
 }
 
 } // namespace gtest

@@ -26,7 +26,7 @@ static std::string formatCorners(const std::array<cv::Point2f, 4>& points) {
 
 
 //! Load the png files in the given resource subdirectory.
-void runTest(std::string testSetName, unsigned imageCount) {
+static void runTest(std::string testSetName, unsigned imageCount) {
 	const auto TEST_PATH = std::filesystem::path(PATH_TEST_IMG) / testSetName;
 
 	// Get test images and ensure valid
