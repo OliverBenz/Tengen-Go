@@ -1,34 +1,18 @@
 # Core Library (`gameCore`)
 
-This module is the rules engine. It owns the game loop, validates moves, and emits deltas.
-External code should treat it like a black box: push events in, listen to deltas out.
-A delta is a set of game state changes since the last move.
+Rules engine for Go. For the conceptual picture, see [docs/Core.md](../../../docs/Core.md) — this is the companion for people changing code in here. Depends on `game::model` only; don't let Qt or networking leak in.
 
-## Big Picture
+## Concurrency
 
-- **Game**: owns the rules loop and emits `GameDelta` updates.
-- **MoveChecker**: stateless rule checks (suicide, captures, superko).
-- **Position/Board**: lightweight state containers used by the rules engine.
-- **EventHub**: synchronous sending of signals to listeners.
+`pushEvent()` and the subscribe/unsubscribe calls are the only synchronized entry points into `Game`. `isActive()` and `boardSize()` read plain fields that `run()` writes on the game thread — `GameServer` already calls `isActive()` from the network thread on every incoming move. That's a real data race, just one that's been harmless in practice so far; don't assume either getter is safe to poll from outside the game thread.
 
-## Happy Path
+`EventHub::signal()`/`signalDelta()` hold `m_listenerMutex` for the entire dispatch loop and call listeners synchronously and inline — in practice on the game thread, since `Game::handleEvent` calls straight into the hub. A slow listener stalls `Game::run()` itself, and a listener that calls `subscribe`/`unsubscribe` back into the same hub from inside its own callback will deadlock, since the mutex isn't recursive. Keep callbacks fast and non-reentrant.
 
-1) External code pushes a `GameEvent` (put/pass/resign).
-2) Game validates the move (including superko).
-3) Game mutates internal state and emits `GameDelta`.
-4) Listeners rebuild their own view of state from deltas.
+## Where to look
 
-This ensures all game logic is modularized and external components are pure representations of the board.
-
-## Design Choices
-
-- **Deltas are the source of truth**: callers do not query internal state.
-- **Single‑threaded rules**: Game is designed to run its loop on one thread.
-- **Deterministic hashing**: Zobrist hash is seeded for reproducibility.
-
-## Where To Look
-
-- `src/game/core/game.*` for the rules loop and delta emission.
-- `src/game/core/moveChecker.*` for legality and capture logic.
-- `src/game/model/board.*` and `src/game/core/position.*` for data structures.
-- `src/game/core/zobristHash.hpp` for hash generation.
+- `game.*` — event loop and orchestration.
+- `moveChecker.*` — legality, captures, liberties.
+- `position.*` — `GamePosition`.
+- `eventHub.*`, `IGameSignalListener.hpp`, `IGameStateListener.hpp` — the notification system.
+- `zobristHash.hpp` / `IZobristHash.hpp` — hashing.
+- `sgfHandler.*`, `serializer.*` — coordinate and text-board conversion utilities.
