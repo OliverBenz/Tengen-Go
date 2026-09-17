@@ -1,60 +1,25 @@
 # Networking
 
-## Current Architecture (what actually exists)
+There's still only one `Game` in a networked match — it just happens to live on someone else's machine, and every request has to cross a wire to reach it. Nothing about the rules changes: a consumer sends a request, the `Game` decides, and updates flow back out, exactly like the relationship described in [Core.md](Core.md).
 
-We split networking into two layers:
+## The server holds the only real Game
 
-- **netCore**: pure transport (TCP, framing, connection management).
-- **netNetwork**: application protocol (game events, server/client roles, session IDs).
+Only one place in a networked game actually runs a `Game`: the server. It owns the game loop, and it's the only thing anyone trusts. Clients never get their own copy of the rules — they just keep a local record of whatever the server has told them, so they have something to draw on screen while they wait for the next update.
 
-The server is authoritative. Clients send intent; server sends facts.
+Under the hood this is split into two pieces: a plain transport layer that just moves bytes over TCP and doesn't know Go exists, and a layer on top that turns those bytes into typed messages — place a stone, pass, resign, send a chat line — encoded as small JSON payloads. The split means the transport could be reused for something that has nothing to do with Go, and nobody working on game messages has to think about sockets.
 
-### Components
+## Clients propose, same as always
 
-- **Server**: `network::Server` running in the server executable. Forwards client events to the game loop and broadcasts deltas/updates to clients.
-- **Clients**: `network::Client` used by the GUI. Sends move intents and applies server updates.
-- **Observers**: same client type, just a different seat.
+A client can't just place a stone — it sends the server a request, the same way any consumer asks the `Game` for something locally. The server hands that request straight to its `Game`, and the `Game` decides, exactly like it always does. If the request is illegal, nothing comes back — no rejection message, just silence, because that's how the `Game` behaves everywhere else too.
 
-### Data Flow (happy path)
+If the move is accepted, the `Game` produces its usual update, and the server packages that up and sends it to every connected client. That's the only way clients learn what happened — nobody predicts a move locally and hopes it matches; everybody just waits to be told.
 
-1) Client sends an intent (`ClientPutStone`, `ClientPass`, `ClientResign`).
-2) Server forwards the intent to the core game loop.
-3) Game validates and emits an update (`GameDelta`).
-4) Server turns that into a `ServerDelta` and broadcasts to all clients.
-5) Clients apply the delta locally and update UI.
+## Seats decide what you're allowed to do
 
-This structure enforces a clear separation between layers and responsibilities.
+The first two people to connect to a game become Black and White. Everyone who connects after that is an Observer.
 
-### Layers in code
+Observers see exactly what the players see — every move, every chat message — they just can't send anything back. No moves, no chat, nothing. They can watch a game unfold in real time without being able to touch it.
 
-**netCore**
-- `TcpServer` owns the accept loop and active `Connection` objects.
-- `Connection` does async read/write with a size‑prefixed frame.
-- `TcpClient` is the synchronous client used by the GUI and tests.
+## Hosting is still just a server
 
-**netNetwork**
-- `Client` and `Server` wrap the transport with a small protocol in `nwEvents`.
-- `SessionManager` (server‑side) maps connections to seats and handles disconnects.
-- `ServerDelta` is the core update payload; clients treat it as the single source of truth.
-
-### Message framing
-
-Messages are length‑prefixed in `netCore`:
-
-1) `BasicMessageHeader` contains payload size (network byte order).
-2) Then `payload_size` bytes of payload.
-
-`netNetwork` serializes/deserializes the payload into typed events.
-
-### Notes
-
-- The server does not trust clients. Clients only *request* moves.
-- Clients keep a local shadow state for rendering, but server data wins.
-- Observers are just clients with an observer seat.
-
-### Where to look
-
-- Transport: `src/net/core/README.md`
-- Protocol: `src/net/network/include/network/nwEvents.hpp`
-- Server wiring: `src/net/network/server.cpp`, `src/game/runtime/gameServer.cpp`
-- Client wiring: `src/net/network/client.cpp`, `src/game/runtime/sessionManager.cpp`
+Starting a hosted game doesn't run a different code path — it starts a real server in the background and connects to it exactly the way a remote player would, as covered in [GUI.md](GUI.md). There's no special "local host" mode hiding in the network code; hosting is just being the first client of your own server.
