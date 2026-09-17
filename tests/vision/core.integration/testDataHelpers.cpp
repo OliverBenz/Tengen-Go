@@ -1,8 +1,12 @@
 #include "testDataHelpers.hpp"
 
 #include "core/serializer.hpp"
+#include <algorithm>
+#include <cmath>
 #include <fstream>
 #include <gtest/gtest.h>
+#include <limits>
+#include <numeric>
 
 namespace tengen::vision::core {
 namespace gtest {
@@ -95,9 +99,8 @@ GeometryGroundTruth loadGeometryGroundTruth(const std::filesystem::path& imagePa
 	return truth;
 }
 
-void expectPointsMatch(const std::vector<cv::Point2f>& expected, const std::vector<cv::Point2f>& actual, float tolerance, std::string_view context) {
-	ASSERT_EQ(expected.size(), actual.size()) << context;
-
+//! Permutation of \p actual minimizing the total matching distance to \p expected.
+static std::vector<std::size_t> bestMatchPermutation(const std::vector<cv::Point2f>& expected, const std::vector<cv::Point2f>& actual) {
 	std::vector<std::size_t> perm(actual.size());
 	std::iota(perm.begin(), perm.end(), std::size_t{0});
 
@@ -114,10 +117,56 @@ void expectPointsMatch(const std::vector<cv::Point2f>& expected, const std::vect
 		}
 	} while (std::next_permutation(perm.begin(), perm.end()));
 
+	return bestPerm;
+}
+
+void expectPointsMatch(const std::vector<cv::Point2f>& expected, const std::vector<cv::Point2f>& actual, float tolerance, std::string_view context) {
+	ASSERT_EQ(expected.size(), actual.size()) << context;
+
+	const std::vector<std::size_t> bestPerm = bestMatchPermutation(expected, actual);
 	for (std::size_t i = 0; i < expected.size(); ++i) {
 		const double distance = cv::norm(expected[i] - actual[bestPerm[i]]);
 		EXPECT_LE(distance, tolerance) << context << ": point " << i << " off by " << distance << "px (tolerance " << tolerance << "px)";
 	}
+}
+
+double maxMatchedPointDistance(const std::vector<cv::Point2f>& expected, const std::vector<cv::Point2f>& actual) {
+	if (expected.empty() || expected.size() != actual.size()) {
+		return std::numeric_limits<double>::infinity();
+	}
+
+	const std::vector<std::size_t> bestPerm = bestMatchPermutation(expected, actual);
+
+	double worst = 0.0;
+	for (std::size_t i = 0; i < expected.size(); ++i) {
+		worst = std::max(worst, cv::norm(expected[i] - actual[bestPerm[i]]));
+	}
+	return worst;
+}
+
+double quadIoU(const std::vector<cv::Point2f>& lhs, const std::vector<cv::Point2f>& rhs) {
+	if (lhs.size() < 3u || rhs.size() < 3u) {
+		return 0.0;
+	}
+
+	// Hull both sides: cv::intersectConvexConvex() needs convex, consistently wound input, and the
+	// ground truth corners are stored in no particular order.
+	std::vector<cv::Point2f> hullLhs;
+	std::vector<cv::Point2f> hullRhs;
+	cv::convexHull(lhs, hullLhs);
+	cv::convexHull(rhs, hullRhs);
+
+	const double areaLhs = std::abs(cv::contourArea(hullLhs));
+	const double areaRhs = std::abs(cv::contourArea(hullRhs));
+	if (areaLhs <= 0.0 || areaRhs <= 0.0) {
+		return 0.0;
+	}
+
+	std::vector<cv::Point2f> intersection;
+	const double areaIntersection = cv::intersectConvexConvex(hullLhs, hullRhs, intersection, true);
+	const double areaUnion        = areaLhs + areaRhs - areaIntersection;
+
+	return areaUnion > 0.0 ? std::clamp(areaIntersection / areaUnion, 0.0, 1.0) : 0.0;
 }
 
 } // namespace gtest
