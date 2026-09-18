@@ -107,7 +107,7 @@ public:
 };
 
 SubProcess::SubProcess()
-	: m_pimpl{std::make_unique<SubProcess::Pimpl>()} {
+    : m_pimpl{std::make_unique<SubProcess::Pimpl>()} {
 }
 
 SubProcess::~SubProcess() {
@@ -168,10 +168,20 @@ bool SubProcess::start(const std::vector<std::string>& argv, const std::string& 
 	// The other ends of the pipes belong to the child now.
 	closeHandle(m_pimpl->m_inPipe[readEnd]);
 	closeHandle(m_pimpl->m_outPipe[writeEnd]);
+
+	// A stop that arrived while we were launching only reaches the child here. It has not spoken
+	// yet, so it goes down right away instead of getting the grace period stop() would give it.
+	if (m_stopped) {
+		TerminateProcess(m_pimpl->m_process, EXIT_FAILURE);
+		stop();
+		return false;
+	}
 	return true;
 }
 
 void SubProcess::stop() {
+	m_stopped = true;
+
 	// Closing the child's stdin asks it to shut down. Its own exit then closes the other pipe from
 	// the far side, which is what releases a readUntil() that is still blocking.
 	closeHandle(m_pimpl->m_inPipe[writeEnd]);
