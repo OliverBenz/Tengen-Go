@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <fcntl.h>
+#include <sys/types.h>
 #include <sys/wait.h>
 #include <thread>
 #include <unistd.h>
@@ -42,6 +43,16 @@ bool writeAll(const int fd, const std::string& data) {
 } // namespace
 
 
+class SubProcess::Pimpl {
+public:
+	pid_t m_pid{-1};          //!< Child process Id.
+	int m_inPipe[2]{-1, -1};  //!< Pipe: parent -> child
+	int m_outPipe[2]{-1, -1}; //!< Pipe: child  -> parent
+};
+
+SubProcess::SubProcess() : m_pimpl{std::make_unique<SubProcess::Pimpl>()} {
+}
+
 SubProcess::~SubProcess() {
 	stop();
 }
@@ -66,10 +77,10 @@ bool SubProcess::start(const std::vector<std::string>& argv, const std::string& 
 	childArgv.push_back(nullptr);
 
 	// Setup Pipes
-	if (pipe(m_inPipe) == -1) {
+	if (pipe(m_pimpl->m_inPipe) == -1) {
 		return false;
 	}
-	if (pipe(m_outPipe) == -1) {
+	if (pipe(m_pimpl->m_outPipe) == -1) {
 		closePipes();
 		return false;
 	}
@@ -89,45 +100,45 @@ bool SubProcess::start(const std::vector<std::string>& argv, const std::string& 
 	}
 
 	// Parent process
-	m_pid = pid;
+	m_pimpl->m_pid = pid;
 
 	// The other ends of the pipes belong to the child now.
-	closeFd(m_inPipe[0]);
-	closeFd(m_outPipe[1]);
+	closeFd(m_pimpl->m_inPipe[0]);
+	closeFd(m_pimpl->m_outPipe[1]);
 	return true;
 }
 
 void SubProcess::stop() {
 	// Closing the child's stdin asks it to shut down. Its own exit then closes the other pipe from
 	// the far side, which is what releases a readUntil() that is still blocking.
-	closeFd(m_inPipe[1]);
+	closeFd(m_pimpl->m_inPipe[1]);
 
 	waitForExit();
 	closePipes();
 }
 
 bool SubProcess::isRunning() const {
-	return m_pid >= 0;
+	return m_pimpl->m_pid >= 0;
 }
 
 bool SubProcess::sendLine(const std::string& line) {
-	if (m_inPipe[1] < 0) {
+	if (m_pimpl->m_inPipe[1] < 0) {
 		return false;
 	}
 
-	return writeAll(m_inPipe[1], line + '\n');
+	return writeAll(m_pimpl->m_inPipe[1], line + '\n');
 }
 
 bool SubProcess::readUntil(std::string& data, const std::string_view terminator) {
 	data.clear();
-	if (m_outPipe[0] < 0) {
+	if (m_pimpl->m_outPipe[0] < 0) {
 		return false;
 	}
 
 	// The child answers one request at a time, so nothing of the next answer can trail the terminator.
 	char buffer[512];
 	while (data.find(terminator) == std::string::npos) {
-		const ssize_t count = read(m_outPipe[0], buffer, std::size(buffer));
+		const ssize_t count = read(m_pimpl->m_outPipe[0], buffer, std::size(buffer));
 		if (count < 0 && errno == EINTR) {
 			continue; // Interrupted before anything arrived. Retry.
 		}
@@ -150,16 +161,16 @@ void SubProcess::execChild(char* const argv[], const char* logFile) {
 	}
 
 	// Redirect the pipe ends to stdin/stdout (copy)
-	if (dup2(m_inPipe[0], STDIN_FILENO) == -1 || dup2(m_outPipe[1], STDOUT_FILENO) == -1) {
+	if (dup2(m_pimpl->m_inPipe[0], STDIN_FILENO) == -1 || dup2(m_pimpl->m_outPipe[1], STDOUT_FILENO) == -1) {
 		perror("dup2 failed");
 		_exit(EXIT_FAILURE);
 	}
 
 	// These are now redundant -> close them
-	close(m_inPipe[0]);
-	close(m_inPipe[1]);
-	close(m_outPipe[0]);
-	close(m_outPipe[1]);
+	close(m_pimpl->m_inPipe[0]);
+	close(m_pimpl->m_inPipe[1]);
+	close(m_pimpl->m_outPipe[0]);
+	close(m_pimpl->m_outPipe[1]);
 
 	// Replace current process with the requested executable.
 	execvp(argv[0], argv);
@@ -170,7 +181,7 @@ void SubProcess::execChild(char* const argv[], const char* logFile) {
 }
 
 void SubProcess::waitForExit() {
-	if (m_pid < 0) {
+	if (m_pimpl->m_pid < 0) {
 		return;
 	}
 
@@ -180,22 +191,22 @@ void SubProcess::waitForExit() {
 	const auto deadline            = std::chrono::steady_clock::now() + shutdownTimeout;
 
 	int status{0};
-	while (waitpid(m_pid, &status, WNOHANG) == 0) {
+	while (waitpid(m_pimpl->m_pid, &status, WNOHANG) == 0) {
 		if (std::chrono::steady_clock::now() >= deadline) {
-			kill(m_pid, SIGKILL);
-			waitpid(m_pid, &status, 0); // SIGKILL can't be caught/blocked, returns promptly
+			kill(m_pimpl->m_pid, SIGKILL);
+			waitpid(m_pimpl->m_pid, &status, 0); // SIGKILL can't be caught/blocked, returns promptly
 			break;
 		}
 		std::this_thread::sleep_for(pollInterval);
 	}
-	m_pid = -1;
+	m_pimpl->m_pid = -1;
 }
 
 void SubProcess::closePipes() {
-	closeFd(m_inPipe[0]);
-	closeFd(m_inPipe[1]);
-	closeFd(m_outPipe[0]);
-	closeFd(m_outPipe[1]);
+	closeFd(m_pimpl->m_inPipe[0]);
+	closeFd(m_pimpl->m_inPipe[1]);
+	closeFd(m_pimpl->m_outPipe[0]);
+	closeFd(m_pimpl->m_outPipe[1]);
 }
 
 } // namespace tengen::engine
