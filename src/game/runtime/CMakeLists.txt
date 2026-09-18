@@ -4,6 +4,7 @@ set(targetName gameRuntime)
 
 # Get files to build
 set(headers
+	"${CMAKE_CURRENT_LIST_DIR}/include/tengen/botSession.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/tengen/networkSession.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/tengen/openSession.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/tengen/IAppSignal.hpp"
@@ -16,6 +17,7 @@ set(headers
 )
 
 set(sources
+	"${CMAKE_CURRENT_LIST_DIR}/botSession.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/networkSession.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/openSession.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/eventHub.cpp"
@@ -38,6 +40,7 @@ target_link_libraries(${targetName}
 		Logger::Logger
 	PUBLIC
 		tengen::game::core
+		tengen::game::engine
 		tengen::net::gameNet
 )
 
