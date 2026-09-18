@@ -1,0 +1,100 @@
+#include "kataGo.hpp"
+
+#include "gtp.hpp"
+
+#include <filesystem>
+#include <string>
+
+static constexpr const char* LOG_FILE = "katago.log"; //!< Takes over the engine's stderr.
+
+static bool validConfig(const LaunchConfig& config) {
+	return std::filesystem::exists(config.executable) && std::filesystem::exists(config.model) && std::filesystem::exists(config.config) && std::filesystem::exists(config.modelHuman);
+}
+
+KataGo::~KataGo() {
+	stop();
+}
+
+bool KataGo::start(const LaunchConfig& config) {
+	// Check valid config
+	if (!validConfig(config)) {
+		return false;
+	}
+
+	if (!m_process.start({config.executable,
+	                      "gtp",
+	                      "-model", config.model,
+	                      "-human-model", config.modelHuman,
+	                      "-config", config.config},
+	                     LOG_FILE)) {
+		return false;
+	}
+
+	// Forking succeeds even when the executable cannot be launched. Only an answer proves that we
+	// are talking to a GTP engine.
+	std::string response;
+	if (!sendCommand(gtp::protocolVersion(), response)) {
+		m_process.stop();
+		return false;
+	}
+	return true;
+}
+
+void KataGo::stop() {
+	if (!m_process.isRunning()) {
+		return;
+	}
+
+	// Ask the engine to shut down but do not wait for the answer: a genmove may still be blocking on
+	// the pipe from another thread. Closing its stdin in stop() ends the engine either way.
+	m_process.sendLine(gtp::quit());
+	m_process.stop();
+}
+
+bool KataGo::startGame(const unsigned boardSize, const tengen::Player botColour) {
+	m_boardSize = boardSize;
+	m_botColour = botColour;
+
+	std::string response;
+	bool success = true;
+	success &= sendCommand(gtp::boardSize(boardSize), response);
+	success &= sendCommand(gtp::clearBoard(), response);
+	success &= sendCommand(gtp::komi(7.5f), response);
+	return success; // TODO: Take the komi from the game configuration.
+}
+
+bool KataGo::place(const tengen::Coord pos) {
+	std::string response;
+	return sendCommand(gtp::play(opponent(m_botColour), pos, m_boardSize), response);
+}
+
+bool KataGo::pass() {
+	std::string response;
+	return sendCommand(gtp::pass(opponent(m_botColour)), response);
+}
+
+bool KataGo::resign() {
+	// GTP has no command for the opponent resigning. The game is simply over.
+	return true;
+}
+
+bool KataGo::genmove(BotMove& move) {
+	// The engine plays the move on its own board, so it must not be relayed back with place().
+	std::string response;
+	if (!sendCommand(gtp::genmove(m_botColour), response)) {
+		return false;
+	}
+
+	return gtp::parseMove(response, m_boardSize, move);
+}
+
+bool KataGo::sendCommand(const std::string& command, std::string& response) {
+	response.clear();
+
+	std::string raw;
+	if (!m_process.sendLine(command) || !m_process.readUntil(raw, gtp::responseEnd)) {
+		return false;
+	}
+
+	return gtp::parseResponse(raw, response);
+}
