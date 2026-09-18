@@ -1,8 +1,8 @@
 #pragma once
 
+#include <memory>
 #include <string>
 #include <string_view>
-#include <sys/types.h>
 #include <vector>
 
 namespace tengen::engine {
@@ -11,7 +11,7 @@ namespace tengen::engine {
 //! The transport is line oriented and knows nothing about the protocol spoken on top of it.
 class SubProcess {
 public:
-	SubProcess()                             = default;
+	SubProcess();
 	SubProcess(const SubProcess&)            = delete;
 	SubProcess& operator=(const SubProcess&) = delete;
 	~SubProcess();
@@ -30,9 +30,8 @@ private:
 	void closePipes();                                       //!< Close every pipe end we still own.
 
 private:
-	pid_t m_pid{-1};          //!< Child process Id.
-	int m_inPipe[2]{-1, -1};  //!< Pipe: parent -> child
-	int m_outPipe[2]{-1, -1}; //!< Pipe: child  -> parent
+	class Pimpl;
+	std::unique_ptr<Pimpl> m_pimpl{nullptr}; //!< Implementation pointer. Allows to select between windows and linux implementation.
 };
 
 } // namespace tengen::engine
