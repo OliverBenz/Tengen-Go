@@ -45,10 +45,42 @@ bool writeAll(const int fd, const std::string& data) {
 
 class SubProcess::Pimpl {
 public:
+	void execChild(char* const argv[], const char* logFile); //!< Runs in the forked child. Only returns if the launch failed.
+
 	pid_t m_pid{-1};          //!< Child process Id.
 	int m_inPipe[2]{-1, -1};  //!< Pipe: parent -> child
 	int m_outPipe[2]{-1, -1}; //!< Pipe: child  -> parent
 };
+
+void SubProcess::Pimpl::execChild(char* const argv[], const char* logFile) {
+	std::signal(SIGPIPE, SIG_DFL); // The parent ignores it, the child keeps the default.
+
+	// Redirect stderr to the log file. The child still works without it.
+	const int logFd = open(logFile, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+	if (logFd != -1) {
+		dup2(logFd, STDERR_FILENO);
+		close(logFd);
+	}
+
+	// Redirect the pipe ends to stdin/stdout (copy)
+	if (dup2(m_inPipe[0], STDIN_FILENO) == -1 || dup2(m_outPipe[1], STDOUT_FILENO) == -1) {
+		perror("dup2 failed");
+		_exit(EXIT_FAILURE);
+	}
+
+	// These are now redundant -> close them
+	close(m_inPipe[0]);
+	close(m_inPipe[1]);
+	close(m_outPipe[0]);
+	close(m_outPipe[1]);
+
+	// Replace current process with the requested executable.
+	execvp(argv[0], argv);
+
+	// Only reached if the executable could not be launched. The closed pipe tells the parent.
+	perror("execvp failed");
+	_exit(EXIT_FAILURE);
+}
 
 SubProcess::SubProcess() : m_pimpl{std::make_unique<SubProcess::Pimpl>()} {
 }
@@ -96,7 +128,7 @@ bool SubProcess::start(const std::vector<std::string>& argv, const std::string& 
 	}
 
 	if (pid == 0) {
-		execChild(childArgv.data(), logFile.c_str()); // Does not return.
+		m_pimpl->execChild(childArgv.data(), logFile.c_str()); // Does not return.
 	}
 
 	// Parent process
@@ -148,36 +180,6 @@ bool SubProcess::readUntil(std::string& data, const std::string_view terminator)
 		data.append(buffer, static_cast<std::size_t>(count));
 	}
 	return true;
-}
-
-void SubProcess::execChild(char* const argv[], const char* logFile) {
-	std::signal(SIGPIPE, SIG_DFL); // The parent ignores it, the child keeps the default.
-
-	// Redirect stderr to the log file. The child still works without it.
-	const int logFd = open(logFile, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-	if (logFd != -1) {
-		dup2(logFd, STDERR_FILENO);
-		close(logFd);
-	}
-
-	// Redirect the pipe ends to stdin/stdout (copy)
-	if (dup2(m_pimpl->m_inPipe[0], STDIN_FILENO) == -1 || dup2(m_pimpl->m_outPipe[1], STDOUT_FILENO) == -1) {
-		perror("dup2 failed");
-		_exit(EXIT_FAILURE);
-	}
-
-	// These are now redundant -> close them
-	close(m_pimpl->m_inPipe[0]);
-	close(m_pimpl->m_inPipe[1]);
-	close(m_pimpl->m_outPipe[0]);
-	close(m_pimpl->m_outPipe[1]);
-
-	// Replace current process with the requested executable.
-	execvp(argv[0], argv);
-
-	// Only reached if the executable could not be launched. The closed pipe tells the parent.
-	perror("execvp failed");
-	_exit(EXIT_FAILURE);
 }
 
 void SubProcess::waitForExit() {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "botMove.hpp"
+#include "engine/botMove.hpp"
 #include "model/player.hpp"
 
 #include <string>

@@ -4,7 +4,6 @@
 #include "model/player.hpp"
 
 #include "botMove.hpp"
-#include "subProcess.hpp"
 
 #include <memory>
 #include <string>

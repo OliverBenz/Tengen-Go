@@ -25,9 +25,8 @@ public:
 	bool readUntil(std::string& data, std::string_view terminator); //!< Read the child's stdout up to and including the terminator.
 
 private:
-	void execChild(char* const argv[], const char* logFile); //!< Runs in the forked child. Only returns if the launch failed.
-	void waitForExit();                                      //!< Wait for the child to exit. Force kill it after a timeout.
-	void closePipes();                                       //!< Close every pipe end we still own.
+	void waitForExit(); //!< Wait for the child to exit. Force kill it after a timeout.
+	void closePipes();  //!< Close every pipe end we still own.
 
 private:
 	class Pimpl;
