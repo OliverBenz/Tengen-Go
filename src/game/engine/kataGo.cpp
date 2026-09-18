@@ -1,6 +1,7 @@
-#include "kataGo.hpp"
+#include "engine/kataGo.hpp"
 
 #include "gtp.hpp"
+#include "subProcess.hpp"
 
 #include <filesystem>
 #include <string>
@@ -12,7 +13,8 @@ static bool validConfig(const LaunchConfig& config) {
 	return std::filesystem::exists(config.executable) && std::filesystem::exists(config.model) && std::filesystem::exists(config.config) && std::filesystem::exists(config.modelHuman);
 }
 
-KataGo::KataGo() : m_process{std::make_unique<SubProcess>()} {
+KataGo::KataGo()
+    : m_process{std::make_unique<SubProcess>()} {
 }
 
 KataGo::~KataGo() {
