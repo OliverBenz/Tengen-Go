@@ -47,12 +47,9 @@ bool KataGo::start(const LaunchConfig& config) {
 }
 
 void KataGo::stop() {
-	if (!m_process->isRunning()) {
-		return;
-	}
-
 	// Ask the engine to shut down but do not wait for the answer: a genmove may still be blocking on
 	// the pipe from another thread. Closing its stdin in stop() ends the engine either way.
+	// This runs even when no process is attached yet, so that a start() still in flight is cancelled.
 	m_process->sendLine(gtp::quit());
 	m_process->stop();
 }

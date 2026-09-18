@@ -137,10 +137,20 @@ bool SubProcess::start(const std::vector<std::string>& argv, const std::string& 
 	// The other ends of the pipes belong to the child now.
 	closeFd(m_pimpl->m_inPipe[0]);
 	closeFd(m_pimpl->m_outPipe[1]);
+
+	// A stop that arrived while we were launching only reaches the child here. It has not spoken
+	// yet, so it goes down right away instead of getting the grace period stop() would give it.
+	if (m_stopped) {
+		kill(m_pimpl->m_pid, SIGKILL);
+		stop();
+		return false;
+	}
 	return true;
 }
 
 void SubProcess::stop() {
+	m_stopped = true;
+
 	// Closing the child's stdin asks it to shut down. Its own exit then closes the other pipe from
 	// the far side, which is what releases a readUntil() that is still blocking.
 	closeFd(m_pimpl->m_inPipe[1]);

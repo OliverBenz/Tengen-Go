@@ -10,21 +10,35 @@ namespace tengen::app {
 BotSession::BotSession(const unsigned boardSize, const engine::LaunchConfig& engineConfig, const bool playerPlaysAsBlack)
     : m_game(boardSize), m_botColour(playerPlaysAsBlack ? Player::White : Player::Black) {
 	m_position.init(boardSize);
+	m_position.setStatus(GameStatus::Ready); // The bot is not up yet, so the board takes no moves.
 	m_game.subscribeState(this);
 	m_gameThread = std::thread([this] { m_game.run(); });
 
-	if (!m_engine.start(engineConfig) || !m_engine.startGame(boardSize, m_botColour)) {
-		endSession("[BotSession] Engine failed to start. The bot cannot answer.");
-		return;
-	}
+	// Bringing the engine up costs seconds, so it runs on the engine thread like any other request.
+	// The session stays idle until it is up: the status only opens the board once it answers.
+	m_engineThread = std::thread([this, boardSize, engineConfig] {
+		const bool ready = m_engine.start(engineConfig) && m_engine.startGame(boardSize, m_botColour);
+		if (m_shuttingDown) {
+			return; // Closed again before the engine was even up.
+		}
+		if (!ready) {
+			endSession("[BotSession] Engine failed to start. The bot cannot answer.");
+			return;
+		}
 
-	// The bot opens the game when it plays black.
-	if (m_botColour == Player::Black) {
-		m_status = Status::BotMove;
-		requestBotMove();
-	} else {
-		m_status = Status::PlayerMove;
-	}
+		{
+			std::lock_guard<std::mutex> lock(m_stateMutex);
+			m_position.setStatus(GameStatus::Active);
+		}
+		m_eventHub.signal(AS_StateChange);
+
+		// The bot opens the game when it plays black.
+		if (m_botColour == Player::Black) {
+			playBotMove();
+		} else {
+			m_status = Status::PlayerMove;
+		}
+	});
 }
 
 BotSession::~BotSession() {
@@ -60,8 +74,8 @@ void BotSession::tryPass() {
 	m_game.pushEvent(PassEvent{opponent(m_botColour)});
 }
 void BotSession::tryResign() {
-	if (m_status == Status::Finished) {
-		return; // Nothing left to resign from.
+	if (m_status == Status::Idle || m_status == Status::Finished) {
+		return; // Nothing to resign from yet, or anymore.
 	}
 
 	// TODO: ResignEvent names no player, so resigning while the bot thinks resigns in its name.
@@ -171,20 +185,23 @@ void BotSession::requestBotMove() {
 	}
 	joinEngineThread(); // Retire the previous request. Only one is ever in flight.
 
-	m_status       = Status::Thinking;
-	m_engineThread = std::thread([this] {
-		engine::BotMove move{};
-		const bool answered = m_engine.genmove(move);
-		if (m_shuttingDown) {
-			return; // stop() pulled the pipe out from under the request, or the Game is already gone.
-		}
+	m_engineThread = std::thread([this] { playBotMove(); });
+}
 
-		if (!answered) {
-			endSession("[BotSession] Engine failed to produce a move.");
-			return;
-		}
-		pushBotMove(move);
-	});
+void BotSession::playBotMove() {
+	m_status = Status::Thinking;
+
+	engine::BotMove move{};
+	const bool answered = m_engine.genmove(move);
+	if (m_shuttingDown) {
+		return; // stop() pulled the pipe out from under the request, or the Game is already gone.
+	}
+
+	if (!answered) {
+		endSession("[BotSession] Engine failed to produce a move.");
+		return;
+	}
+	pushBotMove(move);
 }
 
 void BotSession::pushBotMove(const engine::BotMove& move) {

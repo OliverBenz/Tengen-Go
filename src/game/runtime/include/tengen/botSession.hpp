@@ -15,14 +15,15 @@
 namespace tengen::app {
 
 //! Play locally against a bot engine.
-//! The engine is asked for its move on its own thread and the answer is pushed into the Game like any
-//! other move. The Game stays the source of truth; the Position only follows once the Game accepted it.
+//! The engine is brought up and asked for its moves on its own thread, and its answers are pushed into
+//! the Game like any other move. The Game stays the source of truth; the Position only follows once
+//! the Game accepted it.
 class BotSession : public IGameSession, public IGameStateListener {
 public:
 	enum class Status {
-		Idle,
+		Idle,     //!< The engine is not up yet. The board takes no moves.
 		BotMove,  //!< Bot's turn. The move has not been requested yet.
-		Thinking, //!< Move requested. The engine answers through onBotMove().
+		Thinking, //!< Move requested. The engine answers on its own thread.
 		PlayerMove,
 		Finished
 	};
@@ -51,6 +52,7 @@ public: // IGameStateListener Interface
 private:
 	void relayPlayerMove(const GameDelta& delta);  //!< Mirror a move the Game accepted into the engine.
 	void requestBotMove();                         //!< Ask the engine for its move without blocking the game loop.
+	void playBotMove();                            //!< Run one move request. Lives on the engine thread.
 	void pushBotMove(const engine::BotMove& move); //!< Hand the engine's move to the Game for validation.
 	void joinEngineThread();                       //!< Wait for the in flight move request to finish.
 	void endSession(const std::string& reason);    //!< The bot cannot answer anymore: log it and close the session.
