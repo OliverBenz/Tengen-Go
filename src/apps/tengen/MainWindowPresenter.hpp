@@ -2,6 +2,7 @@
 
 #include "GamePresenter.hpp"
 #include "MainWindow.hpp"
+#include "engineTypes.hpp" // TODO: REMOVE
 #include "tengen/IGameSession.hpp"
 
 #include <QObject>
@@ -18,6 +19,7 @@ public:
 
 private slots:
 	void onNewLocalGameRequested();
+	void onNewBotGameRequested(unsigned boardSize, gui::Difficulty difficulty, bool humanPlaysBlack);
 	void onConnectRequested(const QString& hostIp);
 	void onHostRequested(const unsigned boardSize);
 	void onShutdownRequested();
@@ -26,9 +28,9 @@ private:
 	void startOpenPlay();
 
 private:
-	gui::MainWindow& m_mainWindow;
-	std::unique_ptr<app::IGameSession> m_game{nullptr};
-	std::unique_ptr<GamePresenter> m_gamePresenter{nullptr};
+	gui::MainWindow& m_mainWindow;                             //!< The main window.
+	std::unique_ptr<app::IGameSession> m_gameSession{nullptr}; //!< The actual game.
+	std::unique_ptr<GamePresenter> m_gamePresenter{nullptr};   //!< The 'drawer' of the game.
 };
 
 } // namespace tengen

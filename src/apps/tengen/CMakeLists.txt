@@ -10,6 +10,7 @@ add_executable(${targetName}
     "${CMAKE_CURRENT_LIST_DIR}/MainWindowPresenter.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/GamePresenter.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/BoardPresenter.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/BotDialog.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ChatPresenter.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ConnectDialog.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/HostDialog.cpp"
@@ -23,6 +24,12 @@ target_link_libraries(${targetName}
         tengen::game::runtime
         tengen::game::gui
         Qt6::Widgets
+)
+
+# TODO: Local development only. The engine assets are read straight out of the source tree.
+target_compile_definitions(${targetName}
+    PRIVATE
+        TENGEN_CONFIG_DIR="${CMAKE_SOURCE_DIR}/config"
 )
 
 set_target_properties(${targetName}
