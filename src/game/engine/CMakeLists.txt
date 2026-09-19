@@ -37,5 +37,10 @@ set_target_properties(${targetName}
 )
 
 # Setup project settings
-set_target_configuration(${targetName} Config::Default)
+if(WIN32)
+	set_target_configuration(${targetName} Config::DefaultWin)
+else()
+	set_target_configuration(${targetName} Config::Default)
+endif()
+
 set_output_directory(${targetName})  # Set the output directory of the library
