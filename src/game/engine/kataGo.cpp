@@ -107,6 +107,10 @@ void KataGo::genmove() {
 void KataGo::post(std::function<void()> request) {
 	{
 		std::lock_guard<std::mutex> lock(m_requestMutex);
+		if (!m_running) {
+			return; // Stopped. There is no worker left to run the request, and nothing to answer with.
+		}
+
 		assert(!m_pendingRequest); // Only one request is ever in flight.
 		m_pendingRequest = std::move(request);
 	}

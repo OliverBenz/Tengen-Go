@@ -66,11 +66,9 @@ void BotSession::tryResign() {
 }
 
 void BotSession::shutdown() {
-	// Tells the engine thread that a request dying on the pipe below is our doing, not a failure.
-	m_shuttingDown = true;
-
-	// Stopping the engine first releases a genmove that is still blocking on the pipe, and with it
-	// the game thread should it be waiting on that request.
+	// Stopping the engine first releases a request that is still blocking on the pipe and retires the
+	// engine thread with it. Once stop() returns, no answer can reach us anymore, so the Game below is
+	// ours alone to take down.
 	m_engine.stop();
 
 	m_game.pushEvent(ShutdownEvent{});
@@ -142,6 +140,7 @@ void BotSession::onGameDelta(const GameDelta& delta) {
 void BotSession::relayPlayerMove(const GameDelta& delta) {
 	// 'play' does not run a search, so the round trip is short enough to keep on the game thread.
 	// Doing it here also keeps the engine's board in the order the Game accepted the moves in.
+	// Only the player's own moves get here, so the engine is never thinking while we send.
 	switch (delta.action) {
 	case GameAction::Place:
 		assert(delta.coord);
@@ -161,19 +160,11 @@ void BotSession::relayPlayerMove(const GameDelta& delta) {
 }
 
 void BotSession::requestBotMove() {
-	if (m_shuttingDown) {
-		return; // The engine is on its way out. There is nothing left to ask it.
-	}
-
 	m_status = Status::Thinking;
 	m_engine.genmove();
 }
 
 void BotSession::onEngineReady() {
-	if (m_shuttingDown) {
-		return; // Closed again before the engine was even up.
-	}
-
 	{
 		std::lock_guard<std::mutex> lock(m_stateMutex);
 		m_position.setStatus(GameStatus::Active);
@@ -189,10 +180,6 @@ void BotSession::onEngineReady() {
 }
 
 void BotSession::onMoveGenerated(const engine::BotMove& move) {
-	if (m_shuttingDown) {
-		return; // stop() pulled the pipe out from under the request, or the Game is already gone.
-	}
-
 	// The Game validates the move like any other. It signals us back through onGameDelta() when it accepts.
 	// TODO: The Game drops rejected moves silently, so a move our ruleset disagrees with leaves the bot idle.
 	switch (move.action) {
@@ -209,10 +196,6 @@ void BotSession::onMoveGenerated(const engine::BotMove& move) {
 }
 
 void BotSession::onEngineFailed() {
-	if (m_shuttingDown) {
-		return; // stop() pulled the pipe out from under the request, or the Game is already gone.
-	}
-
 	// Idle means the engine never came up. Anything else means it owes a move it cannot make anymore.
 	endSession(m_status == Status::Idle ? "[BotSession] Engine failed to start. The bot cannot answer."
 	                                    : "[BotSession] Engine failed to produce a move.");
