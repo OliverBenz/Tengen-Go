@@ -53,6 +53,10 @@ void KataGo::stop() {
 	// This runs even when no process is attached yet, so that a start() still in flight is cancelled.
 	m_process->sendLine(gtp::quit());
 	m_process->stop();
+
+	if (m_genmoveThread.joinable()) {
+		m_genmoveThread.join();
+	}
 }
 
 bool KataGo::startGame(const unsigned boardSize, const tengen::Player botColour) {
@@ -82,14 +86,18 @@ bool KataGo::resign() {
 	return true;
 }
 
-bool KataGo::genmove(BotMove& move) {
-	// The engine plays the move on its own board, so it must not be relayed back with place().
-	std::string response;
-	if (!sendCommand(gtp::genmove(m_botColour), response)) {
-		return false;
+void KataGo::genmove(std::function<void(bool, BotMove)> callback) {
+	if (m_genmoveThread.joinable()) {
+		m_genmoveThread.join(); // Retire the previous request. Only one is ever in flight.
 	}
 
-	return gtp::parseMove(response, m_boardSize, move);
+	m_genmoveThread = std::thread([this, callback = std::move(callback)] {
+		// The engine plays the move on its own board, so it must not be relayed back with place().
+		BotMove move{};
+		std::string response;
+		const bool ok = sendCommand(gtp::genmove(m_botColour), response) && gtp::parseMove(response, m_boardSize, move);
+		callback(ok, move);
+	});
 }
 
 bool KataGo::sendCommand(const std::string& command, std::string& response) {
