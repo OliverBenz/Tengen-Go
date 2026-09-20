@@ -50,13 +50,13 @@ public: // IGameStateListener Interface
 	void onGameDelta(const GameDelta& delta) override;
 
 public: // IEngineListener Interface
+	void onEngineReady() override;
 	void onMoveGenerated(const engine::BotMove& move) override;
 	void onEngineFailed() override;
 
 private:
 	void relayPlayerMove(const GameDelta& delta); //!< Mirror a move the Game accepted into the engine.
 	void requestBotMove();                        //!< Ask the engine for its move without blocking the game loop.
-	void joinEngineThread();                      //!< Wait for the startup thread to finish.
 	void endSession(const std::string& reason);   //!< The bot cannot answer anymore: log it and close the session.
 
 private:
@@ -68,9 +68,8 @@ private:
 	// Bot specifics
 	std::atomic<Status> m_status{Status::Idle}; //!< Also written from the engine thread.
 	std::atomic<bool> m_shuttingDown{false};    //!< Set before the engine is stopped. Tells an aborted request from a failure.
-	engine::KataGo m_engine;                    //!< The engine process. Runs genmove() requests on its own thread.
+	engine::KataGo m_engine;                    //!< The engine process. Runs its long requests on its own thread.
 	Player m_botColour{Player::White};          //!< Colour the bot plays. The user takes the other one.
-	std::thread m_engineThread;                 //!< Runs the initial start()+startGame() sequence. Retired by shutdown().
 
 	std::thread m_gameThread;        //!< Runs the game loop.
 	mutable std::mutex m_stateMutex; //!< Concurrency handling.

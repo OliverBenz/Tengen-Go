@@ -13,33 +13,11 @@ BotSession::BotSession(const unsigned boardSize, const engine::LaunchConfig& eng
 	m_position.setStatus(GameStatus::Ready); // The bot is not up yet, so the board takes no moves.
 	m_game.subscribeState(this);
 	m_gameThread = std::thread([this] { m_game.run(); });
-	m_engine.registerListener(this);
 
-	// Bringing the engine up costs seconds, so it runs on the engine thread like any other request.
+	// Bringing the engine up costs seconds, so it answers on its own thread like any other request.
 	// The session stays idle until it is up: the status only opens the board once it answers.
-	m_engineThread = std::thread([this, boardSize, engineConfig] {
-		const bool ready = m_engine.start(engineConfig) && m_engine.startGame(boardSize, m_botColour);
-		if (m_shuttingDown) {
-			return; // Closed again before the engine was even up.
-		}
-		if (!ready) {
-			endSession("[BotSession] Engine failed to start. The bot cannot answer.");
-			return;
-		}
-
-		{
-			std::lock_guard<std::mutex> lock(m_stateMutex);
-			m_position.setStatus(GameStatus::Active);
-		}
-		m_eventHub.signal(AS_StateChange);
-
-		// The bot opens the game when it plays black.
-		if (m_botColour == m_position.getPlayer()) {
-			requestBotMove();
-		} else {
-			m_status = Status::PlayerMove;
-		}
-	});
+	m_engine.registerListener(this);
+	m_engine.start(engineConfig, boardSize, m_botColour);
 }
 
 BotSession::~BotSession() {
@@ -100,9 +78,6 @@ void BotSession::shutdown() {
 		m_gameThread.join();
 	}
 	m_game.unsubscribeState(this);
-
-	// The game thread is gone, so the request is ours alone to retire now.
-	joinEngineThread();
 }
 
 void BotSession::subscribe(IAppSignalListener* listener, uint64_t signalMask) {
@@ -194,6 +169,25 @@ void BotSession::requestBotMove() {
 	m_engine.genmove();
 }
 
+void BotSession::onEngineReady() {
+	if (m_shuttingDown) {
+		return; // Closed again before the engine was even up.
+	}
+
+	{
+		std::lock_guard<std::mutex> lock(m_stateMutex);
+		m_position.setStatus(GameStatus::Active);
+	}
+	m_eventHub.signal(AS_StateChange);
+
+	// The bot opens the game when it plays black.
+	if (m_botColour == m_position.getPlayer()) {
+		requestBotMove();
+	} else {
+		m_status = Status::PlayerMove;
+	}
+}
+
 void BotSession::onMoveGenerated(const engine::BotMove& move) {
 	if (m_shuttingDown) {
 		return; // stop() pulled the pipe out from under the request, or the Game is already gone.
@@ -218,13 +212,10 @@ void BotSession::onEngineFailed() {
 	if (m_shuttingDown) {
 		return; // stop() pulled the pipe out from under the request, or the Game is already gone.
 	}
-	endSession("[BotSession] Engine failed to produce a move.");
-}
 
-void BotSession::joinEngineThread() {
-	if (m_engineThread.joinable()) {
-		m_engineThread.join();
-	}
+	// Idle means the engine never came up. Anything else means it owes a move it cannot make anymore.
+	endSession(m_status == Status::Idle ? "[BotSession] Engine failed to start. The bot cannot answer."
+	                                    : "[BotSession] Engine failed to produce a move.");
 }
 
 void BotSession::endSession(const std::string& reason) {
