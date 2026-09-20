@@ -108,6 +108,10 @@ bool SubProcess::start(const std::vector<std::string>& argv, const std::string& 
 	}
 	childArgv.push_back(nullptr);
 
+	// Arm the flag for this launch. Set before the child exists, so a stop() racing the launch below
+	// still latches and is caught after the fork.
+	m_stopped = false;
+
 	// Setup Pipes
 	if (pipe(m_pimpl->m_inPipe) == -1) {
 		return false;
