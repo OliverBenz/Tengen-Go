@@ -10,7 +10,8 @@ namespace tengen::engine {
 static constexpr const char* LOG_FILE = "katago.log"; //!< Takes over the engine's stderr.
 
 static bool validConfig(const LaunchConfig& config) {
-	return std::filesystem::exists(config.executable) && std::filesystem::exists(config.model) && std::filesystem::exists(config.config) && std::filesystem::exists(config.modelHuman);
+	std::error_code ec;
+	return std::filesystem::exists(config.executable, ec) && std::filesystem::exists(config.model, ec) && std::filesystem::exists(config.config, ec) && std::filesystem::exists(config.modelHuman, ec);
 }
 
 KataGo::KataGo()
