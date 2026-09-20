@@ -33,7 +33,7 @@ BotSession::BotSession(const unsigned boardSize, const engine::LaunchConfig& eng
 		m_eventHub.signal(AS_StateChange);
 
 		// The bot opens the game when it plays black.
-		if (m_botColour == Player::Black) {
+		if (m_botColour == m_position.getPlayer()) {
 			playBotMove();
 		} else {
 			m_status = Status::PlayerMove;
@@ -49,10 +49,12 @@ GameStatus BotSession::status() const {
 	std::lock_guard<std::mutex> lock(m_stateMutex);
 	return m_position.getStatus();
 }
+
 Board BotSession::board() const {
 	std::lock_guard<std::mutex> lock(m_stateMutex);
 	return m_position.getBoard();
 }
+
 Player BotSession::currentPlayer() const {
 	std::lock_guard<std::mutex> lock(m_stateMutex);
 	return m_position.getPlayer();
@@ -67,12 +69,14 @@ void BotSession::tryPlace(const unsigned x, const unsigned y) {
 	// while it is not his turn, so a second click cannot slip in as a move for the bot.
 	m_game.pushEvent(PutStoneEvent{opponent(m_botColour), Coord{x, y}});
 }
+
 void BotSession::tryPass() {
 	if (m_status != Status::PlayerMove) {
 		return; // Only the user's own turn is his to play.
 	}
 	m_game.pushEvent(PassEvent{opponent(m_botColour)});
 }
+
 void BotSession::tryResign() {
 	if (m_status == Status::Idle || m_status == Status::Finished) {
 		return; // Nothing to resign from yet, or anymore.
@@ -81,6 +85,7 @@ void BotSession::tryResign() {
 	// TODO: ResignEvent names no player, so resigning while the bot thinks resigns in its name.
 	m_game.pushEvent(ResignEvent{});
 }
+
 void BotSession::shutdown() {
 	// Tells the engine thread that a request dying on the pipe below is our doing, not a failure.
 	m_shuttingDown = true;
