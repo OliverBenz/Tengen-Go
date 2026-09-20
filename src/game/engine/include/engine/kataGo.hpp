@@ -27,6 +27,7 @@ struct LaunchConfig {
 class IEngineListener {
 public:
 	virtual ~IEngineListener()                        = default;
+	virtual void onEngineReady()                      = 0; //!< The engine is up and the game is set up.
 	virtual void onMoveGenerated(const BotMove& move) = 0; //!< The engine picked its move and played it on its own board.
 	virtual void onEngineFailed()                     = 0; //!< The engine cannot answer anymore.
 };
@@ -45,12 +46,12 @@ public:
 
 	bool registerListener(IEngineListener* listener); //!< Register a single listener. Returns false if one is already registered.
 
-	bool start(const LaunchConfig& config); //!< Start katago with the given configuration.
-	void stop();                            //!< Stop the subprocess and retire the worker. No listener callbacks after this.
+	//! Bring katago up and set the game up. Returns at once; the listener hears onEngineReady() once it is up.
+	void start(const LaunchConfig& config, unsigned boardSize, tengen::Player botColour);
+	void stop(); //!< Stop the subprocess and retire the worker. No listener callbacks after this.
 
 	// Short round trips that run no search, so they answer on the calling thread.
 	// Note: Validate the move is legal beforehand, and only send while the engine is not thinking.
-	bool startGame(unsigned boardSize, tengen::Player botColour);
 	bool place(tengen::Coord pos);
 	bool pass();
 	bool resign();
@@ -59,6 +60,8 @@ public:
 	void genmove();
 
 private:
+	bool launch(const LaunchConfig& config);                             //!< Start the process and make sure it speaks GTP.
+	bool setupGame();                                                    //!< Set the engine's board up for the game we start.
 	bool sendCommand(const std::string& command, std::string& response); //!< Send one GTP command and wait for its response.
 
 	void post(std::function<void()> request); //!< Hand one request to the worker. Only one is ever in flight.

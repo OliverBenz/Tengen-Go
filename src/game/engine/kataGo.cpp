@@ -31,32 +31,25 @@ bool KataGo::registerListener(IEngineListener* listener) {
 	return true;
 }
 
-bool KataGo::start(const LaunchConfig& config) {
-	// Check valid config
-	if (!validConfig(config)) {
-		return false;
-	}
+void KataGo::start(const LaunchConfig& config, const unsigned boardSize, const tengen::Player botColour) {
+	assert(!m_running); // Starting twice would strand the engine that is already up.
+	m_boardSize = boardSize;
+	m_botColour = botColour;
 
-	if (!m_process->start({config.executable,
-	                       "gtp",
-	                       "-model", config.model,
-	                       "-human-model", config.modelHuman,
-	                       "-config", config.config},
-	                      LOG_FILE)) {
-		return false;
-	}
-
-	// Forking succeeds even when the executable cannot be launched. Only an answer proves that we
-	// are talking to a GTP engine.
-	std::string response;
-	if (!sendCommand(gtp::protocolVersion(), response)) {
-		m_process->stop();
-		return false;
-	}
-
+	// Bringing the engine up costs seconds, so it is a request like any other.
 	m_running = true;
 	m_worker  = std::thread([this] { workerLoop(); });
-	return true;
+	post([this, config] {
+		const bool ready = launch(config) && setupGame();
+		if (!canNotify()) {
+			return;
+		}
+		if (ready) {
+			m_listener->onEngineReady();
+		} else {
+			m_listener->onEngineFailed();
+		}
+	});
 }
 
 void KataGo::stop() {
@@ -76,18 +69,6 @@ void KataGo::stop() {
 	if (m_worker.joinable()) {
 		m_worker.join();
 	}
-}
-
-bool KataGo::startGame(const unsigned boardSize, const tengen::Player botColour) {
-	m_boardSize = boardSize;
-	m_botColour = botColour;
-
-	std::string response;
-	bool success = true;
-	success &= sendCommand(gtp::boardSize(boardSize), response);
-	success &= sendCommand(gtp::clearBoard(), response);
-	success &= sendCommand(gtp::komi(7.5f), response);
-	return success; // TODO: Take the komi from the game configuration.
 }
 
 bool KataGo::place(const tengen::Coord pos) {
@@ -152,6 +133,40 @@ void KataGo::workerLoop() {
 
 bool KataGo::canNotify() const {
 	return m_running && m_listener;
+}
+
+bool KataGo::launch(const LaunchConfig& config) {
+	// Check valid config
+	if (!validConfig(config)) {
+		return false;
+	}
+
+	if (!m_process->start({config.executable,
+	                       "gtp",
+	                       "-model", config.model,
+	                       "-human-model", config.modelHuman,
+	                       "-config", config.config},
+	                      LOG_FILE)) {
+		return false;
+	}
+
+	// Forking succeeds even when the executable cannot be launched. Only an answer proves that we
+	// are talking to a GTP engine.
+	std::string response;
+	if (!sendCommand(gtp::protocolVersion(), response)) {
+		m_process->stop();
+		return false;
+	}
+	return true;
+}
+
+bool KataGo::setupGame() {
+	std::string response;
+	bool success = true;
+	success &= sendCommand(gtp::boardSize(m_boardSize), response);
+	success &= sendCommand(gtp::clearBoard(), response);
+	success &= sendCommand(gtp::komi(7.5f), response);
+	return success; // TODO: Take the komi from the game configuration.
 }
 
 bool KataGo::sendCommand(const std::string& command, std::string& response) {
