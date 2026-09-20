@@ -141,6 +141,7 @@ void BotSession::relayPlayerMove(const GameDelta& delta) {
 	// 'play' does not run a search, so the round trip is short enough to keep on the game thread.
 	// Doing it here also keeps the engine's board in the order the Game accepted the moves in.
 	// Only the player's own moves get here, so the engine is never thinking while we send.
+	bool relayed = true;
 	switch (delta.action) {
 	case GameAction::Place:
 		assert(delta.coord);
@@ -148,14 +149,21 @@ void BotSession::relayPlayerMove(const GameDelta& delta) {
 			Logger().Log(Logging::LogLevel::Warning, "[BotSession] Game delta missing place coordinate; engine not updated.");
 			return;
 		}
-		m_engine.place(*delta.coord);
+		relayed = m_engine.place(*delta.coord);
 		break;
 	case GameAction::Pass:
-		m_engine.pass();
+		relayed = m_engine.pass();
 		break;
 	case GameAction::Resign:
-		m_engine.resign();
+		relayed = m_engine.resign();
 		break;
+	}
+
+	// The engine either died or refused a move our rules accepted. Either way its board is behind the
+	// Game's from here on, so every move it would still generate answers a position we are not in.
+	// A move the Game hands us after shutdown has nowhere to go and is none of its doing.
+	if (!relayed && m_engine.isRunning()) {
+		endSession("[BotSession] Engine did not take the move. Its board no longer matches the game.");
 	}
 }
 
@@ -165,14 +173,16 @@ void BotSession::requestBotMove() {
 }
 
 void BotSession::onEngineReady() {
+	Player nextPlayer = Player::Black;
 	{
 		std::lock_guard<std::mutex> lock(m_stateMutex);
 		m_position.setStatus(GameStatus::Active);
+		nextPlayer = m_position.getPlayer();
 	}
 	m_eventHub.signal(AS_StateChange);
 
 	// The bot opens the game when it plays black.
-	if (m_botColour == m_position.getPlayer()) {
+	if (m_botColour == nextPlayer) {
 		requestBotMove();
 	} else {
 		m_status = Status::PlayerMove;

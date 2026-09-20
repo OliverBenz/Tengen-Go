@@ -53,22 +53,28 @@ void KataGo::start(const LaunchConfig& config, const unsigned boardSize, const t
 }
 
 void KataGo::stop() {
-	// Ask the engine to shut down but do not wait for the answer: a request may still be blocking on
-	// the pipe from the worker thread. Closing its stdin in stop() ends the engine either way.
-	// This runs even when no process is attached yet, so that a start() still in flight is cancelled.
-	m_process->sendLine(gtp::quit());
-	m_process->stop();
-
-	// Clearing this both ends the worker loop and silences the answer of the request we just killed.
+	// Clear this first: everything below kills the pipes, and nothing dying on them from here on is a
+	// failure worth reporting. It also ends the worker loop.
 	// Under the lock, so that a worker about to wait for work cannot miss it.
 	{
 		std::lock_guard<std::mutex> lock(m_requestMutex);
 		m_running = false;
 	}
 	m_requestReady.notify_one();
+
+	// Ask the engine to shut down but do not wait for the answer: a request may still be blocking on
+	// the pipe from the worker thread. Closing its stdin in stop() ends the engine either way.
+	// This runs even when no process is attached yet, so that a start() still in flight is cancelled.
+	m_process->sendLine(gtp::quit());
+	m_process->stop();
+
 	if (m_worker.joinable()) {
 		m_worker.join();
 	}
+}
+
+bool KataGo::isRunning() const {
+	return m_running;
 }
 
 bool KataGo::place(const tengen::Coord pos) {
@@ -111,7 +117,9 @@ void KataGo::post(std::function<void()> request) {
 			return; // Stopped. There is no worker left to run the request, and nothing to answer with.
 		}
 
-		assert(!m_pendingRequest); // Only one request is ever in flight.
+		// The worker takes a request out of the slot before running it, so an occupied slot means two
+		// were posted without the first ever being picked up. A post from a callback is not that.
+		assert(!m_pendingRequest);
 		m_pendingRequest = std::move(request);
 	}
 	m_requestReady.notify_one();

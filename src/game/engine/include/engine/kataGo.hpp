@@ -36,7 +36,8 @@ class SubProcess;
 
 //! Drives a KataGo process over GTP.
 //! Long requests run on a worker thread of this class and answer through the listener, so callers never
-//! block on a search. Only one request is ever in flight.
+//! block on a search. Callers keep one request in flight at a time; a request posted from a listener
+//! callback runs once the one being answered is done.
 class KataGo {
 public:
 	KataGo();
@@ -48,7 +49,11 @@ public:
 
 	//! Bring katago up and set the game up. Returns at once; the listener hears onEngineReady() once it is up.
 	void start(const LaunchConfig& config, unsigned boardSize, tengen::Player botColour);
-	void stop(); //!< Stop the subprocess and retire the worker. No listener callbacks after this.
+	//! Stop the subprocess and retire the worker. No listener callbacks once this returns.
+	//! \note Never call this from a listener callback: it joins the thread the callback runs on.
+	void stop();
+
+	bool isRunning() const; //!< False before start() and from the moment stop() begins.
 
 	// Short round trips that run no search, so they answer on the calling thread.
 	// Note: Validate the move is legal beforehand, and only send while the engine is not thinking.
@@ -64,7 +69,7 @@ private:
 	bool setupGame();                                                    //!< Set the engine's board up for the game we start.
 	bool sendCommand(const std::string& command, std::string& response); //!< Send one GTP command and wait for its response.
 
-	void post(std::function<void()> request); //!< Hand one request to the worker. Only one is ever in flight.
+	void post(std::function<void()> request); //!< Hand one request to the worker. Dropped once stopped.
 	void workerLoop();                        //!< Runs the posted requests until stop().
 	bool canNotify() const;                   //!< False once stop() killed the request the answer belongs to.
 
