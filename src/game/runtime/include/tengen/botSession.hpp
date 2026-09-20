@@ -67,7 +67,6 @@ private:
 
 	// Bot specifics
 	std::atomic<Status> m_status{Status::Idle}; //!< Also written from the engine thread.
-	std::atomic<bool> m_shuttingDown{false};    //!< Set before the engine is stopped. Tells an aborted request from a failure.
 	engine::KataGo m_engine;                    //!< The engine process. Runs its long requests on its own thread.
 	Player m_botColour{Player::White};          //!< Colour the bot plays. The user takes the other one.
 
