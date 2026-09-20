@@ -124,6 +124,10 @@ bool SubProcess::start(const std::vector<std::string>& argv, const std::string& 
 		return false;
 	}
 
+	// Arm the flag for this launch. Set before the child exists, so a stop() racing the launch below
+	// still latches and is caught after the process is created.
+	m_stopped = false;
+
 	// Setup Pipes
 	if (!createPipe(m_pimpl->m_inPipe, writeEnd) || !createPipe(m_pimpl->m_outPipe, readEnd)) {
 		closePipes();

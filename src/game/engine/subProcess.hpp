@@ -33,7 +33,7 @@ private:
 private:
 	class Pimpl;
 	std::unique_ptr<Pimpl> m_pimpl{nullptr}; //!< Implementation pointer. Allows to select between windows and linux implementation.
-	std::atomic<bool> m_stopped{false};      //!< Set by stop(), read by a start() that is still running. Never cleared.
+	std::atomic<bool> m_stopped{false};      //!< Set by stop(), read by a start() that is still running. Cleared by the next start().
 };
 
 } // namespace tengen::engine
