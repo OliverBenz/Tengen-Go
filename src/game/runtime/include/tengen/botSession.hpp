@@ -15,10 +15,10 @@
 namespace tengen::app {
 
 //! Play locally against a bot engine.
-//! The engine is brought up and asked for its moves on its own thread, and its answers are pushed into
-//! the Game like any other move. The Game stays the source of truth; the Position only follows once
-//! the Game accepted it.
-class BotSession : public IGameSession, public IGameStateListener {
+//! The engine answers on a thread of its own and signals us through the listener interface. Its moves are
+//! pushed into the Game like any other move. The Game stays the source of truth; the Position only
+//! follows once the Game accepted it.
+class BotSession : public IGameSession, public IGameStateListener, public engine::IEngineListener {
 public:
 	enum class Status {
 		Idle,     //!< The engine is not up yet. The board takes no moves.
@@ -49,12 +49,15 @@ public: // IAppSignalSource Interface
 public: // IGameStateListener Interface
 	void onGameDelta(const GameDelta& delta) override;
 
+public: // IEngineListener Interface
+	void onMoveGenerated(const engine::BotMove& move) override;
+	void onEngineFailed() override;
+
 private:
-	void relayPlayerMove(const GameDelta& delta);  //!< Mirror a move the Game accepted into the engine.
-	void requestBotMove();                         //!< Ask the engine for its move without blocking the game loop.
-	void pushBotMove(const engine::BotMove& move); //!< Hand the engine's move to the Game for validation.
-	void joinEngineThread();                       //!< Wait for the startup thread to finish.
-	void endSession(const std::string& reason);    //!< The bot cannot answer anymore: log it and close the session.
+	void relayPlayerMove(const GameDelta& delta); //!< Mirror a move the Game accepted into the engine.
+	void requestBotMove();                        //!< Ask the engine for its move without blocking the game loop.
+	void joinEngineThread();                      //!< Wait for the startup thread to finish.
+	void endSession(const std::string& reason);   //!< The bot cannot answer anymore: log it and close the session.
 
 private:
 	// Game Specifics
@@ -65,11 +68,9 @@ private:
 	// Bot specifics
 	std::atomic<Status> m_status{Status::Idle}; //!< Also written from the engine thread.
 	std::atomic<bool> m_shuttingDown{false};    //!< Set before the engine is stopped. Tells an aborted request from a failure.
-	// TODO: place() runs on the game thread while genmove() may still block on the engine thread.
-	// Both read the same pipe, so the engine still needs a lock of its own.
-	engine::KataGo m_engine;           //!< The engine process. Runs genmove() requests on its own thread.
-	Player m_botColour{Player::White}; //!< Colour the bot plays. The user takes the other one.
-	std::thread m_engineThread;        //!< Runs the initial start()+startGame() sequence. Retired by shutdown().
+	engine::KataGo m_engine;                    //!< The engine process. Runs genmove() requests on its own thread.
+	Player m_botColour{Player::White};          //!< Colour the bot plays. The user takes the other one.
+	std::thread m_engineThread;                 //!< Runs the initial start()+startGame() sequence. Retired by shutdown().
 
 	std::thread m_gameThread;        //!< Runs the game loop.
 	mutable std::mutex m_stateMutex; //!< Concurrency handling.

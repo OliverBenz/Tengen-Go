@@ -3,6 +3,7 @@
 #include "gtp.hpp"
 #include "subProcess.hpp"
 
+#include <cassert>
 #include <filesystem>
 #include <string>
 
@@ -20,6 +21,14 @@ KataGo::KataGo()
 
 KataGo::~KataGo() {
 	stop();
+}
+
+bool KataGo::registerListener(IEngineListener* listener) {
+	if (m_listener) {
+		return false;
+	}
+	m_listener = listener;
+	return true;
 }
 
 bool KataGo::start(const LaunchConfig& config) {
@@ -44,18 +53,28 @@ bool KataGo::start(const LaunchConfig& config) {
 		m_process->stop();
 		return false;
 	}
+
+	m_running = true;
+	m_worker  = std::thread([this] { workerLoop(); });
 	return true;
 }
 
 void KataGo::stop() {
-	// Ask the engine to shut down but do not wait for the answer: a genmove may still be blocking on
-	// the pipe from another thread. Closing its stdin in stop() ends the engine either way.
+	// Ask the engine to shut down but do not wait for the answer: a request may still be blocking on
+	// the pipe from the worker thread. Closing its stdin in stop() ends the engine either way.
 	// This runs even when no process is attached yet, so that a start() still in flight is cancelled.
 	m_process->sendLine(gtp::quit());
 	m_process->stop();
 
-	if (m_genmoveThread.joinable()) {
-		m_genmoveThread.join();
+	// Clearing this both ends the worker loop and silences the answer of the request we just killed.
+	// Under the lock, so that a worker about to wait for work cannot miss it.
+	{
+		std::lock_guard<std::mutex> lock(m_requestMutex);
+		m_running = false;
+	}
+	m_requestReady.notify_one();
+	if (m_worker.joinable()) {
+		m_worker.join();
 	}
 }
 
@@ -86,18 +105,53 @@ bool KataGo::resign() {
 	return true;
 }
 
-void KataGo::genmove(std::function<void(bool, BotMove)> callback) {
-	if (m_genmoveThread.joinable()) {
-		m_genmoveThread.join(); // Retire the previous request. Only one is ever in flight.
-	}
-
-	m_genmoveThread = std::thread([this, callback = std::move(callback)] {
+void KataGo::genmove() {
+	post([this] {
 		// The engine plays the move on its own board, so it must not be relayed back with place().
 		BotMove move{};
 		std::string response;
 		const bool ok = sendCommand(gtp::genmove(m_botColour), response) && gtp::parseMove(response, m_boardSize, move);
-		callback(ok, move);
+
+		if (!canNotify()) {
+			return;
+		}
+		if (ok) {
+			m_listener->onMoveGenerated(move);
+		} else {
+			m_listener->onEngineFailed();
+		}
 	});
+}
+
+void KataGo::post(std::function<void()> request) {
+	{
+		std::lock_guard<std::mutex> lock(m_requestMutex);
+		assert(!m_pendingRequest); // Only one request is ever in flight.
+		m_pendingRequest = std::move(request);
+	}
+	m_requestReady.notify_one();
+}
+
+void KataGo::workerLoop() {
+	while (true) {
+		std::function<void()> request;
+		{
+			std::unique_lock<std::mutex> lock(m_requestMutex);
+			m_requestReady.wait(lock, [this] { return m_pendingRequest || !m_running; });
+			if (!m_running) {
+				return;
+			}
+			request          = std::move(m_pendingRequest);
+			m_pendingRequest = nullptr;
+		}
+
+		// Outside the lock: the request blocks on the engine, and its answer may post the next one.
+		request();
+	}
+}
+
+bool KataGo::canNotify() const {
+	return m_running && m_listener;
 }
 
 bool KataGo::sendCommand(const std::string& command, std::string& response) {
