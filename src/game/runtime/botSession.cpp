@@ -13,6 +13,7 @@ BotSession::BotSession(const unsigned boardSize, const engine::LaunchConfig& eng
 	m_position.setStatus(GameStatus::Ready); // The bot is not up yet, so the board takes no moves.
 	m_game.subscribeState(this);
 	m_gameThread = std::thread([this] { m_game.run(); });
+	m_engine.registerListener(this);
 
 	// Bringing the engine up costs seconds, so it runs on the engine thread like any other request.
 	// The session stays idle until it is up: the status only opens the board once it answers.
@@ -190,20 +191,14 @@ void BotSession::requestBotMove() {
 	}
 
 	m_status = Status::Thinking;
-	m_engine.genmove([this](const bool answered, const engine::BotMove move) {
-		if (m_shuttingDown) {
-			return; // stop() pulled the pipe out from under the request, or the Game is already gone.
-		}
-
-		if (!answered) {
-			endSession("[BotSession] Engine failed to produce a move.");
-			return;
-		}
-		pushBotMove(move);
-	});
+	m_engine.genmove();
 }
 
-void BotSession::pushBotMove(const engine::BotMove& move) {
+void BotSession::onMoveGenerated(const engine::BotMove& move) {
+	if (m_shuttingDown) {
+		return; // stop() pulled the pipe out from under the request, or the Game is already gone.
+	}
+
 	// The Game validates the move like any other. It signals us back through onGameDelta() when it accepts.
 	// TODO: The Game drops rejected moves silently, so a move our ruleset disagrees with leaves the bot idle.
 	switch (move.action) {
@@ -217,6 +212,13 @@ void BotSession::pushBotMove(const engine::BotMove& move) {
 		m_game.pushEvent(ResignEvent{});
 		break;
 	}
+}
+
+void BotSession::onEngineFailed() {
+	if (m_shuttingDown) {
+		return; // stop() pulled the pipe out from under the request, or the Game is already gone.
+	}
+	endSession("[BotSession] Engine failed to produce a move.");
 }
 
 void BotSession::joinEngineThread() {
