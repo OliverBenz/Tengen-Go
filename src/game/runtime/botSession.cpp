@@ -34,7 +34,7 @@ BotSession::BotSession(const unsigned boardSize, const engine::LaunchConfig& eng
 
 		// The bot opens the game when it plays black.
 		if (m_botColour == m_position.getPlayer()) {
-			playBotMove();
+			requestBotMove();
 		} else {
 			m_status = Status::PlayerMove;
 		}
@@ -188,25 +188,19 @@ void BotSession::requestBotMove() {
 	if (m_shuttingDown) {
 		return; // The engine is on its way out. There is nothing left to ask it.
 	}
-	joinEngineThread(); // Retire the previous request. Only one is ever in flight.
 
-	m_engineThread = std::thread([this] { playBotMove(); });
-}
-
-void BotSession::playBotMove() {
 	m_status = Status::Thinking;
+	m_engine.genmove([this](const bool answered, const engine::BotMove move) {
+		if (m_shuttingDown) {
+			return; // stop() pulled the pipe out from under the request, or the Game is already gone.
+		}
 
-	engine::BotMove move{};
-	const bool answered = m_engine.genmove(move);
-	if (m_shuttingDown) {
-		return; // stop() pulled the pipe out from under the request, or the Game is already gone.
-	}
-
-	if (!answered) {
-		endSession("[BotSession] Engine failed to produce a move.");
-		return;
-	}
-	pushBotMove(move);
+		if (!answered) {
+			endSession("[BotSession] Engine failed to produce a move.");
+			return;
+		}
+		pushBotMove(move);
+	});
 }
 
 void BotSession::pushBotMove(const engine::BotMove& move) {

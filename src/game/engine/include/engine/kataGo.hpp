@@ -5,8 +5,10 @@
 
 #include "botMove.hpp"
 
+#include <functional>
 #include <memory>
 #include <string>
+#include <thread>
 
 namespace tengen::engine {
 
@@ -35,8 +37,8 @@ public:
 	bool pass();
 	bool resign();
 
-	//! Let the engine pick its move. Blocks until the search is done.
-	bool genmove(BotMove& move);
+	//! Let the engine pick its move on its own thread. Calls back with the result once it answers.
+	void genmove(std::function<void(bool ok, BotMove move)> callback);
 
 private:
 	bool sendCommand(const std::string& command, std::string& response); //!< Send one GTP command and wait for its response.
@@ -45,6 +47,7 @@ private:
 	std::unique_ptr<SubProcess> m_process{nullptr};    //!< The engine process.
 	tengen::Player m_botColour{tengen::Player::Black}; //!< Colour the bot plays. The player takes the other one.
 	unsigned m_boardSize{9u};                          //!< Board size the game was started with.
+	std::thread m_genmoveThread;                       //!< Runs the in flight genmove request. Retired by stop().
 };
 
 } // namespace tengen::engine
