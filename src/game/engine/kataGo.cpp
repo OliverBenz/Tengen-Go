@@ -3,27 +3,64 @@
 #include "gtp.hpp"
 #include "subProcess.hpp"
 
+#include <atomic>
 #include <cassert>
+#include <condition_variable>
 #include <filesystem>
+#include <functional>
+#include <mutex>
 #include <string>
+#include <thread>
 
 namespace tengen::engine {
-static constexpr const char* LOG_FILE = "katago.log"; //!< Takes over the engine's stderr.
+
+static constexpr char LOG_FILE[] = "katago.log"; //!< Takes over the engine's stderr.
 
 static bool validConfig(const LaunchConfig& config) {
 	std::error_code ec;
 	return std::filesystem::exists(config.executable, ec) && std::filesystem::exists(config.model, ec) && std::filesystem::exists(config.config, ec) && std::filesystem::exists(config.modelHuman, ec);
 }
 
-KataGo::KataGo()
-    : m_process{std::make_unique<SubProcess>()} {
-}
+class KataGo::Implementation {
+public:
+	Implementation() = default;
 
-KataGo::~KataGo() {
-	stop();
-}
+	bool registerListener(IEngineListener* listener);
 
-bool KataGo::registerListener(IEngineListener* listener) {
+	void start(const LaunchConfig& config, unsigned boardSize, tengen::Player botColour);
+	void stop();
+	bool isRunning() const;
+
+	bool place(tengen::Coord pos);
+	bool pass();
+	bool resign();
+
+	void genmove();
+
+private:
+	void post(std::function<void()> request); //!< Hand one request to the engine thread. Dropped once stopped.
+	void engineLoop();                        //!< Engine thread: run the posted requests until stop().
+	bool canNotify() const;                   //!< False once stop() silenced the answers.
+
+private:
+	bool launch(const LaunchConfig& config);
+	bool setupGame();
+	bool sendCommand(const std::string& command, std::string& response); //!< Send one GTP command and wait for its response.
+
+private:
+	SubProcess m_process;
+	IEngineListener* m_listener{nullptr};
+	tengen::Player m_botColour{tengen::Player::Black}; //!< The player takes the other one.
+	unsigned m_boardSize{9u};
+
+	std::atomic<bool> m_running{false}; //!< Engine thread running.
+	std::thread m_engineThread;
+	std::mutex m_requestMutex;
+	std::condition_variable m_requestReady;
+	std::function<void()> m_pendingRequest; //!< Request waiting to be picked up. At most one.
+};
+
+bool KataGo::Implementation::registerListener(IEngineListener* listener) {
 	if (m_listener) {
 		return false;
 	}
@@ -31,14 +68,14 @@ bool KataGo::registerListener(IEngineListener* listener) {
 	return true;
 }
 
-void KataGo::start(const LaunchConfig& config, const unsigned boardSize, const tengen::Player botColour) {
+void KataGo::Implementation::start(const LaunchConfig& config, const unsigned boardSize, const tengen::Player botColour) {
 	assert(!m_running); // Starting twice would strand the engine that is already up.
 	m_boardSize = boardSize;
 	m_botColour = botColour;
 
 	// Bringing the engine up costs seconds, so it is a request like any other.
-	m_running = true;
-	m_worker  = std::thread([this] { workerLoop(); });
+	m_running      = true;
+	m_engineThread = std::thread([this] { engineLoop(); });
 	post([this, config] {
 		const bool ready = launch(config) && setupGame();
 		if (!canNotify()) {
@@ -52,47 +89,43 @@ void KataGo::start(const LaunchConfig& config, const unsigned boardSize, const t
 	});
 }
 
-void KataGo::stop() {
-	// Clear this first: everything below kills the pipes, and nothing dying on them from here on is a
-	// failure worth reporting. It also ends the worker loop.
-	// Under the lock, so that a worker about to wait for work cannot miss it.
+void KataGo::Implementation::stop() {
+	// Under the lock: it ends the engine loop and silences answers dying on the pipes killed below.
 	{
 		std::lock_guard<std::mutex> lock(m_requestMutex);
 		m_running = false;
 	}
 	m_requestReady.notify_one();
 
-	// Ask the engine to shut down but do not wait for the answer: a request may still be blocking on
-	// the pipe from the worker thread. Closing its stdin in stop() ends the engine either way.
-	// This runs even when no process is attached yet, so that a start() still in flight is cancelled.
-	m_process->sendLine(gtp::quit());
-	m_process->stop();
+	// Do not wait for the answer: a request may still be blocking on the pipe.
+	m_process.sendLine(gtp::quit());
+	m_process.stop();
 
-	if (m_worker.joinable()) {
-		m_worker.join();
+	if (m_engineThread.joinable()) {
+		m_engineThread.join();
 	}
 }
 
-bool KataGo::isRunning() const {
+bool KataGo::Implementation::isRunning() const {
 	return m_running;
 }
 
-bool KataGo::place(const tengen::Coord pos) {
+bool KataGo::Implementation::place(const tengen::Coord pos) {
 	std::string response;
 	return sendCommand(gtp::play(opponent(m_botColour), pos, m_boardSize), response);
 }
 
-bool KataGo::pass() {
+bool KataGo::Implementation::pass() {
 	std::string response;
 	return sendCommand(gtp::pass(opponent(m_botColour)), response);
 }
 
-bool KataGo::resign() {
+bool KataGo::Implementation::resign() {
 	// GTP has no command for the opponent resigning. The game is simply over.
 	return true;
 }
 
-void KataGo::genmove() {
+void KataGo::Implementation::genmove() {
 	post([this] {
 		// The engine plays the move on its own board, so it must not be relayed back with place().
 		BotMove move{};
@@ -110,22 +143,20 @@ void KataGo::genmove() {
 	});
 }
 
-void KataGo::post(std::function<void()> request) {
+void KataGo::Implementation::post(std::function<void()> request) {
 	{
 		std::lock_guard<std::mutex> lock(m_requestMutex);
 		if (!m_running) {
-			return; // Stopped. There is no worker left to run the request, and nothing to answer with.
+			return; // Stopped. No thread left to run it, and nothing to answer with.
 		}
 
-		// The worker takes a request out of the slot before running it, so an occupied slot means two
-		// were posted without the first ever being picked up. A post from a callback is not that.
-		assert(!m_pendingRequest);
+		assert(!m_pendingRequest); // One request in flight at a time.
 		m_pendingRequest = std::move(request);
 	}
 	m_requestReady.notify_one();
 }
 
-void KataGo::workerLoop() {
+void KataGo::Implementation::engineLoop() {
 	while (true) {
 		std::function<void()> request;
 		{
@@ -143,36 +174,34 @@ void KataGo::workerLoop() {
 	}
 }
 
-bool KataGo::canNotify() const {
+bool KataGo::Implementation::canNotify() const {
 	return m_running && m_listener;
 }
 
-bool KataGo::launch(const LaunchConfig& config) {
-	// Check valid config
+bool KataGo::Implementation::launch(const LaunchConfig& config) {
 	if (!validConfig(config)) {
 		return false;
 	}
 
-	if (!m_process->start({config.executable,
-	                       "gtp",
-	                       "-model", config.model,
-	                       "-human-model", config.modelHuman,
-	                       "-config", config.config},
-	                      LOG_FILE)) {
+	if (!m_process.start({config.executable,
+	                      "gtp",
+	                      "-model", config.model,
+	                      "-human-model", config.modelHuman,
+	                      "-config", config.config},
+	                     LOG_FILE)) {
 		return false;
 	}
 
-	// Forking succeeds even when the executable cannot be launched. Only an answer proves that we
-	// are talking to a GTP engine.
+	// Starting the process succeeds even when it is not an engine. Only an answer proves GTP.
 	std::string response;
 	if (!sendCommand(gtp::protocolVersion(), response)) {
-		m_process->stop();
+		m_process.stop();
 		return false;
 	}
 	return true;
 }
 
-bool KataGo::setupGame() {
+bool KataGo::Implementation::setupGame() {
 	std::string response;
 	bool success = true;
 	success &= sendCommand(gtp::boardSize(m_boardSize), response);
@@ -181,15 +210,56 @@ bool KataGo::setupGame() {
 	return success; // TODO: Take the komi from the game configuration.
 }
 
-bool KataGo::sendCommand(const std::string& command, std::string& response) {
+bool KataGo::Implementation::sendCommand(const std::string& command, std::string& response) {
 	response.clear();
 
 	std::string raw;
-	if (!m_process->sendLine(command) || !m_process->readUntil(raw, gtp::responseEnd)) {
+	if (!m_process.sendLine(command) || !m_process.readUntil(raw, gtp::responseEnd)) {
 		return false;
 	}
 
 	return gtp::parseResponse(raw, response);
+}
+
+
+KataGo::KataGo()
+    : m_pimpl(std::make_unique<Implementation>()) {
+}
+
+KataGo::~KataGo() {
+	stop();
+}
+
+bool KataGo::registerListener(IEngineListener* listener) {
+	return m_pimpl->registerListener(listener);
+}
+
+void KataGo::start(const LaunchConfig& config, const unsigned boardSize, const tengen::Player botColour) {
+	m_pimpl->start(config, boardSize, botColour);
+}
+
+void KataGo::stop() {
+	m_pimpl->stop();
+}
+
+bool KataGo::isRunning() const {
+	return m_pimpl->isRunning();
+}
+
+bool KataGo::place(const tengen::Coord pos) {
+	return m_pimpl->place(pos);
+}
+
+bool KataGo::pass() {
+	return m_pimpl->pass();
+}
+
+bool KataGo::resign() {
+	return m_pimpl->resign();
+}
+
+void KataGo::genmove() {
+	m_pimpl->genmove();
 }
 
 } // namespace tengen::engine
