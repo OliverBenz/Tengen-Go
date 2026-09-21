@@ -1,9 +1,9 @@
 #pragma once
 
+#include "engine/IEngineListener.hpp"
+#include "engine/botMove.hpp"
 #include "model/coordinate.hpp"
 #include "model/player.hpp"
-
-#include "botMove.hpp"
 
 #include <memory>
 #include <string>
@@ -15,17 +15,6 @@ struct LaunchConfig {
 	std::string model;
 	std::string modelHuman;
 	std::string config;
-};
-
-//! Callback interface invoked on the engine's request thread.
-//! \note Keep handlers lightweight.
-class IEngineListener {
-public:
-	virtual ~IEngineListener() = default;
-
-	virtual void onEngineReady()                      = 0;
-	virtual void onMoveGenerated(const BotMove& move) = 0; //!< The engine already played the move on its own board.
-	virtual void onEngineFailed()                     = 0;
 };
 
 //! Drives a KataGo process over GTP.

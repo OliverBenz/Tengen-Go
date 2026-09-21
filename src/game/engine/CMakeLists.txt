@@ -12,6 +12,7 @@ endif()
 # Create target
 add_library(${targetName} STATIC
 	"${CMAKE_CURRENT_LIST_DIR}/include/engine/botMove.hpp"
+	"${CMAKE_CURRENT_LIST_DIR}/include/engine/IEngineListener.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/engine/kataGo.hpp"
 
 	"${CMAKE_CURRENT_LIST_DIR}/kataGo.cpp"
