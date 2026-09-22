@@ -10,6 +10,7 @@
 
 namespace tengen::engine {
 
+//! Where the engine and its assets live. This is deployment configuration and says nothing about how strong the bot plays: the strength comes in per game as a Skill.
 struct LaunchConfig {
 	std::string executable;
 	std::string model;
@@ -32,9 +33,12 @@ public:
 
 	bool registerListener(IEngineListener* listener); //!< Register a single listener. Returns false if already registered.
 
-	void start(const LaunchConfig& config, unsigned boardSize, tengen::Player botColour); //!< Bring katago up and set the game up. Returns at once; answers with onEngineReady().
-	void stop();                                                                          //!< No listener callbacks once this returns. Never call from a callback.
-	bool isRunning() const;                                                               //!< False before start() and from the moment stop() begins.
+	//! Bring katago up and set the game up. Returns at once; answers with onEngineReady().
+	//! \note The engine only imitates ranks it was trained on, so a skill outside that range plays at the closest one it has.
+	void start(const LaunchConfig& config, unsigned boardSize, tengen::Player botColour, tengen::Skill botSkill);
+
+	void stop();            //!< No listener callbacks once this returns. Never call from a callback.
+	bool isRunning() const; //!< False before start() and from the moment stop() begins.
 
 	// Short round trips that answer on the calling thread. Only send while the engine is not thinking.
 	bool place(tengen::Coord pos);

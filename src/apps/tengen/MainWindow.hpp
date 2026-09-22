@@ -1,6 +1,6 @@
 #pragma once
 
-#include "engineTypes.hpp" // TODO: Remove this
+#include "model/player.hpp"
 
 #include <QCloseEvent>
 #include <QMainWindow>
@@ -21,7 +21,7 @@ public:
 
 signals:
 	void gameLocalRequested();
-	void gameBotRequested(unsigned boardSize, Difficulty difficulty, bool humanPlaysBlack);
+	void gameBotRequested(unsigned boardSize, Skill botSkill, bool humanPlaysBlack);
 	void connectRequested(const QString& hostIp);
 	void hostRequested(unsigned boardSize);
 	void shutdownRequested();

@@ -1,9 +1,12 @@
 #pragma once
 
-#include "engineTypes.hpp" // TODO: Remove this
+#include "model/player.hpp"
+
 #include <QDialog>
 
 class QComboBox;
+class QLabel;
+class QSlider;
 
 namespace tengen::gui {
 
@@ -14,12 +17,13 @@ public:
 	explicit BotDialog(QWidget* parent = nullptr);
 
 	unsigned boardSize() const;
-	Difficulty difficulty() const;
+	Skill skill() const; //!< Rank the bot should play at.
 	bool humanPlaysBlack() const;
 
 private:
 	QComboBox* m_boardSize{nullptr};
-	QComboBox* m_difficulty{nullptr};
+	QSlider* m_skill{nullptr};
+	QLabel* m_skillLabel{nullptr}; //!< Shows the rank the slider currently sits on.
 	QComboBox* m_colour{nullptr};
 };
 

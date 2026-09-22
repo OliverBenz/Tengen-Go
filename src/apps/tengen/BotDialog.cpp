@@ -6,10 +6,28 @@
 #include <QComboBox>
 #include <QDialogButtonBox>
 #include <QFormLayout>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QSlider>
 #include <QVBoxLayout>
 #include <fcntl.h>
 
 namespace tengen::gui {
+namespace {
+
+// The bot imitates human ranks, and only the ones it was trained on: 20k is the weakest it knows.
+// Anything below that is a matter of handicap stones, which the game does not offer yet.
+constexpr Skill weakestBot = fromKyu(20);
+
+// The imitation stops matching the rank somewhere in the low dan ranks, where playing that strongly
+// takes search rather than imitation alone. Offering ranks we cannot honestly play would be a lie.
+constexpr Skill strongestBot = fromDan(3);
+
+QString rankText(const Skill skill) {
+	return QString::fromStdString(toString(skill));
+}
+
+} // namespace
 
 BotDialog::BotDialog(QWidget* parent)
     : QDialog(parent) {
@@ -21,11 +39,26 @@ BotDialog::BotDialog(QWidget* parent)
 	m_boardSize->addItem("19x19", 19u);
 	m_boardSize->setCurrentIndex(0);
 
-	m_difficulty = new QComboBox(this);
-	m_difficulty->addItem("Easy", static_cast<int>(Difficulty::Easy));
-	m_difficulty->addItem("Medium", static_cast<int>(Difficulty::Medium));
-	m_difficulty->addItem("Hard", static_cast<int>(Difficulty::Hard));
-	m_difficulty->setCurrentIndex(1);
+	// The slider runs over the skill scale itself, so every rank in between is offered too.
+	m_skill = new QSlider(Qt::Horizontal, this);
+	m_skill->setRange(static_cast<int>(weakestBot), static_cast<int>(strongestBot));
+	m_skill->setValue(static_cast<int>(weakestBot));
+	m_skill->setTickPosition(QSlider::TicksBelow);
+	m_skill->setTickInterval(1);
+	m_skill->setPageStep(1);
+
+	m_skillLabel = new QLabel(rankText(weakestBot), this);
+	m_skillLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+	// Hold the width of the longest rank so the slider does not shift while it is dragged.
+	m_skillLabel->setMinimumWidth(m_skillLabel->fontMetrics().horizontalAdvance("30k"));
+
+	connect(m_skill, &QSlider::valueChanged, this, [this](const int value) {
+		m_skillLabel->setText(rankText(Skill{static_cast<int8_t>(value)}));
+	});
+
+	auto* skillRow = new QHBoxLayout();
+	skillRow->addWidget(m_skill);
+	skillRow->addWidget(m_skillLabel);
 
 	m_colour = new QComboBox(this);
 	m_colour->addItem("Black", static_cast<int>(Player::Black));
@@ -34,7 +67,7 @@ BotDialog::BotDialog(QWidget* parent)
 
 	auto* form = new QFormLayout();
 	form->addRow(tr("Board size:"), m_boardSize);
-	form->addRow(tr("Difficulty:"), m_difficulty);
+	form->addRow(tr("Opponent rank:"), skillRow);
 	form->addRow(tr("Your color:"), m_colour);
 
 	auto* buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
@@ -56,14 +89,9 @@ unsigned BotDialog::boardSize() const {
 	return boardSize;
 }
 
-Difficulty BotDialog::difficulty() const {
-	const int difficulty = m_difficulty->currentData().toInt();
-
-	if (difficulty < static_cast<int>(Difficulty::Easy) || difficulty > static_cast<int>(Difficulty::Hard)) {
-		Logger().Log(Logging::LogLevel::Error, "Invalid difficulty value in Bot game selected. Choosing Easy.");
-		return Difficulty::Easy;
-	}
-	return static_cast<Difficulty>(difficulty);
+Skill BotDialog::skill() const {
+	// No range check: the slider cannot leave the range it was given, unlike a combo box's user data.
+	return Skill{static_cast<int8_t>(m_skill->value())};
 }
 
 bool BotDialog::humanPlaysBlack() const {
