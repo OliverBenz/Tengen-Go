@@ -3,6 +3,7 @@
 #include "gtp.hpp"
 #include "subProcess.hpp"
 
+#include <algorithm>
 #include <atomic>
 #include <cassert>
 #include <condition_variable>
@@ -21,13 +22,29 @@ static bool validConfig(const LaunchConfig& config) {
 	return std::filesystem::exists(config.executable, ec) && std::filesystem::exists(config.model, ec) && std::filesystem::exists(config.config, ec) && std::filesystem::exists(config.modelHuman, ec);
 }
 
+// The human model imitates ranks from 20k to 9d and nothing outside of it. A weaker bot than its
+// floor is a matter of handicap stones rather than of profile, so a skill below it plays at 20k.
+static constexpr Skill weakestProfile   = fromKyu(20);
+static constexpr Skill strongestProfile = fromDan(9);
+
+// Opening style of the imitated players:
+// 'preaz' plays like humans did before AlphaZero changed how the opening is played
+// 'rank'  like they do since.
+static constexpr char profileStyle[] = "preaz_";
+
+//! Name the humanSLProfile the engine should imitate, e.g. "preaz_5k".
+//! \note This is the one place that knows how our skill scale maps onto KataGo's vocabulary.
+static std::string humanProfile(const Skill skill) {
+	return profileStyle + toString(std::clamp(skill, weakestProfile, strongestProfile));
+}
+
 class KataGo::Implementation {
 public:
 	Implementation() = default;
 
 	bool registerListener(IEngineListener* listener);
 
-	void start(const LaunchConfig& config, unsigned boardSize, tengen::Player botColour);
+	void start(const LaunchConfig& config, unsigned boardSize, tengen::Player botColour, tengen::Skill botSkill);
 	void stop();
 	bool isRunning() const;
 
@@ -51,6 +68,7 @@ private:
 	SubProcess m_process;
 	IEngineListener* m_listener{nullptr};
 	tengen::Player m_botColour{tengen::Player::Black}; //!< The player takes the other one.
+	tengen::Skill m_botSkill{weakestProfile};          //!< Rank the bot plays at.
 	unsigned m_boardSize{9u};
 
 	std::atomic<bool> m_running{false}; //!< Engine thread running.
@@ -68,10 +86,11 @@ bool KataGo::Implementation::registerListener(IEngineListener* listener) {
 	return true;
 }
 
-void KataGo::Implementation::start(const LaunchConfig& config, const unsigned boardSize, const tengen::Player botColour) {
+void KataGo::Implementation::start(const LaunchConfig& config, const unsigned boardSize, const tengen::Player botColour, const tengen::Skill botSkill) {
 	assert(!m_running); // Starting twice would strand the engine that is already up.
 	m_boardSize = boardSize;
 	m_botColour = botColour;
+	m_botSkill  = botSkill;
 
 	// Bringing the engine up costs seconds, so it is a request like any other.
 	m_running      = true;
@@ -183,11 +202,13 @@ bool KataGo::Implementation::launch(const LaunchConfig& config) {
 		return false;
 	}
 
+	// The strength overrides the profile the config file names, so one config serves every rank.
 	if (!m_process.start({config.executable,
 	                      "gtp",
 	                      "-model", config.model,
 	                      "-human-model", config.modelHuman,
-	                      "-config", config.config},
+	                      "-config", config.config,
+	                      "-override-config", "humanSLProfile=" + humanProfile(m_botSkill)},
 	                     LOG_FILE)) {
 		return false;
 	}
@@ -234,8 +255,8 @@ bool KataGo::registerListener(IEngineListener* listener) {
 	return m_pimpl->registerListener(listener);
 }
 
-void KataGo::start(const LaunchConfig& config, const unsigned boardSize, const tengen::Player botColour) {
-	m_pimpl->start(config, boardSize, botColour);
+void KataGo::start(const LaunchConfig& config, const unsigned boardSize, const tengen::Player botColour, const tengen::Skill botSkill) {
+	m_pimpl->start(config, boardSize, botColour, botSkill);
 }
 
 void KataGo::stop() {

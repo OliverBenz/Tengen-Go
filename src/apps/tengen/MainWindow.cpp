@@ -82,7 +82,7 @@ void MainWindow::openBotDialog() {
 	BotDialog dialog(this);
 
 	if (dialog.exec() == QDialog::Accepted) {
-		emit gameBotRequested(dialog.boardSize(), dialog.difficulty(), dialog.humanPlaysBlack());
+		emit gameBotRequested(dialog.boardSize(), dialog.skill(), dialog.humanPlaysBlack());
 	}
 }
 

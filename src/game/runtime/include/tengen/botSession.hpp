@@ -28,8 +28,8 @@ public:
 		Finished
 	};
 
-	//! The engine configuration carries the strength: it names the KataGo config the bot plays with.
-	BotSession(unsigned boardSize, const engine::LaunchConfig& engineConfig, bool playerPlaysAsBlack);
+	//! The engine configuration says where the engine lives.
+	BotSession(unsigned boardSize, const engine::LaunchConfig& engineConfig, Skill botSkill, bool playerPlaysAsBlack);
 	~BotSession() override;
 
 public: // IGameSession Interface

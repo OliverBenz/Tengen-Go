@@ -7,7 +7,7 @@
 
 namespace tengen::app {
 
-BotSession::BotSession(const unsigned boardSize, const engine::LaunchConfig& engineConfig, const bool playerPlaysAsBlack)
+BotSession::BotSession(const unsigned boardSize, const engine::LaunchConfig& engineConfig, const Skill botSkill, const bool playerPlaysAsBlack)
     : m_game(boardSize), m_botColour(playerPlaysAsBlack ? Player::White : Player::Black) {
 	m_position.init(boardSize);
 	m_position.setStatus(GameStatus::Ready); // The bot is not up yet, so the board takes no moves.
@@ -17,7 +17,7 @@ BotSession::BotSession(const unsigned boardSize, const engine::LaunchConfig& eng
 	// Bringing the engine up costs seconds, so it answers on its own thread like any other request.
 	// The session stays idle until it is up: the status only opens the board once it answers.
 	m_engine.registerListener(this);
-	m_engine.start(engineConfig, boardSize, m_botColour);
+	m_engine.start(engineConfig, boardSize, m_botColour, botSkill);
 }
 
 BotSession::~BotSession() {

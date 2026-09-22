@@ -50,13 +50,10 @@ void MainWindowPresenter::onNewLocalGameRequested() {
 	startOpenPlay();
 }
 
-void MainWindowPresenter::onNewBotGameRequested(unsigned boardSize, gui::Difficulty difficulty, bool humanPlaysBlack) {
+void MainWindowPresenter::onNewBotGameRequested(unsigned boardSize, Skill botSkill, bool humanPlaysBlack) {
 	onShutdownRequested();
 
-	// TODO: Pick the engine strength. The local setup only holds the 5k configuration.
-	(void)difficulty;
-
-	m_gameSession   = std::make_unique<app::BotSession>(boardSize, localEngineConfig(), humanPlaysBlack);
+	m_gameSession   = std::make_unique<app::BotSession>(boardSize, localEngineConfig(), botSkill, humanPlaysBlack);
 	m_gamePresenter = std::make_unique<GamePresenter>(*m_gameSession, m_mainWindow.gameWidget());
 }
 

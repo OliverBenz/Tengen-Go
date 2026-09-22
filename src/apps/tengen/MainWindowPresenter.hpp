@@ -2,7 +2,7 @@
 
 #include "GamePresenter.hpp"
 #include "MainWindow.hpp"
-#include "engineTypes.hpp" // TODO: REMOVE
+#include "model/player.hpp"
 #include "tengen/IGameSession.hpp"
 
 #include <QObject>
@@ -19,7 +19,7 @@ public:
 
 private slots:
 	void onNewLocalGameRequested();
-	void onNewBotGameRequested(unsigned boardSize, gui::Difficulty difficulty, bool humanPlaysBlack);
+	void onNewBotGameRequested(unsigned boardSize, Skill botSkill, bool humanPlaysBlack);
 	void onConnectRequested(const QString& hostIp);
 	void onHostRequested(const unsigned boardSize);
 	void onShutdownRequested();
