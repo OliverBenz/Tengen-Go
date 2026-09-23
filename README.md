@@ -51,6 +51,7 @@ All open source so you can tinker around as you like.
 | ---------------- | ------------------------------------------------------------------------------------------------------- |
 | gameModel        | Library specifying the core data structures for the game.                                               |
 | gameCore         | Library for game rules, board state validation, deltas, and move handling.                              |
+| gameEngine       | Library for driving bot engines (GNU Go, KataGo) as separate processes over the Go Text Protocol.       |
 | gameGui          | Library for QT6 graphical user elements built on the gameModel.                                         |
 | netCore          | Library for low-level TCP transport, framing, and connection management.                                |
 | netNetwork       | Library for the game/network protocol and client/server session handling. Building on netCore.          |
@@ -87,6 +88,35 @@ cmake --preset Win64 && cmake --build --preset Win64-Debug
 OpenCV has no package manager on Windows, so `OpenCV_DIR` must point at the OpenCV build directory containing `OpenCVConfig.cmake`.
 The `Win64` preset currently hardcodes this to `C:/opencv/build`; if your install lives elsewhere, edit that path or override it in a local `CMakeUserPresets.json`.
 On Linux, OpenCV is expected to come from the system package manager, so no manual step is needed there.
+
+## Bot Games
+
+Bot games are played against [GNU Go](https://www.gnu.org/software/gnugo/).
+It runs as a separate process and is not part of this repository, so you have to provide it yourself.
+Tengen looks for it next to its own executable (for a Windows debug build, that is `build/Win64/out/bin/x64/Debug/`):
+
+```
+<tengen directory>/
+├── tengen(.exe)
+└── engine/
+    └── gnugo/
+        └── gnugo(.exe)
+```
+
+If GNU Go is not found there, the `Game` menu does not offer `New Bot Game`.
+
+On Windows, download a GNU Go 3.8 build and copy its whole folder into `engine/gnugo/`, not just `gnugo.exe`: builds like the Cygwin one need their DLLs next to the executable.
+For local development, you can instead place that folder at `config/bin/gnugo-3.8/`; building `tengen` then copies it into place.
+
+On Linux, install GNU Go through your package manager and link it into place:
+
+```
+mkdir -p <tengen directory>/engine/gnugo
+ln -s "$(command -v gnugo)" <tengen directory>/engine/gnugo/gnugo
+```
+
+The rank you pick in the bot dialog sets GNU Go's `--level` (1 to 10).
+GNU Go plays around 5k to 8k at its strongest, and its levels are not calibrated to ranks, so the rank is only a rough guide: anything from 6k upwards plays GNU Go at full strength.
 
 ## General Documentation
 

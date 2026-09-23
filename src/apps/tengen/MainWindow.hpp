@@ -6,6 +6,8 @@
 #include <QMainWindow>
 #include <QString>
 
+class QAction;
+
 namespace tengen::gui {
 
 class GameWidget;
@@ -18,6 +20,8 @@ public:
 	~MainWindow() override;
 
 	GameWidget& gameWidget();
+
+	void setBotGameAvailable(bool available); //!< Bot games need an engine. Without one, the menu does not offer them.
 
 signals:
 	void gameLocalRequested();
@@ -41,6 +45,7 @@ protected:
 
 private:
 	GameWidget* m_gameWidget = nullptr;
+	QAction* m_botGameAction = nullptr; //!< Starts a bot game. Hidden while no engine is installed.
 };
 
 } // namespace tengen::gui

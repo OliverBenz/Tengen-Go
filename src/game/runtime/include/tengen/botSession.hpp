@@ -2,12 +2,13 @@
 
 #include "core/IGameStateListener.hpp"
 #include "core/game.hpp"
-#include "engine/kataGo.hpp"
+#include "engine/gtpEngine.hpp"
 #include "tengen/IGameSession.hpp"
 #include "tengen/eventHub.hpp"
 #include "tengen/position.hpp"
 
 #include <atomic>
+#include <memory>
 #include <mutex>
 #include <string>
 #include <thread>
@@ -28,8 +29,8 @@ public:
 		Finished
 	};
 
-	//! The engine configuration says where the engine lives.
-	BotSession(unsigned boardSize, const engine::LaunchConfig& engineConfig, Skill botSkill, bool playerPlaysAsBlack);
+	//! The session takes the engine over: it starts it for this game and shuts it down with it.
+	BotSession(unsigned boardSize, std::unique_ptr<engine::GtpEngine> botEngine, Skill botSkill, bool playerPlaysAsBlack);
 	~BotSession() override;
 
 public: // IGameSession Interface
@@ -66,9 +67,9 @@ private:
 	EventHub m_eventHub;   //!< Event notifier.
 
 	// Bot specifics
-	std::atomic<Status> m_status{Status::Idle}; //!< Also written from the engine thread.
-	engine::KataGo m_engine;                    //!< The engine process. Runs its long requests on its own thread.
-	Player m_botColour{Player::White};          //!< Colour the bot plays. The user takes the other one.
+	std::atomic<Status> m_status{Status::Idle};  //!< Also written from the engine thread.
+	std::unique_ptr<engine::GtpEngine> m_engine; //!< The engine process. Runs its long requests on its own thread.
+	Player m_botColour{Player::White};           //!< Colour the bot plays. The user takes the other one.
 
 	std::thread m_gameThread;        //!< Runs the game loop.
 	mutable std::mutex m_stateMutex; //!< Concurrency handling.

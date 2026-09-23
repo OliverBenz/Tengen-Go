@@ -27,19 +27,24 @@ GameWidget& MainWindow::gameWidget() {
 	return *m_gameWidget;
 }
 
+void MainWindow::setBotGameAvailable(const bool available) {
+	m_botGameAction->setVisible(available);
+}
+
 void MainWindow::buildLayout() {
 	// Menu Bar
 	auto* game            = menuBar()->addMenu(tr("&Game"));
 	auto* actNewLocalGame = new QAction("&New Local Game", this);
-	auto* actNewBotGame   = new QAction("New &Bot Game", this);
+	m_botGameAction       = new QAction("New &Bot Game", this);
 	auto* actSaveGame     = new QAction("&Save Game", this);
 	auto* actLoadGame     = new QAction("&Load Game", this);
 	game->addAction(actNewLocalGame);
-	game->addAction(actNewBotGame);
+	game->addAction(m_botGameAction);
 	game->addAction(actSaveGame);
 	game->addAction(actLoadGame);
 	connect(actNewLocalGame, &QAction::triggered, this, &MainWindow::gameLocalRequested); // Signal to signal connection
-	connect(actNewBotGame, &QAction::triggered, this, &MainWindow::openBotDialog);
+	connect(m_botGameAction, &QAction::triggered, this, &MainWindow::openBotDialog);
+	m_botGameAction->setVisible(false); // Offered once we know an engine is installed.
 
 	auto* network            = menuBar()->addMenu(tr("&Network"));
 	auto* actConnectToServer = new QAction("&Connect to Server", this);

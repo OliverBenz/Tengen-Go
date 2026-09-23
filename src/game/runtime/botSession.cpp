@@ -7,8 +7,9 @@
 
 namespace tengen::app {
 
-BotSession::BotSession(const unsigned boardSize, const engine::LaunchConfig& engineConfig, const Skill botSkill, const bool playerPlaysAsBlack)
-    : m_game(boardSize), m_botColour(playerPlaysAsBlack ? Player::White : Player::Black) {
+BotSession::BotSession(const unsigned boardSize, std::unique_ptr<engine::GtpEngine> botEngine, const Skill botSkill, const bool playerPlaysAsBlack)
+    : m_game(boardSize), m_engine(std::move(botEngine)), m_botColour(playerPlaysAsBlack ? Player::White : Player::Black) {
+	assert(m_engine);
 	m_position.init(boardSize);
 	m_position.setStatus(GameStatus::Ready); // The bot is not up yet, so the board takes no moves.
 	m_game.subscribeState(this);
@@ -16,8 +17,8 @@ BotSession::BotSession(const unsigned boardSize, const engine::LaunchConfig& eng
 
 	// Bringing the engine up costs seconds, so it answers on its own thread like any other request.
 	// The session stays idle until it is up: the status only opens the board once it answers.
-	m_engine.registerListener(this);
-	m_engine.start(engineConfig, boardSize, m_botColour, botSkill);
+	m_engine->registerListener(this);
+	m_engine->start(boardSize, m_botColour, botSkill);
 }
 
 BotSession::~BotSession() {
@@ -69,7 +70,7 @@ void BotSession::shutdown() {
 	// Stopping the engine first releases a request that is still blocking on the pipe and retires the
 	// engine thread with it. Once stop() returns, no answer can reach us anymore, so the Game below is
 	// ours alone to take down.
-	m_engine.stop();
+	m_engine->stop();
 
 	m_game.pushEvent(ShutdownEvent{});
 	if (m_gameThread.joinable()) {
@@ -149,27 +150,27 @@ void BotSession::relayPlayerMove(const GameDelta& delta) {
 			Logger().Log(Logging::LogLevel::Warning, "[BotSession] Game delta missing place coordinate; engine not updated.");
 			return;
 		}
-		relayed = m_engine.place(*delta.coord);
+		relayed = m_engine->place(*delta.coord);
 		break;
 	case GameAction::Pass:
-		relayed = m_engine.pass();
+		relayed = m_engine->pass();
 		break;
 	case GameAction::Resign:
-		relayed = m_engine.resign();
+		relayed = m_engine->resign();
 		break;
 	}
 
 	// The engine either died or refused a move our rules accepted. Either way its board is behind the
 	// Game's from here on, so every move it would still generate answers a position we are not in.
 	// A move the Game hands us after shutdown has nowhere to go and is none of its doing.
-	if (!relayed && m_engine.isRunning()) {
+	if (!relayed && m_engine->isRunning()) {
 		endSession("[BotSession] Engine did not take the move. Its board no longer matches the game.");
 	}
 }
 
 void BotSession::requestBotMove() {
 	m_status = Status::Thinking;
-	m_engine.genmove();
+	m_engine->genmove();
 }
 
 void BotSession::onEngineReady() {
