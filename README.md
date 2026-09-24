@@ -106,7 +106,6 @@ Tengen looks for it next to its own executable (for a Windows debug build, that 
 If GNU Go is not found there, the `Game` menu does not offer `New Bot Game`.
 
 On Windows, download a GNU Go 3.8 build and copy its whole folder into `engine/gnugo/`, not just `gnugo.exe`: builds like the Cygwin one need their DLLs next to the executable.
-For local development, you can instead place that folder at `config/bin/gnugo-3.8/`; building `tengen` then copies it into place.
 
 On Linux, install GNU Go through your package manager and link it into place:
 
