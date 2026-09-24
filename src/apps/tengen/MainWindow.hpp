@@ -1,12 +1,10 @@
 #pragma once
 
-#include "model/player.hpp"
+#include "engine/engineCatalog.hpp"
 
 #include <QCloseEvent>
 #include <QMainWindow>
 #include <QString>
-
-class QAction;
 
 namespace tengen::gui {
 
@@ -21,11 +19,13 @@ public:
 
 	GameWidget& gameWidget();
 
-	void setBotGameAvailable(bool available); //!< Bot games need an engine. Without one, the menu does not offer them.
+	//! Let the user set a bot game up against one of the engines. Answers with gameBotRequested() once accepted.
+	void openBotDialog(const engine::InstalledEngines& engines);
 
 signals:
 	void gameLocalRequested();
-	void gameBotRequested(unsigned boardSize, Skill botSkill, bool humanPlaysBlack);
+	void botDialogRequested(); //!< The user wants a bot game. Answer with openBotDialog().
+	void gameBotRequested(unsigned boardSize, const engine::EngineConfig& engineConfig, bool humanPlaysBlack);
 	void connectRequested(const QString& hostIp);
 	void hostRequested(unsigned boardSize);
 	void shutdownRequested();
@@ -35,7 +35,6 @@ private:
 	void buildLayout();
 
 private:
-	void openBotDialog();
 	void openConnectDialog();
 	void openHostDialog();
 	void openRulesDialog();
@@ -45,7 +44,6 @@ protected:
 
 private:
 	GameWidget* m_gameWidget = nullptr;
-	QAction* m_botGameAction = nullptr; //!< Starts a bot game. Hidden while no engine is installed.
 };
 
 } // namespace tengen::gui

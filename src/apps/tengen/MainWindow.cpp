@@ -27,24 +27,19 @@ GameWidget& MainWindow::gameWidget() {
 	return *m_gameWidget;
 }
 
-void MainWindow::setBotGameAvailable(const bool available) {
-	m_botGameAction->setVisible(available);
-}
-
 void MainWindow::buildLayout() {
 	// Menu Bar
 	auto* game            = menuBar()->addMenu(tr("&Game"));
 	auto* actNewLocalGame = new QAction("&New Local Game", this);
-	m_botGameAction       = new QAction("New &Bot Game", this);
+	auto* actNewBotGame   = new QAction("New &Bot Game", this);
 	auto* actSaveGame     = new QAction("&Save Game", this);
 	auto* actLoadGame     = new QAction("&Load Game", this);
 	game->addAction(actNewLocalGame);
-	game->addAction(m_botGameAction);
+	game->addAction(actNewBotGame);
 	game->addAction(actSaveGame);
 	game->addAction(actLoadGame);
 	connect(actNewLocalGame, &QAction::triggered, this, &MainWindow::gameLocalRequested); // Signal to signal connection
-	connect(m_botGameAction, &QAction::triggered, this, &MainWindow::openBotDialog);
-	m_botGameAction->setVisible(false); // Offered once we know an engine is installed.
+	connect(actNewBotGame, &QAction::triggered, this, &MainWindow::botDialogRequested);   // The presenter looks for the engines first.
 
 	auto* network            = menuBar()->addMenu(tr("&Network"));
 	auto* actConnectToServer = new QAction("&Connect to Server", this);
@@ -83,11 +78,11 @@ void MainWindow::openConnectDialog() {
 	}
 }
 
-void MainWindow::openBotDialog() {
-	BotDialog dialog(this);
+void MainWindow::openBotDialog(const engine::InstalledEngines& engines) {
+	BotDialog dialog(engines, this);
 
 	if (dialog.exec() == QDialog::Accepted) {
-		emit gameBotRequested(dialog.boardSize(), dialog.skill(), dialog.humanPlaysBlack());
+		emit gameBotRequested(dialog.boardSize(), dialog.engineConfig(), dialog.humanPlaysBlack());
 	}
 }
 

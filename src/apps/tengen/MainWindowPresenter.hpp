@@ -2,7 +2,7 @@
 
 #include "GamePresenter.hpp"
 #include "MainWindow.hpp"
-#include "model/player.hpp"
+#include "engine/engineCatalog.hpp"
 #include "tengen/IGameSession.hpp"
 
 #include <QObject>
@@ -19,7 +19,8 @@ public:
 
 private slots:
 	void onNewLocalGameRequested();
-	void onNewBotGameRequested(unsigned boardSize, Skill botSkill, bool humanPlaysBlack);
+	void onBotDialogRequested();
+	void onNewBotGameRequested(unsigned boardSize, const engine::EngineConfig& engineConfig, bool humanPlaysBlack);
 	void onConnectRequested(const QString& hostIp);
 	void onHostRequested(const unsigned boardSize);
 	void onShutdownRequested();
