@@ -5,7 +5,16 @@ project(Tengen
 	LANGUAGES CXX
 )
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+# Create build info file for language server. Symlink to root so clangd finds it.
+# Only Ninja and Makefile generators write the file (e.g. not Visual Studio).
+if(CMAKE_GENERATOR MATCHES "Ninja|Makefiles")
+	set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+	file(CREATE_LINK
+		"${CMAKE_BINARY_DIR}/compile_commands.json"
+		"${CMAKE_SOURCE_DIR}/compile_commands.json"
+		SYMBOLIC
+	)
+endif()
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
