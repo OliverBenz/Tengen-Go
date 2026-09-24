@@ -27,7 +27,7 @@ public:
 	bool registerListener(IEngineListener* listener);
 
 	//! Bring the engine up and set the game up. Answers with EngineListener.
-	virtual void start(unsigned boardSize, tengen::Player botColour, tengen::Skill botSkill) = 0;
+	virtual void start(unsigned boardSize, tengen::Player botColour) = 0;
 
 	//! No listener callbacks once this returns.
 	//! \note Never call from a callback.

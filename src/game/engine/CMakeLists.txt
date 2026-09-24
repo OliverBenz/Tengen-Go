@@ -13,10 +13,14 @@ endif()
 add_library(${targetName} STATIC
 	"${CMAKE_CURRENT_LIST_DIR}/include/engine/botMove.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/engine/IEngineListener.hpp"
+	"${CMAKE_CURRENT_LIST_DIR}/include/engine/engineCatalog.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/engine/gtpEngine.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/engine/kataGo.hpp"
+	"${CMAKE_CURRENT_LIST_DIR}/include/engine/kataGoConfig.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/engine/gnuGo.hpp"
+	"${CMAKE_CURRENT_LIST_DIR}/include/engine/gnuGoConfig.hpp"
 
+	"${CMAKE_CURRENT_LIST_DIR}/engineCatalog.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/gtpEngine.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/kataGo.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/gnuGo.cpp"

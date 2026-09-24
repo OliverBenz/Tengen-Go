@@ -30,7 +30,8 @@ public:
 	};
 
 	//! The session takes the engine over: it starts it for this game and shuts it down with it.
-	BotSession(unsigned boardSize, std::unique_ptr<engine::GtpEngine> botEngine, Skill botSkill, bool playerPlaysAsBlack);
+	//! How the bot plays is the engine's own config, so the session never needs to know it.
+	BotSession(unsigned boardSize, std::unique_ptr<engine::GtpEngine> botEngine, bool playerPlaysAsBlack);
 	~BotSession() override;
 
 public: // IGameSession Interface

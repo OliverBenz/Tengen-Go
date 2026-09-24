@@ -26,12 +26,6 @@ target_link_libraries(${targetName}
         Qt6::Widgets
 )
 
-# TODO: Local development only. The engine assets are read straight out of the source tree.
-target_compile_definitions(${targetName}
-    PRIVATE
-        TENGEN_CONFIG_DIR="${CMAKE_SOURCE_DIR}/config"
-)
-
 set_target_properties(${targetName}
     PROPERTIES
       AUTOMOC ON # Auto handling of QT Meta-Object Compiler

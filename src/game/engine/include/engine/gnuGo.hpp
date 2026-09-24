@@ -1,21 +1,19 @@
 #pragma once
 
+#include "engine/gnuGoConfig.hpp"
 #include "engine/gtpEngine.hpp"
-
-#include <string>
 
 namespace tengen::engine {
 
 //! Plays GNU Go. It needs nothing but its executable and runs on any machine.
-//! \note GNU Go's strength is a level rather than a rank, so the skill only picks roughly how strong it plays.
 class GnuGo : public GtpEngine {
 public:
-	explicit GnuGo(std::string executable);
+	explicit GnuGo(GnuGoConfig config);
 
-	void start(unsigned boardSize, tengen::Player botColour, tengen::Skill botSkill) override;
+	void start(unsigned boardSize, tengen::Player botColour) override;
 
 private:
-	std::string m_executable;
+	GnuGoConfig m_config; //!< Where the engine relevant files physically lie and how the engine should play.
 };
 
 } // namespace tengen::engine

@@ -6,11 +6,6 @@
 
 namespace tengen::engine {
 
-// The human model imitates ranks from 20k to 9d and nothing outside of it. A weaker bot than its
-// floor is a matter of handicap stones rather than of profile, so a skill below it plays at 20k.
-static constexpr Skill weakestProfile   = fromKyu(20);
-static constexpr Skill strongestProfile = fromDan(9);
-
 // Opening style of the imitated players:
 // 'preaz' plays like humans did before AlphaZero changed how the opening is played
 // 'rank'  like they do since.
@@ -18,23 +13,36 @@ static constexpr char profileStyle[] = "preaz_";
 
 //! Name the humanSLProfile the engine should imitate, e.g. "preaz_5k".
 //! \note This is the one place that knows how our skill scale maps onto KataGo's vocabulary.
-static std::string humanProfile(const Skill skill) {
-	return profileStyle + toString(std::clamp(skill, weakestProfile, strongestProfile));
+static std::string humanProfile(const Skill rank) {
+	return profileStyle + toString(rank);
 }
 
-KataGo::KataGo(LaunchConfig config)
+KataGo::KataGo(KataGoConfig config)
     : m_config(std::move(config)) {
 }
 
-void KataGo::start(const unsigned boardSize, const tengen::Player botColour, const tengen::Skill botSkill) {
-	// The strength overrides the profile the config file names, so one config serves every rank.
-	launch({.argv          = {m_config.executable,
-	                          "gtp",
-	                          "-model", m_config.model,
-	                          "-human-model", m_config.modelHuman,
-	                          "-config", m_config.config,
-	                          "-override-config", "humanSLProfile=" + humanProfile(botSkill)},
-	        .requiredFiles = {m_config.executable, m_config.model, m_config.modelHuman, m_config.config},
+void KataGo::start(const unsigned boardSize, const tengen::Player botColour) {
+	const Skill rank = std::clamp(m_config.rank, KataGoConfig::weakestRank, KataGoConfig::strongestRank);
+
+	const std::string executable = m_config.files.executable.string();
+	const std::string model      = m_config.files.model.string();
+	const std::string humanModel = m_config.files.humanModel.string();
+	const std::string gtpConfig  = m_config.files.gtpConfig.string();
+
+	// The rank overrides the profile the config file names, so one config serves every rank.
+	launch({.argv = {
+	                executable,
+	                "gtp",
+	                "-model",
+	                model,
+	                "-human-model",
+	                humanModel,
+	                "-config",
+	                gtpConfig,
+	                "-override-config",
+	                "humanSLProfile=" + humanProfile(rank),
+	        },
+	        .requiredFiles = {executable, model, humanModel, gtpConfig},
 	        .logFile       = "katago.log"},
 	       boardSize, botColour);
 }

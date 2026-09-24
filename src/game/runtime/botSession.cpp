@@ -7,7 +7,7 @@
 
 namespace tengen::app {
 
-BotSession::BotSession(const unsigned boardSize, std::unique_ptr<engine::GtpEngine> botEngine, const Skill botSkill, const bool playerPlaysAsBlack)
+BotSession::BotSession(const unsigned boardSize, std::unique_ptr<engine::GtpEngine> botEngine, const bool playerPlaysAsBlack)
     : m_game(boardSize), m_engine(std::move(botEngine)), m_botColour(playerPlaysAsBlack ? Player::White : Player::Black) {
 	assert(m_engine);
 	m_position.init(boardSize);
@@ -18,7 +18,7 @@ BotSession::BotSession(const unsigned boardSize, std::unique_ptr<engine::GtpEngi
 	// Bringing the engine up costs seconds, so it answers on its own thread like any other request.
 	// The session stays idle until it is up: the status only opens the board once it answers.
 	m_engine->registerListener(this);
-	m_engine->start(boardSize, m_botColour, botSkill);
+	m_engine->start(boardSize, m_botColour);
 }
 
 BotSession::~BotSession() {

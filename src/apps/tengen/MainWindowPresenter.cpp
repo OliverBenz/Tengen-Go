@@ -1,44 +1,39 @@
 #include "MainWindowPresenter.hpp"
 
 #include "GamePresenter.hpp"
-#include "engine/gnuGo.hpp"
-#include "engine/kataGo.hpp"
+#include "Logging.hpp"
+#include "engine/engineCatalog.hpp"
 #include "tengen/botSession.hpp"
 #include "tengen/networkSession.hpp"
 #include "tengen/openSession.hpp"
 
 #include <QCoreApplication>
 #include <QObject>
+#include <algorithm>
 #include <filesystem>
 #include <memory>
-#include <system_error>
+#include <optional>
 
 namespace tengen {
 namespace {
 
-//! Engine assets of the local development setup.
-//! TODO: Ship the engine with the build instead of reading it out of the source tree.
-//! \note Bot games play GNU Go for now. Hand the BotSession an engine::KataGo made from this to play KataGo instead.
-[[maybe_unused]] engine::LaunchConfig localEngineConfig() {
-	const std::filesystem::path configDir = TENGEN_CONFIG_DIR;
-	const std::filesystem::path binDir    = configDir / "bin";
-
-	return engine::LaunchConfig{
-	        .executable = (binDir / "katago").string(),
-	        .model      = (binDir / "g170-b30c320x2-s4824661760-d1229536699.bin.gz").string(),
-	        .modelHuman = (binDir / "b18c384nbt-humanv0.bin.gz").string(),
-	        .config     = (configDir / "gtp_human5k_example.cfg").string()};
+//! The engines live in engine/ next to our executable. The engine catalog knows the layout below it.
+std::filesystem::path engineRoot() {
+	const std::filesystem::path appDir = QCoreApplication::applicationDirPath().toStdWString();
+	return appDir / "engine";
 }
 
-//! GNU Go ships in engine/gnugo next to our executable.
-std::filesystem::path gnuGoExecutable() {
-#ifdef _WIN32
-	constexpr char executable[] = "gnugo.exe";
-#else
-	constexpr char executable[] = "gnugo";
-#endif
-	const std::filesystem::path appDir = QCoreApplication::applicationDirPath().toStdWString();
-	return appDir / "engine" / "gnugo" / executable;
+//! The bot dialog still offers ranks, while GNU Go plays at a level.
+//! TODO: Remove once the bot dialog offers GNU Go's levels itself.
+int gnuGoLevel(const Skill botSkill) {
+	// GNU Go's levels are not calibrated to ranks. Until someone plays them against known ranks, they
+	// spread evenly from 20k to 6k, and any stronger skill gets GNU Go's strongest level.
+	constexpr Skill weakest   = fromKyu(20);
+	constexpr Skill strongest = fromKyu(6);
+	constexpr int levels      = engine::GnuGoConfig::strongestLevel - engine::GnuGoConfig::weakestLevel;
+
+	const int ranksAbove = stoneGap(weakest, std::clamp(botSkill, weakest, strongest));
+	return engine::GnuGoConfig::weakestLevel + ranksAbove * levels / stoneGap(weakest, strongest);
 }
 
 } // namespace
@@ -52,8 +47,7 @@ MainWindowPresenter::MainWindowPresenter(gui::MainWindow& mainWindow)
 	QObject::connect(&m_mainWindow, &gui::MainWindow::shutdownRequested, this, &MainWindowPresenter::onShutdownRequested);
 
 	// Bot games are only offered when their engine is installed.
-	std::error_code ec;
-	m_mainWindow.setBotGameAvailable(std::filesystem::exists(gnuGoExecutable(), ec));
+	m_mainWindow.setBotGameAvailable(engine::findEngines(engineRoot()).gnuGo.has_value());
 
 	startOpenPlay();
 }
@@ -71,10 +65,17 @@ void MainWindowPresenter::onNewLocalGameRequested() {
 }
 
 void MainWindowPresenter::onNewBotGameRequested(unsigned boardSize, Skill botSkill, bool humanPlaysBlack) {
+	// Look again rather than trust the menu: GNU Go may be gone since it was offered. Then the current game stays.
+	std::optional<engine::GnuGoConfig> gnuGo = engine::findEngines(engineRoot()).gnuGo;
+	if (!gnuGo) {
+		gui::Logger().Log(Logging::LogLevel::Error, "GNU Go is not installed anymore. The bot game was not started.");
+		return;
+	}
+	gnuGo->level = gnuGoLevel(botSkill);
+
 	onShutdownRequested();
 
-	auto botEngine  = std::make_unique<engine::GnuGo>(gnuGoExecutable().string());
-	m_gameSession   = std::make_unique<app::BotSession>(boardSize, std::move(botEngine), botSkill, humanPlaysBlack);
+	m_gameSession   = std::make_unique<app::BotSession>(boardSize, engine::makeEngine(*gnuGo), humanPlaysBlack);
 	m_gamePresenter = std::make_unique<GamePresenter>(*m_gameSession, m_mainWindow.gameWidget());
 }
 
