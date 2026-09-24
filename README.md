@@ -91,19 +91,26 @@ On Linux, OpenCV is expected to come from the system package manager, so no manu
 
 ## Bot Games
 
-Bot games are played against [GNU Go](https://www.gnu.org/software/gnugo/).
-It runs as a separate process and is not part of this repository, so you have to provide it yourself.
-Tengen looks for it next to its own executable (for a Windows debug build, that is `build/Win64/out/bin/x64/Debug/`):
+Bot games are played against [GNU Go](https://www.gnu.org/software/gnugo/) or [KataGo](https://github.com/lightvector/KataGo).
+They run as separate processes and are not part of this repository, so you have to provide them yourself.
+Tengen looks for them next to its own executable (for a Windows debug build, that is `build/Win64/out/bin/x64/Debug/`):
 
 ```
 <tengen directory>/
 ├── tengen(.exe)
 └── engine/
-    └── gnugo/
-        └── gnugo(.exe)
+    ├── gnugo/
+    │   └── gnugo(.exe)
+    └── katago/
+        ├── katago(.exe)
+        ├── model.bin.gz
+        ├── human_model.bin.gz
+        └── gtp.cfg
 ```
 
-If GNU Go is not found there, the `Game` menu does not offer `New Bot Game`.
+The bot dialog lists both engines. One whose files are not all there is greyed out, and the dialog looks again every time it opens, so an engine installed while Tengen runs shows up right away.
+
+### GNU Go
 
 On Windows, download a GNU Go 3.8 build and copy its whole folder into `engine/gnugo/`, not just `gnugo.exe`: builds like the Cygwin one need their DLLs next to the executable.
 
@@ -114,8 +121,18 @@ mkdir -p <tengen directory>/engine/gnugo
 ln -s "$(command -v gnugo)" <tengen directory>/engine/gnugo/gnugo
 ```
 
-The rank you pick in the bot dialog sets GNU Go's `--level` (1 to 10).
-GNU Go plays around 5k to 8k at its strongest, and its levels are not calibrated to ranks, so the rank is only a rough guide: anything from 6k upwards plays GNU Go at full strength.
+GNU Go's strength is a level from 1 to 10, and that is what the bot dialog offers.
+The levels are not ranks: GNU Go plays around 5k to 8k at level 10, and the lower levels play weaker by an amount nobody has measured.
+
+### KataGo
+
+Copy KataGo's whole folder into `engine/katago/`, then add:
+
+- a KataGo network, as `model.bin.gz`
+- the human SL network `b18c384nbt-humanv0.bin.gz` from KataGo's releases, as `human_model.bin.gz`
+- a GTP config made for the human SL network, like KataGo's `gtp_human5k_example.cfg`, as `gtp.cfg`
+
+KataGo imitates a human of the rank you pick in the bot dialog, from 20k to 3d.
 
 ## General Documentation
 

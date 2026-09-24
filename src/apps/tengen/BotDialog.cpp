@@ -1,37 +1,45 @@
 #include "BotDialog.hpp"
 
+#include "GnuGoConfigWidget.hpp"
+#include "KataGoConfigWidget.hpp"
 #include "Logging.hpp"
 #include "model/player.hpp"
 
 #include <QComboBox>
 #include <QDialogButtonBox>
 #include <QFormLayout>
-#include <QHBoxLayout>
 #include <QLabel>
-#include <QSlider>
+#include <QPushButton>
+#include <QStackedWidget>
+#include <QStandardItemModel>
 #include <QVBoxLayout>
+#include <cassert>
 #include <fcntl.h>
 
 namespace tengen::gui {
-namespace {
 
-// The bot imitates human ranks, and only the ones it was trained on: 20k is the weakest it knows.
-// Anything below that is a matter of handicap stones, which the game does not offer yet.
-constexpr Skill weakestBot = fromKyu(20);
-
-// The imitation stops matching the rank somewhere in the low dan ranks, where playing that strongly
-// takes search rather than imitation alone. Offering ranks we cannot honestly play would be a lie.
-constexpr Skill strongestBot = fromDan(3);
-
-QString rankText(const Skill skill) {
-	return QString::fromStdString(toString(skill));
-}
-
-} // namespace
-
-BotDialog::BotDialog(QWidget* parent)
+BotDialog::BotDialog(const engine::InstalledEngines& engines, QWidget* parent)
     : QDialog(parent) {
 	setWindowTitle("New Bot Game");
+
+	// Every engine shows, installed or not. One that is not installed cannot be picked, so the default
+	// config its widget starts from never leaves the dialog.
+	m_engineCombo   = new QComboBox(this);
+	m_engineConfigs = new QStackedWidget(this);
+	m_gnuGo         = new GnuGoConfigWidget(engines.gnuGo.value_or(engine::GnuGoConfig{}), this);
+	m_kataGo        = new KataGoConfigWidget(engines.kataGo.value_or(engine::KataGoConfig{}), this);
+	addEngine(tr("GNU Go"), m_gnuGo, engines.gnuGo.has_value());
+	addEngine(tr("KataGo"), m_kataGo, engines.kataGo.has_value());
+	connect(m_engineCombo, &QComboBox::currentIndexChanged, m_engineConfigs, &QStackedWidget::setCurrentIndex);
+
+	// The combo box starts on its first engine, even when that one cannot be picked.
+	const auto* engineItems = qobject_cast<QStandardItemModel*>(m_engineCombo->model());
+	for (int row = 0; row < m_engineCombo->count(); ++row) {
+		if (engineItems->item(row)->isEnabled()) {
+			m_engineCombo->setCurrentIndex(row);
+			break;
+		}
+	}
 
 	m_boardSize = new QComboBox(this);
 	m_boardSize->addItem("9x9", 9u);
@@ -39,43 +47,32 @@ BotDialog::BotDialog(QWidget* parent)
 	m_boardSize->addItem("19x19", 19u);
 	m_boardSize->setCurrentIndex(0);
 
-	// The slider runs over the skill scale itself, so every rank in between is offered too.
-	m_skill = new QSlider(Qt::Horizontal, this);
-	m_skill->setRange(static_cast<int>(weakestBot), static_cast<int>(strongestBot));
-	m_skill->setValue(static_cast<int>(weakestBot));
-	m_skill->setTickPosition(QSlider::TicksBelow);
-	m_skill->setTickInterval(1);
-	m_skill->setPageStep(1);
-
-	m_skillLabel = new QLabel(rankText(weakestBot), this);
-	m_skillLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-	// Hold the width of the longest rank so the slider does not shift while it is dragged.
-	m_skillLabel->setMinimumWidth(m_skillLabel->fontMetrics().horizontalAdvance("30k"));
-
-	connect(m_skill, &QSlider::valueChanged, this, [this](const int value) {
-		m_skillLabel->setText(rankText(Skill{static_cast<int8_t>(value)}));
-	});
-
-	auto* skillRow = new QHBoxLayout();
-	skillRow->addWidget(m_skill);
-	skillRow->addWidget(m_skillLabel);
-
 	m_colour = new QComboBox(this);
 	m_colour->addItem("Black", static_cast<int>(Player::Black));
 	m_colour->addItem("White", static_cast<int>(Player::White));
 	m_colour->setCurrentIndex(0);
 
+	// Every engine counts its strength its own way. Its config widget shows which, so the row only says what it sets.
 	auto* form = new QFormLayout();
+	form->addRow(tr("Engine:"), m_engineCombo);
+	form->addRow(tr("Strength:"), m_engineConfigs);
 	form->addRow(tr("Board size:"), m_boardSize);
-	form->addRow(tr("Opponent rank:"), skillRow);
 	form->addRow(tr("Your color:"), m_colour);
 
+	// Without an engine there is nothing to play against.
+	const bool anyInstalled = engines.gnuGo || engines.kataGo;
+	auto* noEngine          = new QLabel(tr("No engine is installed. Please refer to the documentation."), this);
+	noEngine->setWordWrap(true);
+	noEngine->setVisible(!anyInstalled);
+
 	auto* buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
+	buttons->button(QDialogButtonBox::Ok)->setEnabled(anyInstalled);
 	connect(buttons, &QDialogButtonBox::accepted, this, &QDialog::accept);
 	connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
 	auto* layout = new QVBoxLayout(this);
 	layout->addLayout(form);
+	layout->addWidget(noEngine);
 	layout->addWidget(buttons);
 }
 
@@ -89,9 +86,13 @@ unsigned BotDialog::boardSize() const {
 	return boardSize;
 }
 
-Skill BotDialog::skill() const {
-	// No range check: the slider cannot leave the range it was given, unlike a combo box's user data.
-	return Skill{static_cast<int8_t>(m_skill->value())};
+engine::EngineConfig BotDialog::engineConfig() const {
+	// Only an installed engine can be picked, and its config widget holds the files the catalog found for it.
+	if (m_engineConfigs->currentWidget() == m_kataGo) {
+		return m_kataGo->config();
+	}
+	assert(m_engineConfigs->currentWidget() == m_gnuGo);
+	return m_gnuGo->config();
 }
 
 bool BotDialog::humanPlaysBlack() const {
@@ -102,6 +103,19 @@ bool BotDialog::humanPlaysBlack() const {
 		return true;
 	}
 	return static_cast<Player>(player) == Player::Black;
+}
+
+void BotDialog::addEngine(const QString& name, QWidget* configWidget, const bool installed) {
+	m_engineCombo->addItem(installed ? name : tr("%1 (not installed)").arg(name));
+	m_engineConfigs->addWidget(configWidget);
+	configWidget->setEnabled(installed);
+
+	if (!installed) {
+		// Greyed out, and neither the mouse nor the keyboard can pick it.
+		auto* engineItems = qobject_cast<QStandardItemModel*>(m_engineCombo->model());
+		assert(engineItems); // A combo box keeps its items in a QStandardItemModel unless it is given another model.
+		engineItems->item(m_engineCombo->count() - 1)->setEnabled(false);
+	}
 }
 
 } // namespace tengen::gui
