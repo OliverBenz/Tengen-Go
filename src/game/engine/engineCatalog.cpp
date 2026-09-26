@@ -12,7 +12,7 @@
 
 namespace tengen::engine {
 
-// The one place that knows where the engines live, each in its own directory below the engine root:
+// The one place that knows where the engines live, each in its own directory below an engine root:
 //
 //   <engine root>/
 //     gnugo/
@@ -80,9 +80,17 @@ static std::optional<KataGoConfig> findKataGo(const std::filesystem::path& engin
 	return KataGoConfig{.files = std::move(files)};
 }
 
-InstalledEngines findEngines(const std::filesystem::path& engineRoot) {
-	return {.gnuGo  = findGnuGo(engineRoot),
-	        .kataGo = findKataGo(engineRoot)};
+InstalledEngines findEngines(const std::vector<std::filesystem::path>& rootPaths) {
+	InstalledEngines engines;
+	for (const std::filesystem::path& root: rootPaths) {
+		if (!engines.gnuGo) {
+			engines.gnuGo = findGnuGo(root);
+		}
+		if (!engines.kataGo) {
+			engines.kataGo = findKataGo(root);
+		}
+	}
+	return engines;
 }
 
 

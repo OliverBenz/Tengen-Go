@@ -49,27 +49,38 @@
 <a name="Layout"></a>
 <h2>Setup Guide</h2>
 	<p>
-    	Tengen looks in the <code>engine</code> folder next to its executable. Each
-    	engine has a folder of its own, and the file names must match exactly. On
-    	Linux they are case-sensitive.
+    	Tengen looks for engines in two <code>engine</code> folders, in this order,
+    	and takes each engine from the first one that holds all of its files:
+	</p>
+	<ol>
+    	<li>
+        	Your data folder (recommended):
+        	<ul>
+            	<li>Linux: <code>~/.local/share/tengen/engine</code></li>
+            	<li>Windows: <code>%LOCALAPPDATA%\tengen\engine</code></li>
+            	<li>macOS: <code>~/Library/Application Support/tengen/engine</code></li>
+        	</ul>
+    	</li>
+    	<li>The <code>engine</code> folder next to the Tengen executable.</li>
+	</ol>
+	<p>
+    	Inside, each engine has a folder of its own, and the file names must match
+    	exactly. On Linux they are case-sensitive.
 	</p>
 <pre>
-&lt;tengen directory&gt;/
-├── tengen(.exe)
-└── engine/
-    ├── gnugo/
-    │   └── gnugo(.exe)
-    └── katago/
-        ├── katago(.exe)
-        ├── model.bin.gz
-        ├── human_model.bin.gz
-        └── gtp.cfg
+engine/
+├── gnugo/
+│   └── gnugo(.exe)
+└── katago/
+    ├── katago(.exe)
+    ├── model.bin.gz
+    ├── human_model.bin.gz
+    └── gtp.cfg
 </pre>
 	<p>
-    	An engine is available only when all of its files are there. Any other
-    	engine is greyed out in the <i>New Bot Game</i> dialog. The dialog looks
-    	again every time it opens, so you can install an engine while Tengen is
-    	running.
+    	An engine missing a file is greyed out in the <i>New Bot Game</i> dialog.
+    	The dialog looks again every time it opens, so you can install an engine
+    	while Tengen is running.
 	</p>
 
 	<a name="GnuGo"></a>
@@ -86,8 +97,8 @@
 		<h4>Linux</h4>
 			<p>Install GNU Go with your package manager, then link it into place:</p>
 <pre>
-mkdir -p &lt;tengen directory&gt;/engine/gnugo
-ln -s "$(command -v gnugo)" &lt;tengen directory&gt;/engine/gnugo/gnugo
+mkdir -p ~/.local/share/tengen/engine/gnugo
+ln -s "$(command -v gnugo)" ~/.local/share/tengen/engine/gnugo/gnugo
 </pre>
 
 	<a name="KataGo"></a>
@@ -116,7 +127,7 @@ ln -s "$(command -v gnugo)" &lt;tengen directory&gt;/engine/gnugo/gnugo
         		<td>The network trained on human games. It imitates the rank.</td>
         		<td>
             		<code>b18c384nbt-humanv0.bin.gz</code> from
-            		<a href="https://github.com/lightvector/KataGo/releases">KataGo's releases</a>,
+            		<a href="https://katagotraining.org/extra_networks/">katagotraining.org's extra networks</a>,
             		renamed.
         		</td>
     		</tr>
@@ -169,6 +180,10 @@ ln -s "$(command -v gnugo)" &lt;tengen directory&gt;/engine/gnugo/gnugo
                 	<li>
                     	The files sit one folder too deep, for example
                     	<code>engine/gnugo/gnugo-3.8/gnugo.exe</code>.
+                	</li>
+                	<li>
+                    	Its files are split between both engine folders. Keep them
+                    	together in one.
                 	</li>
                 	<li>
                     	On Linux, the link to the engine is broken. A broken link
