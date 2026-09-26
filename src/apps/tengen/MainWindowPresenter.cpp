@@ -8,17 +8,12 @@
 
 #include <QCoreApplication>
 #include <QObject>
+#include <QStandardPaths>
 #include <filesystem>
 #include <memory>
+#include <vector>
 
 namespace tengen {
-
-//! The engines live in engine/ next to our executable. The engine catalog knows the layout below it.
-static std::filesystem::path engineRoot() {
-	const std::filesystem::path appDir = QCoreApplication::applicationDirPath().toStdWString();
-	return appDir / "engine";
-}
-
 
 MainWindowPresenter::MainWindowPresenter(gui::MainWindow& mainWindow)
     : QObject(nullptr), m_mainWindow(mainWindow) {
@@ -45,8 +40,14 @@ void MainWindowPresenter::onNewLocalGameRequested() {
 }
 
 void MainWindowPresenter::onBotDialogRequested() {
+	// The user's data folder first (e.g. ~/.local/share/tengen/engine), next to our executable as the fallback.
+	const std::vector<std::filesystem::path> rootPaths{
+	        (QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/engine").toStdWString(),
+	        (QCoreApplication::applicationDirPath() + "/engine").toStdWString(),
+	};
+
 	// Look on every opening, so an engine installed while we run is offered right away.
-	m_mainWindow.openBotDialog(engine::findEngines(engineRoot()));
+	m_mainWindow.openBotDialog(engine::findEngines(rootPaths));
 }
 
 void MainWindowPresenter::onNewBotGameRequested(unsigned boardSize, const engine::EngineConfig& engineConfig, bool humanPlaysBlack) {

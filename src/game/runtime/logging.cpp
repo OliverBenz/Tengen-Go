@@ -19,7 +19,7 @@ static void InitializeLogger() {
 	config.SetMinLogLevel(Logging::LogLevel::Any);
 
 	// Get and create default logging dir
-	const auto logPath = Logging::GetDefaultLogDir("GoGame/AppLibrary");
+	const auto logPath = Logging::GetDefaultLogDir("tengen/appLibrary");
 
 	std::error_code ec{};
 	std::filesystem::create_directories(logPath, ec);

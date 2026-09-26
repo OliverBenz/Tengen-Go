@@ -5,6 +5,7 @@
 
 int main(int argc, char* argv[]) {
 	QApplication application(argc, argv);
+	QApplication::setApplicationName("tengen"); // Names our data folders, whatever the executable is called.
 
 	// Setup and show UI
 	tengen::gui::MainWindow window;

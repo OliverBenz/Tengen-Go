@@ -40,7 +40,6 @@ set_output_directory(${targetName})
 
 
 
-# The output directory is read from the property: $<TARGET_FILE_DIR> would make this target depend on tengen, and back.
 add_custom_target(${targetName}_help ALL
     COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
             "${CMAKE_CURRENT_LIST_DIR}/help"
