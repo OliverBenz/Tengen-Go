@@ -16,7 +16,7 @@ add_executable(${targetName}
     "${CMAKE_CURRENT_LIST_DIR}/ChatPresenter.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ConnectDialog.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/HostDialog.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/RulesDialog.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/HelpDialog.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/Logging.cpp"
 )
 
@@ -34,16 +34,20 @@ set_target_properties(${targetName}
       FOLDER "${IDE_FOLDER_SOURCE}/apps"
 )
 
-# Copy help files to output
-add_custom_command(
-    TARGET ${targetName}
-    POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${targetName}>/help"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${CMAKE_CURRENT_LIST_DIR}/help/rules.html"
-            "$<TARGET_FILE_DIR:${targetName}>/help/rules.html"
-)
-
 # Setup project settings
 set_target_configuration(${targetName} Config::Default)
 set_output_directory(${targetName})
+
+
+
+# The output directory is read from the property: $<TARGET_FILE_DIR> would make this target depend on tengen, and back.
+add_custom_target(${targetName}_help ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
+            "${CMAKE_CURRENT_LIST_DIR}/help"
+            "$<GENEX_EVAL:$<TARGET_PROPERTY:${targetName},RUNTIME_OUTPUT_DIRECTORY>>/help"
+)
+add_dependencies(${targetName} ${targetName}_help)
+set_target_properties(${targetName}_help
+	PROPERTIES
+		FOLDER "${IDE_FOLDER_SOURCE}/apps"
+)

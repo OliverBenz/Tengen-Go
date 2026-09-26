@@ -9,6 +9,7 @@
 namespace tengen::gui {
 
 class GameWidget;
+enum class HelpPage;
 
 class MainWindow : public QMainWindow {
 	Q_OBJECT
@@ -37,7 +38,7 @@ private:
 private:
 	void openConnectDialog();
 	void openHostDialog();
-	void openRulesDialog();
+	void openHelp(HelpPage page);
 
 protected:
 	void closeEvent(QCloseEvent* event) override;

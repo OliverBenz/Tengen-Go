@@ -2,8 +2,8 @@
 
 #include "BotDialog.hpp"
 #include "ConnectDialog.hpp"
+#include "HelpDialog.hpp"
 #include "HostDialog.hpp"
-#include "RulesDialog.hpp"
 #include "gui/gameWidget.hpp"
 
 #include <QMenuBar>
@@ -59,12 +59,15 @@ void MainWindow::buildLayout() {
 	tools->addAction(actStartCameraDetection);
 	tools->addAction(actCalibrateDetection);
 
-	auto* help     = menuBar()->addMenu(tr("&Help"));
-	auto* actRules = new QAction("&Rules", this);
-	auto* actAbout = new QAction("&About", this);
+	auto* help      = menuBar()->addMenu(tr("&Help"));
+	auto* actRules  = new QAction("&Rules", this);
+	auto* actEngine = new QAction("&Engine", this);
+	auto* actAbout  = new QAction("&About", this);
 	help->addAction(actRules);
+	help->addAction(actEngine);
 	help->addAction(actAbout);
-	connect(actRules, &QAction::triggered, this, &MainWindow::openRulesDialog);
+	connect(actRules, &QAction::triggered, this, [this] { openHelp(HelpPage::Rules); });
+	connect(actEngine, &QAction::triggered, this, [this] { openHelp(HelpPage::Engine); });
 
 	m_gameWidget = new GameWidget();
 	setCentralWidget(m_gameWidget);
@@ -94,8 +97,8 @@ void MainWindow::openHostDialog() {
 	}
 }
 
-void MainWindow::openRulesDialog() {
-	RulesDialog dialog(this);
+void MainWindow::openHelp(const HelpPage page) {
+	HelpDialog dialog(page, this);
 	dialog.exec();
 }
 
