@@ -23,7 +23,7 @@ namespace tengen::engine {
 //       human_model.bin.gz
 //       gtp.cfg
 //
-// Keep the README's Bot Games section in line with it.
+// Keep the README's Bot Games section and the app's help/engine.html in line with it.
 
 //! The name an executable has on this platform.
 static std::string executableFile(const std::string& name) {
