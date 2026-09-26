@@ -1,0 +1,239 @@
+<h1>Bot Engines</h1>
+	<p>
+    	Bot games are played against an external Go engine. Engines are separate
+    	programs and are <b>not shipped with Tengen</b>, so you have to install at least one supported engine yourself.
+    	You can choose between the installed engines in the <i>New Bot Game</i> dialog.
+	</p>
+	<ul>
+    	<li><a href="#Overview">Choosing an Engine</a></li>
+    	<li><a href="#Layout">Setup Guide</a></li>
+    	<li><a href="#GnuGo">Setting up GNU Go</a></li>
+    	<li><a href="#KataGo">Setting up KataGo</a></li>
+    	<li><a href="#Settings">Game Settings</a></li>
+    	<li><a href="#Troubleshooting">Troubleshooting</a></li>
+	</ul>
+
+<a name="Overview"></a>
+<h2>Choosing an Engine</h2>
+	<table border="1" cellspacing="0" cellpadding="6" width="100%">
+    	<tr>
+        	<th align="left">&nbsp;</th>
+        	<th align="left"><a href="https://www.gnu.org/software/gnugo/">GNU Go</a></th>
+        	<th align="left"><a href="https://github.com/lightvector/KataGo">KataGo</a></th>
+    	</tr>
+    	<tr>
+        	<td><b>Strength</b></td>
+        	<td>
+            	Level 1 to 10. These are not ranks: level 10 plays around 5k to 8k,
+            	and how much weaker the lower levels play has not been measured.
+        	</td>
+        	<td>Rank from 20k to 3d.</td>
+    	</tr>
+    	<tr>
+        	<td><b>Style</b></td>
+        	<td>A classic engine.</td>
+        	<td>A neural network imitating a human of the chosen rank.</td>
+    	</tr>
+    	<tr>
+        	<td><b>Files</b></td>
+        	<td>One program.</td>
+        	<td>One program and three extra files.</td>
+    	</tr>
+    	<tr>
+        	<td><b>Hardware</b></td>
+        	<td>Any computer.</td>
+        	<td>A graphics card is recommended.</td>
+    	</tr>
+	</table>
+
+<a name="Layout"></a>
+<h2>Setup Guide</h2>
+	<p>
+    	Tengen looks for engines in two <code>engine</code> folders, in this order,
+    	and takes each engine from the first one that holds all of its files:
+	</p>
+	<ol>
+    	<li>
+        	Your data folder (recommended):
+        	<ul>
+            	<li>Linux: <code>~/.local/share/tengen/engine</code></li>
+            	<li>Windows: <code>%LOCALAPPDATA%\tengen\engine</code></li>
+            	<li>macOS: <code>~/Library/Application Support/tengen/engine</code></li>
+        	</ul>
+    	</li>
+    	<li>The <code>engine</code> folder next to the Tengen executable.</li>
+	</ol>
+	<p>
+    	Inside, each engine has a folder of its own, and the file names must match
+    	exactly. On Linux they are case-sensitive.
+	</p>
+<pre>
+engine/
+├── gnugo/
+│   └── gnugo(.exe)
+└── katago/
+    ├── katago(.exe)
+    ├── model.bin.gz
+    ├── human_model.bin.gz
+    └── gtp.cfg
+</pre>
+	<p>
+    	An engine missing a file is greyed out in the <i>New Bot Game</i> dialog.
+    	The dialog looks again every time it opens, so you can install an engine
+    	while Tengen is running.
+	</p>
+
+	<a name="GnuGo"></a>
+	<h3>Setting up GNU Go</h3>
+		<p>Use GNU Go <b>3.8</b>.</p>
+
+		<h4>Windows</h4>
+			<p>
+    			Download a GNU Go 3.8 build and copy its <b>whole contents</b> into
+    			<code>engine\gnugo</code>, not just <code>gnugo.exe</code>. Builds such as
+    			the Cygwin one need their <code>.dll</code> files next to the executable.
+			</p>
+
+		<h4>Linux</h4>
+			<p>Install GNU Go with your package manager, then link it into place:</p>
+<pre>
+mkdir -p ~/.local/share/tengen/engine/gnugo
+ln -s "$(command -v gnugo)" ~/.local/share/tengen/engine/gnugo/gnugo
+</pre>
+
+	<a name="KataGo"></a>
+	<h3>Setting up KataGo</h3>
+		<p>
+    		Copy KataGo's <b>whole folder</b> into <code>engine/katago</code>, then add
+    		three files:
+		</p>
+		<table border="1" cellspacing="0" cellpadding="6" width="100%">
+    		<tr>
+        		<th align="left">Name</th>
+        		<th align="left">What it is</th>
+        		<th align="left">Where to get it</th>
+    		</tr>
+    		<tr>
+        		<td><code>model.bin.gz</code></td>
+        		<td>A regular KataGo network.</td>
+        		<td>
+            		Any network from
+            		<a href="https://katagotraining.org/networks/">katagotraining.org</a>,
+            		renamed.
+        		</td>
+    		</tr>
+    		<tr>
+        		<td><code>human_model.bin.gz</code></td>
+        		<td>The network trained on human games. It imitates the rank.</td>
+        		<td>
+            		<code>b18c384nbt-humanv0.bin.gz</code> from
+            		<a href="https://katagotraining.org/extra_networks/">katagotraining.org's extra networks</a>,
+            		renamed.
+        		</td>
+    		</tr>
+    		<tr>
+        		<td><code>gtp.cfg</code></td>
+        		<td>KataGo's configuration, made for the human network.</td>
+        		<td>
+            		KataGo's <code>gtp_human5k_example.cfg</code>, renamed.
+        		</td>
+    		</tr>
+		</table>
+		<p>
+    		The rank comes from the bot dialog. It replaces the
+    		<code>humanSLProfile</code> in <code>gtp.cfg</code>, so one config serves
+    		every rank.
+		</p>
+		<p>
+    		KataGo is released in builds for different hardware: <b>OpenCL</b>,
+    		<b>CUDA</b>, <b>TensorRT</b> and a plain CPU build (<b>Eigen</b>). Pick the
+    		one that fits your graphics card. The CPU build runs anywhere but is slow.
+		</p>
+
+<a name="Settings"></a>
+<h2>Game settings</h2>
+	<p>
+    	Bot games are played on 9&times;9, 13&times;13 or 19&times;19 with a komi of
+    	7.5, which is fixed for now. Repeating a position is forbidden, as in the
+    	<a href="rules.html">rules of Go</a>.
+	</p>
+
+<a name="Troubleshooting"></a>
+<h2>Troubleshooting</h2>
+	<table border="1" cellspacing="0" cellpadding="6" width="100%">
+    	<tr>
+        	<th align="left">Problem</th>
+        	<th align="left">Likely cause and fix</th>
+    	</tr>
+    	<tr>
+        	<td>The dialog says <i>No engine is installed</i>.</td>
+        	<td>No engine has all of its files yet. See <a href="#Layout">Setup Guide</a>.</td>
+    	</tr>
+    	<tr>
+        	<td>An engine I installed is greyed out.</td>
+        	<td>
+            	<ul>
+                	<li>
+                    	A file is missing or named differently, for example
+                    	<code>model.bin.gz.gz</code>.
+                	</li>
+                	<li>
+                    	The files sit one folder too deep, for example
+                    	<code>engine/gnugo/gnugo-3.8/gnugo.exe</code>.
+                	</li>
+                	<li>
+                    	Its files are split between both engine folders. Keep them
+                    	together in one.
+                	</li>
+                	<li>
+                    	On Linux, the link to the engine is broken. A broken link
+                    	counts as a missing file. <code>ls -L</code> on it shows
+                    	whether it works.
+                	</li>
+            	</ul>
+        	</td>
+    	</tr>
+    	<tr>
+        	<td>The engine is listed, but the game ends right after it starts.</td>
+        	<td>
+            	The engine did not start or did not answer. The
+            	<a href="#Logs">engine log</a> shows why. Common causes:
+            	<ul>
+                	<li>
+                    	Windows: the <code>.dll</code> files GNU Go needs are
+                    	missing next to <code>gnugo.exe</code>.
+                	</li>
+                	<li>Linux: the engine is not executable. Run <code>chmod +x</code> on it.</li>
+                	<li>
+                    	KataGo: the build does not match your hardware, for example
+                    	a CUDA build without an NVIDIA card. Try the OpenCL or
+                    	Eigen build.
+                	</li>
+                	<li>
+                    	KataGo: <code>gtp.cfg</code> is not made for the human
+                    	network, or a network file is damaged.
+                	</li>
+            	</ul>
+        	</td>
+    	</tr>
+    	<tr>
+        	<td>The game ends in the middle of play.</td>
+        	<td>
+            	The engine stopped answering, and Tengen ends a game its opponent
+            	cannot continue. The <a href="#Logs">engine log</a> shows why.
+        	</td>
+    	</tr>
+    	<tr>
+        	<td>KataGo takes a long time to answer.</td>
+        	<td>KataGo is probably running on the CPU. Install a build for your graphics card.</td>
+    	</tr>
+	</table>
+
+	<a name="Logs"></a>
+	<h3>Engine log</h3>
+		<p>
+    		Each engine writes what it reports to <code>gnugo.log</code> or
+    		<code>katago.log</code>. The file is created in the folder Tengen was
+    		started from and is overwritten by every new game. When you ask for help,
+    		include this file together with the engine version and your operating system.
+		</p>

@@ -7,6 +7,7 @@
 #include <memory>
 #include <optional>
 #include <variant>
+#include <vector>
 
 namespace tengen::engine {
 
@@ -15,15 +16,16 @@ class GtpEngine;
 //! Configuration where the engine is installed and how it should play.
 using EngineConfig = std::variant<GnuGoConfig, KataGoConfig>;
 
-//! Which engines are installed below the engine root.
+//! Which engines are installed below the engine root paths.
 //! \note An engine is only set when all of its files were found. Its config then points at them.
 struct InstalledEngines {
 	std::optional<GnuGoConfig> gnuGo{std::nullopt};   //!< Set when GnuGo is installed.
 	std::optional<KataGoConfig> kataGo{std::nullopt}; //!< Set when KataGo is installed.
 };
 
-//! Look for every engine in its own directory below the engineRoot.
-InstalledEngines findEngines(const std::filesystem::path& engineRoot);
+//! Look for every engine in its own directory below the rootPaths.
+//! \note Earlier roots win: each engine comes from the first root that holds all of its files.
+InstalledEngines findEngines(const std::vector<std::filesystem::path>& rootPaths);
 
 //! Create an engine based on the given configuration.
 //! \note Does not check the installation: an engine missing its files fails to start and answers with onEngineFailed().
