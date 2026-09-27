@@ -28,11 +28,12 @@ So let's replace the opponent with a robotic arm and play other people online bu
 
 | Area             | Status                 | Notes                                                                                            |
 | ---------------- | ---------------------- | ------------------------------------------------------------------------------------------------ |
-| gameModel/Core   | Working                | Core data structures, rules, move validation, and deltas are implemented.                        |
-| netCore/Network  | Working / In Progress  | TCP transport and game protocol exist; reconnect and some session features are still incomplete. |
+| Game Logic       | Working                | Core data structures, rules, move validation, and deltas are implemented.                        |
+| Bot Games        | Working / In Progress  | Bot games against GNU Go and KataGo exist; komi is fixed and some edge cases are still open.     |
+| Networking       | Working / In Progress  | TCP transport and game protocol exist; reconnect and some session features are still incomplete. |
 | GUI Application  | Working / In Progress  | Qt client and standalone server exist; the application is still under active development.        |
-| visionCore       | Working / Experimental | Board, grid, and stone detection exist, but still rely on a controlled setup.                    |
-| visionPerception | In Progress            | Setup/orientation logic exists; the live board detection loop is not finished yet.               |
+| Board Detection  | Working / Experimental | Board, grid, and stone detection exist, but still rely on a controlled setup.                    |
+| Board Perception | In Progress            | Setup/orientation logic exists; the live board detection loop is not finished yet.               |
 | Robot Arm        | Planned                | The long-term goal is documented, but this is not shipped in the repository yet.                 |
 
 ### Goal
