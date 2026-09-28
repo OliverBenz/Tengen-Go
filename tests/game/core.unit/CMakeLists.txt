@@ -4,6 +4,7 @@ set(targetName gameCore.unit)
 
 add_executable(${targetName}
     "${CMAKE_CURRENT_LIST_DIR}/game.gtest.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/gameState.gtest.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/moveChecker.gtest.cpp"
 )
 
