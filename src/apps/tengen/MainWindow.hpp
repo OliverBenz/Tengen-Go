@@ -39,6 +39,7 @@ private:
 	void openConnectDialog();
 	void openHostDialog();
 	void openHelp(HelpPage page);
+	void openAbout();
 
 protected:
 	void closeEvent(QCloseEvent* event) override;

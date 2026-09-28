@@ -17,6 +17,7 @@ add_executable(${targetName}
     "${CMAKE_CURRENT_LIST_DIR}/ConnectDialog.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/HostDialog.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/HelpDialog.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/AboutDialog.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/Logging.cpp"
 )
 
@@ -26,6 +27,11 @@ target_link_libraries(${targetName}
         tengen::game::runtime
         tengen::game::gui
         Qt6::Widgets
+)
+
+target_compile_definitions(${targetName}
+    PRIVATE
+        TENGEN_VERSION="${PROJECT_VERSION}"
 )
 
 set_target_properties(${targetName}
