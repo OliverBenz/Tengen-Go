@@ -39,7 +39,7 @@ private:
 	void handleEvent(const ShutdownEvent& event);
 
 private:
-	bool m_gameActive{false};        //!< Is the game currently active or not.
+	bool m_active{false};            //!< Is the game currently active or not.
 	unsigned m_consecutivePasses{0}; //!< Two consequtive passes ends game.
 
 	GameRules m_rules;       //!< The rules we use for our current game.
