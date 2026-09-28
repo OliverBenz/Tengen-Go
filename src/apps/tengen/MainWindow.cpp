@@ -1,5 +1,6 @@
 #include "MainWindow.hpp"
 
+#include "AboutDialog.hpp"
 #include "BotDialog.hpp"
 #include "ConnectDialog.hpp"
 #include "HelpDialog.hpp"
@@ -68,6 +69,7 @@ void MainWindow::buildLayout() {
 	help->addAction(actAbout);
 	connect(actRules, &QAction::triggered, this, [this] { openHelp(HelpPage::Rules); });
 	connect(actEngine, &QAction::triggered, this, [this] { openHelp(HelpPage::Engine); });
+	connect(actAbout, &QAction::triggered, this, &MainWindow::openAbout);
 
 	m_gameWidget = new GameWidget();
 	setCentralWidget(m_gameWidget);
@@ -99,6 +101,11 @@ void MainWindow::openHostDialog() {
 
 void MainWindow::openHelp(const HelpPage page) {
 	HelpDialog dialog(page, this);
+	dialog.exec();
+}
+
+void MainWindow::openAbout() {
+	AboutDialog dialog(this);
 	dialog.exec();
 }
 
