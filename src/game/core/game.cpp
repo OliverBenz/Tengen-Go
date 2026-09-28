@@ -4,7 +4,7 @@
 
 namespace tengen {
 
-Game::Game(const std::size_t boardSize) : m_gameActive{false}, m_position{boardSize} {
+Game::Game(const std::size_t boardSize, const GameRules& rules) : m_rules{rules}, m_position{boardSize} {
 	switch (m_position.board.size()) {
 	case 9u:
 		m_hasher = std::make_unique<ZobristHash<9u>>();
