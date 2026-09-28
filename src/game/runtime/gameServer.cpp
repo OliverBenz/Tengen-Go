@@ -1,6 +1,7 @@
 #include "tengen/gameServer.hpp"
 
 #include "core/game.hpp"
+#include "core/gameRules.hpp"
 #include "logging.hpp"
 
 #include <cassert>
@@ -13,7 +14,7 @@ static constexpr char LOG_REC_PASS[]   = "[GameServer] Received Event 'Pass'   f
 static constexpr char LOG_REC_RESIGN[] = "[GameServer] Received Event 'Resign' from Player {}.";
 
 GameServer::GameServer(std::size_t boardSize)
-    : m_game(boardSize) {
+    : m_game(boardSize, fromRuleSet(RuleSet::Japanese)) {
 }
 GameServer::~GameServer() {
 	stop();
