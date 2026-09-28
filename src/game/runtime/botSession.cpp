@@ -1,6 +1,7 @@
 #include "tengen/botSession.hpp"
 
 #include "core/gameEvent.hpp"
+#include "core/gameRules.hpp"
 #include "logging.hpp"
 
 #include <cassert>
@@ -8,7 +9,7 @@
 namespace tengen::app {
 
 BotSession::BotSession(const unsigned boardSize, std::unique_ptr<engine::GtpEngine> botEngine, const bool playerPlaysAsBlack)
-    : m_game(boardSize), m_engine(std::move(botEngine)), m_botColour(playerPlaysAsBlack ? Player::White : Player::Black) {
+    : m_game(boardSize, fromRuleSet(RuleSet::Japanese)), m_engine(std::move(botEngine)), m_botColour(playerPlaysAsBlack ? Player::White : Player::Black) {
 	assert(m_engine);
 	m_position.init(boardSize);
 	m_position.setStatus(GameStatus::Ready); // The bot is not up yet, so the board takes no moves.
