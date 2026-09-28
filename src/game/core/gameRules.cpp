@@ -1,5 +1,7 @@
 #include "core/gameRules.hpp"
 
+#include <cassert>
+
 namespace tengen {
 
 GameRules fromRuleSet(RuleSet ruleSet) {
@@ -26,6 +28,9 @@ GameRules fromRuleSet(RuleSet ruleSet) {
 		        .suicideLegal  = false,
 		};
 	}
+
+	assert(false);
+	return fromRuleSet(RuleSet::Japanese);
 }
 
 } // namespace tengen

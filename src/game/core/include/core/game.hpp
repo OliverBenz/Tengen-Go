@@ -1,13 +1,10 @@
 #pragma once
 
-#include "core/IZobristHash.hpp"
 #include "core/SafeQueue.hpp"
 #include "core/eventHub.hpp"
 #include "core/gameEvent.hpp"
 #include "core/gameRules.hpp"
-#include "core/position.hpp"
-
-#include <unordered_set>
+#include "core/gameState.hpp"
 
 namespace tengen {
 
@@ -20,9 +17,8 @@ public:
 	//! Setup a game of certain board size without starting the game loop.
 	Game(std::size_t boardSize, const GameRules& rules);
 
-	void run();                      //!< Run the main game loop/start handling the event loop (blocking).
+	void run();                      //!< Handle events until a ShutdownEvent (blocking). Keeps running after the game ended.
 	void pushEvent(GameEvent event); //!< Push an event to the event queue.
-	bool isActive() const;           //!< Return if the game is active or not.
 
 	std::size_t boardSize() const;
 
@@ -39,16 +35,11 @@ private:
 	void handleEvent(const ShutdownEvent& event);
 
 private:
-	bool m_active{false};            //!< Is the game currently active or not.
-	unsigned m_consecutivePasses{0}; //!< Two consequtive passes ends game.
+	bool m_running{false}; //!< Event loop runs until a ShutdownEvent.
 
-	GameRules m_rules;       //!< The rules we use for our current game.
-	GamePosition m_position; //!< Stores the current game position.
+	GameState m_state;       //!< Position and rules. All position changes go through here.
 	EventQueue m_eventQueue; //!< Queue of internal game events we have to handle.
 	EventHub m_eventHub;     //!< Hub to signal updates of the game state to external components.
-
-	std::unordered_set<uint64_t> m_seenHashes{};     //!< History of board states.
-	std::unique_ptr<IZobristHash> m_hasher{nullptr}; //!< Store the last 2 moves. Allows to check repeating board state.
 };
 
 } // namespace tengen
