@@ -30,6 +30,8 @@ public:
 	void onGameDelta(const GameDelta& delta) override;
 
 private:
+	bool hasGameStarted() const; //!< True once both players are seated and the game loop is launched.
+
 	// Processing of the network events that are sent in the server event message payload.
 	void handleNetworkEvent(Player player, const network::ClientPutStone& event);
 	void handleNetworkEvent(Player player, const network::ClientPass& event);
