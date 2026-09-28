@@ -4,6 +4,7 @@
 #include "core/SafeQueue.hpp"
 #include "core/eventHub.hpp"
 #include "core/gameEvent.hpp"
+#include "core/gameRules.hpp"
 #include "core/position.hpp"
 
 #include <unordered_set>
@@ -17,7 +18,7 @@ using EventQueue = SafeQueue<GameEvent>;
 class Game {
 public:
 	//! Setup a game of certain board size without starting the game loop.
-	Game(std::size_t boardSize); // TODO: Will be extended to take a game configuration(timer type, board size, ruleset, etc).
+	Game(std::size_t boardSize, const GameRules& rules);
 
 	void run();                      //!< Run the main game loop/start handling the event loop (blocking).
 	void pushEvent(GameEvent event); //!< Push an event to the event queue.
@@ -38,15 +39,16 @@ private:
 	void handleEvent(const ShutdownEvent& event);
 
 private:
-	bool m_gameActive;
+	bool m_gameActive{false};        //!< Is the game currently active or not.
 	unsigned m_consecutivePasses{0}; //!< Two consequtive passes ends game.
 
-	GamePosition m_position;
+	GameRules m_rules;       //!< The rules we use for our current game.
+	GamePosition m_position; //!< Stores the current game position.
 	EventQueue m_eventQueue; //!< Queue of internal game events we have to handle.
 	EventHub m_eventHub;     //!< Hub to signal updates of the game state to external components.
 
-	std::unordered_set<uint64_t> m_seenHashes; //!< History of board states.
-	std::unique_ptr<IZobristHash> m_hasher;    //!< Store the last 2 moves. Allows to check repeating board state.
+	std::unordered_set<uint64_t> m_seenHashes{};     //!< History of board states.
+	std::unique_ptr<IZobristHash> m_hasher{nullptr}; //!< Store the last 2 moves. Allows to check repeating board state.
 };
 
 } // namespace tengen

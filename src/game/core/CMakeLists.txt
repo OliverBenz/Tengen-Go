@@ -5,8 +5,9 @@ set(targetName gameCore)
 # Get files to build
 set(headers
     "${CMAKE_CURRENT_LIST_DIR}/include/core/game.hpp"
-    "${CMAKE_CURRENT_LIST_DIR}/include/core/position.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/include/core/gameEvent.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/include/core/gameRules.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/include/core/position.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/include/core/IGameStateListener.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/include/core/IGameSignalListener.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/include/core/SafeQueue.hpp"
@@ -19,6 +20,7 @@ set(headers
 set(sources
     "${CMAKE_CURRENT_LIST_DIR}/position.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/game.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/gameRules.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/sgfHandler.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/moveChecker.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/eventHub.cpp"
