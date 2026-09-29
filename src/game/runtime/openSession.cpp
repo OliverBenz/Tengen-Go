@@ -1,7 +1,7 @@
 #include "tengen/openSession.hpp"
 
 #include "core/gameEvent.hpp"
-#include "core/gameRules.hpp"
+#include "model/gameRules.hpp"
 
 namespace tengen::app {
 

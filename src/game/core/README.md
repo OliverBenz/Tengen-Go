@@ -12,7 +12,6 @@ Rules engine for Go. For the conceptual picture, see [docs/Core.md](../../../doc
 
 - `game.*` — event loop and orchestration.
 - `gameState.*` — rules state of one game: position, turn order, ko history, game end.
-- `gameRules.*` — rule presets and options.
 - `moveChecker.*` — legality, captures, liberties.
 - `position.*` — `GamePosition`.
 - `eventHub.*`, `IGameSignalListener.hpp`, `IGameStateListener.hpp` — the notification system.

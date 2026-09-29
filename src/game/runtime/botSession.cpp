@@ -1,8 +1,8 @@
 #include "tengen/botSession.hpp"
 
 #include "core/gameEvent.hpp"
-#include "core/gameRules.hpp"
 #include "logging.hpp"
+#include "model/gameRules.hpp"
 
 #include <cassert>
 

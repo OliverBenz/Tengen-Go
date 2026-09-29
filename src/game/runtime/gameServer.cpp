@@ -1,8 +1,8 @@
 #include "tengen/gameServer.hpp"
 
 #include "core/game.hpp"
-#include "core/gameRules.hpp"
 #include "logging.hpp"
+#include "model/gameRules.hpp"
 
 #include <cassert>
 #include <format>

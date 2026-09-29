@@ -3,8 +3,8 @@
 #include "core/SafeQueue.hpp"
 #include "core/eventHub.hpp"
 #include "core/gameEvent.hpp"
-#include "core/gameRules.hpp"
 #include "core/gameState.hpp"
+#include "model/gameRules.hpp"
 
 namespace tengen {
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/gameRules.hpp"
+#include "model/gameRules.hpp"
 
 #include <QWidget>
 
