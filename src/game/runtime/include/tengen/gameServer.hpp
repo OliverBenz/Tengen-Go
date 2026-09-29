@@ -2,6 +2,7 @@
 
 #include "core/IGameStateListener.hpp"
 #include "core/game.hpp"
+#include "model/gameRules.hpp"
 #include "model/player.hpp"
 #include "network/server.hpp"
 
@@ -15,7 +16,7 @@ namespace app {
 
 class GameServer : public network::IServerHandler, public IGameStateListener {
 public:
-	explicit GameServer(std::size_t boardSize = 9u);
+	GameServer(std::size_t boardSize, const GameRules& rules);
 	~GameServer();
 
 	void start(); //!< Boot the network listener and the server event loop.

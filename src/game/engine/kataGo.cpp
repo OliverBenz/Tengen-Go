@@ -21,7 +21,8 @@ KataGo::KataGo(KataGoConfig config)
     : m_config(std::move(config)) {
 }
 
-void KataGo::start(const unsigned boardSize, const tengen::Player botColour) {
+// TODO: Forward the ko, scoring and suicide rules. So far only the komi is used.
+void KataGo::start(const unsigned boardSize, const GameRules& rules, const tengen::Player botColour) {
 	const Skill rank = std::clamp(m_config.rank, KataGoConfig::weakestRank, KataGoConfig::strongestRank);
 
 	const std::string executable = m_config.files.executable.string();
@@ -44,7 +45,7 @@ void KataGo::start(const unsigned boardSize, const tengen::Player botColour) {
 	        },
 	        .requiredFiles = {executable, model, humanModel, gtpConfig},
 	        .logFile       = "katago.log"},
-	       boardSize, botColour);
+	       boardSize, rules, botColour);
 }
 
 } // namespace tengen::engine

@@ -69,7 +69,7 @@ void NetworkSession::connect(const std::string& hostIp) {
 	m_eventHub.signal(AS_StateChange);
 }
 
-void NetworkSession::host(unsigned boardSize) {
+void NetworkSession::host(unsigned boardSize, const GameRules& rules) {
 	disconnect();
 
 	{
@@ -81,7 +81,7 @@ void NetworkSession::host(unsigned boardSize) {
 		m_pendingChat.clear();
 	}
 
-	m_localServer = std::make_unique<GameServer>(boardSize);
+	m_localServer = std::make_unique<GameServer>(boardSize, rules);
 	m_localServer->start();
 	m_network.connect("127.0.0.1");
 

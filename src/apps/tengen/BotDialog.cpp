@@ -4,6 +4,7 @@
 #include "GnuGoConfigWidget.hpp"
 #include "KataGoConfigWidget.hpp"
 #include "Logging.hpp"
+#include "RulesConfigWidget.hpp"
 #include "model/player.hpp"
 
 #include <QComboBox>
@@ -49,12 +50,15 @@ BotDialog::BotDialog(const engine::InstalledEngines& engines, QWidget* parent)
 	m_colour->addItem("White", static_cast<int>(Player::White));
 	m_colour->setCurrentIndex(0);
 
+	m_rules = new RulesConfigWidget(this);
+
 	// Every engine counts its strength its own way. Its config widget shows which, so the row only says what it sets.
 	auto* form = new QFormLayout();
 	form->addRow(tr("Engine:"), m_engineCombo);
 	form->addRow(tr("Strength:"), m_engineConfigs);
 	form->addRow(tr("Board size:"), m_boardSize);
 	form->addRow(tr("Your color:"), m_colour);
+	form->addRow(tr("Rules:"), m_rules); // Last, so the custom rules unfold below everything else.
 
 	// Without an engine there is nothing to play against.
 	const bool anyInstalled = engines.gnuGo || engines.kataGo;
@@ -68,6 +72,7 @@ BotDialog::BotDialog(const engine::InstalledEngines& engines, QWidget* parent)
 	connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
 	auto* layout = new QVBoxLayout(this);
+	layout->setSizeConstraint(QLayout::SetFixedSize); // Shrink back once the custom rules hide again.
 	layout->addLayout(form);
 	layout->addWidget(noEngine);
 	layout->addWidget(buttons);
@@ -75,6 +80,10 @@ BotDialog::BotDialog(const engine::InstalledEngines& engines, QWidget* parent)
 
 unsigned BotDialog::boardSize() const {
 	return m_boardSize->boardSize();
+}
+
+GameRules BotDialog::rules() const {
+	return m_rules->rules();
 }
 
 engine::EngineConfig BotDialog::engineConfig() const {

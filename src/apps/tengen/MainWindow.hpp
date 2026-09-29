@@ -27,9 +27,9 @@ public:
 signals:
 	void gameLocalRequested(unsigned boardSize, const GameRules& rules);
 	void botDialogRequested(); //!< The user wants a bot game. Answer with openBotDialog().
-	void gameBotRequested(unsigned boardSize, const engine::EngineConfig& engineConfig, bool humanPlaysBlack);
+	void gameBotRequested(unsigned boardSize, const GameRules& rules, const engine::EngineConfig& engineConfig, bool humanPlaysBlack);
 	void connectRequested(const QString& hostIp);
-	void hostRequested(unsigned boardSize);
+	void hostRequested(unsigned boardSize, const GameRules& rules);
 	void shutdownRequested();
 
 private:
