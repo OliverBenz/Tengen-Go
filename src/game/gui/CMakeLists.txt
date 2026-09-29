@@ -6,6 +6,7 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets)
 
 # Get files to build
 set(headers
+	"${CMAKE_CURRENT_LIST_DIR}/include/gui/boardTextures.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/gui/boardWidget.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/gui/chatWidget.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/gui/gameWidget.hpp"
@@ -13,6 +14,7 @@ set(headers
 )
 
 set(sources
+	"${CMAKE_CURRENT_LIST_DIR}/boardTextures.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/boardWidget.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/chatWidget.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/gameWidget.cpp"

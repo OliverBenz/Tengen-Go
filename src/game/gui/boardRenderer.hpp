@@ -21,6 +21,9 @@ public:
 	unsigned nodes() const;
 	void setNodes(unsigned nodes);
 	void setBoardSizePx(unsigned boardSizePx);
+	unsigned boardSizePx() const; //!< Drawn board size [px]. Can be smaller than requested, as it is snapped to a multiple of the nodes.
+	//! Draw the board on an image. An empty path or unreadable image draws the plain board colour instead.
+	void setBackgroundTexture(const QString& path);
 	void draw(QPainter& painter, const Board& board, const Ghost& ghost) const;
 	QRect stoneRect(Coord coord) const;
 	bool isReady() const;
@@ -42,6 +45,7 @@ private:
 	bool pixelToCoord(int px, unsigned& coord) const;
 	void updateMetrics(unsigned boardSizePx);
 	void updateStoneTextures();
+	void updateBackgroundTexture();
 
 private:
 	unsigned m_boardSize            = 0; //!< Pixels for the whole board (without coordinate text).
@@ -56,6 +60,8 @@ private:
 	QImage m_textureWhite;
 	QImage m_scaledBlack;
 	QImage m_scaledWhite;
+	QImage m_textureBackground; //!< Square crop of the background image. Null draws the plain colour.
+	QImage m_scaledBackground;
 	bool m_ready = false; //!< Textures have been loaded.
 };
 
