@@ -5,6 +5,7 @@
 #include "ConnectDialog.hpp"
 #include "HelpDialog.hpp"
 #include "HostDialog.hpp"
+#include "LocalGameDialog.hpp"
 #include "gui/gameWidget.hpp"
 
 #include <QMenuBar>
@@ -39,8 +40,8 @@ void MainWindow::buildLayout() {
 	game->addAction(actNewBotGame);
 	game->addAction(actSaveGame);
 	game->addAction(actLoadGame);
-	connect(actNewLocalGame, &QAction::triggered, this, &MainWindow::gameLocalRequested); // Signal to signal connection
-	connect(actNewBotGame, &QAction::triggered, this, &MainWindow::botDialogRequested);   // The presenter looks for the engines first.
+	connect(actNewLocalGame, &QAction::triggered, this, &MainWindow::openLocalGameDialog);
+	connect(actNewBotGame, &QAction::triggered, this, &MainWindow::botDialogRequested); // The presenter looks for the engines first.
 
 	auto* network            = menuBar()->addMenu(tr("&Network"));
 	auto* actConnectToServer = new QAction("&Connect to Server", this);
@@ -73,6 +74,14 @@ void MainWindow::buildLayout() {
 
 	m_gameWidget = new GameWidget();
 	setCentralWidget(m_gameWidget);
+}
+
+void MainWindow::openLocalGameDialog() {
+	LocalGameDialog dialog(this);
+
+	if (dialog.exec() == QDialog::Accepted) {
+		emit gameLocalRequested(dialog.boardSize(), dialog.rules());
+	}
 }
 
 void MainWindow::openConnectDialog() {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/gameRules.hpp"
 #include "engine/engineCatalog.hpp"
 
 #include <QCloseEvent>
@@ -24,7 +25,7 @@ public:
 	void openBotDialog(const engine::InstalledEngines& engines);
 
 signals:
-	void gameLocalRequested();
+	void gameLocalRequested(unsigned boardSize, const GameRules& rules);
 	void botDialogRequested(); //!< The user wants a bot game. Answer with openBotDialog().
 	void gameBotRequested(unsigned boardSize, const engine::EngineConfig& engineConfig, bool humanPlaysBlack);
 	void connectRequested(const QString& hostIp);
@@ -36,6 +37,7 @@ private:
 	void buildLayout();
 
 private:
+	void openLocalGameDialog();
 	void openConnectDialog();
 	void openHostDialog();
 	void openHelp(HelpPage page);

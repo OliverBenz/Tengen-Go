@@ -5,8 +5,8 @@
 
 namespace tengen::app {
 
-OpenSession::OpenSession(const std::size_t boardSize)
-    : m_game(boardSize, fromRuleSet(RuleSet::Japanese)) {
+OpenSession::OpenSession(const std::size_t boardSize, const GameRules& rules)
+    : m_game(boardSize, rules) {
 	m_position.init(boardSize);
 	m_game.subscribeState(this);
 	m_gameThread = std::thread([this] { m_game.run(); });
