@@ -2,8 +2,8 @@
 
 #include "GamePresenter.hpp"
 #include "MainWindow.hpp"
-#include "core/gameRules.hpp"
 #include "engine/engineCatalog.hpp"
+#include "model/gameRules.hpp"
 #include "tengen/IGameSession.hpp"
 
 #include <QObject>

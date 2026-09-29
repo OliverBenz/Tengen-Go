@@ -8,9 +8,11 @@ set(headers
     "${CMAKE_CURRENT_LIST_DIR}/include/model/coordinate.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/include/model/board.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/include/model/gameStatus.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/include/model/gameRules.hpp"
 )
 set(sources
     "${CMAKE_CURRENT_LIST_DIR}/board.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/gameRules.cpp"
 )
 
 # Create target

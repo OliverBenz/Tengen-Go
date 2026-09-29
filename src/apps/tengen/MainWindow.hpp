@@ -1,7 +1,7 @@
 #pragma once
 
-#include "core/gameRules.hpp"
 #include "engine/engineCatalog.hpp"
+#include "model/gameRules.hpp"
 
 #include <QCloseEvent>
 #include <QMainWindow>

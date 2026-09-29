@@ -1,4 +1,4 @@
-#include "core/gameRules.hpp"
+#include "model/gameRules.hpp"
 
 #include <cassert>
 

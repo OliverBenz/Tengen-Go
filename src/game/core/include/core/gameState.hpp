@@ -1,9 +1,9 @@
 #pragma once
 
 #include "core/IZobristHash.hpp"
-#include "core/gameRules.hpp"
 #include "core/position.hpp"
 #include "model/coordinate.hpp"
+#include "model/gameRules.hpp"
 #include "model/player.hpp"
 
 #include <memory>

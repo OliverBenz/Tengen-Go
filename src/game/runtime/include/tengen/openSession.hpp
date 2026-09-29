@@ -2,7 +2,7 @@
 
 #include "core/IGameStateListener.hpp"
 #include "core/game.hpp"
-#include "core/gameRules.hpp"
+#include "model/gameRules.hpp"
 #include "tengen/IGameSession.hpp"
 #include "tengen/eventHub.hpp"
 #include "tengen/position.hpp"
