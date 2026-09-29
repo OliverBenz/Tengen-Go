@@ -159,3 +159,5 @@ KataGo imitates a human of the rank you pick in the bot dialog, from 20k to 3d.
 Licensed under the GNU Affero General Public License v3.0 (AGPL-3.0-or-later). See `LICENSE`.
 
 Copyright (C) 2024 Oliver Benz.
+
+Third-party assets (stone images, board textures) keep their own licenses, listed in [src/game/gui/resources](src/game/gui/resources/README.md).
