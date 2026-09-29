@@ -21,9 +21,9 @@ public:
 private slots:
 	void onNewLocalGameRequested(unsigned boardSize, const GameRules& rules);
 	void onBotDialogRequested();
-	void onNewBotGameRequested(unsigned boardSize, const engine::EngineConfig& engineConfig, bool humanPlaysBlack);
+	void onNewBotGameRequested(unsigned boardSize, const GameRules& rules, const engine::EngineConfig& engineConfig, bool humanPlaysBlack);
 	void onConnectRequested(const QString& hostIp);
-	void onHostRequested(const unsigned boardSize);
+	void onHostRequested(unsigned boardSize, const GameRules& rules);
 	void onShutdownRequested();
 
 private:

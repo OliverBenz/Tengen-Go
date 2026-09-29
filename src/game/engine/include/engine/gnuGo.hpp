@@ -10,7 +10,7 @@ class GnuGo : public GtpEngine {
 public:
 	explicit GnuGo(GnuGoConfig config);
 
-	void start(unsigned boardSize, tengen::Player botColour) override;
+	void start(unsigned boardSize, const GameRules& rules, tengen::Player botColour) override;
 
 private:
 	GnuGoConfig m_config; //!< Where the engine relevant files physically lie and how the engine should play.

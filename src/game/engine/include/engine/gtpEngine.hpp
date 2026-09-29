@@ -2,6 +2,7 @@
 
 #include "engine/IEngineListener.hpp"
 #include "model/coordinate.hpp"
+#include "model/gameRules.hpp"
 #include "model/player.hpp"
 
 #include <memory>
@@ -27,7 +28,8 @@ public:
 	bool registerListener(IEngineListener* listener);
 
 	//! Bring the engine up and set the game up. Answers with EngineListener.
-	virtual void start(unsigned boardSize, tengen::Player botColour) = 0;
+	//! Every engine takes the rules its own way, so each one picks out of them what it can follow.
+	virtual void start(unsigned boardSize, const GameRules& rules, tengen::Player botColour) = 0;
 
 	//! No listener callbacks once this returns.
 	//! \note Never call from a callback.
@@ -51,7 +53,7 @@ protected:
 		std::string logFile;                    //!< Takes over the engine's stderr.
 	};
 
-	void launch(Launch command, unsigned boardSize, tengen::Player botColour); //!< What every start() comes down to.
+	void launch(Launch command, unsigned boardSize, const GameRules& rules, tengen::Player botColour); //!< What every start() comes down to.
 
 private:
 	class Implementation;

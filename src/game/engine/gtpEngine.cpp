@@ -21,7 +21,7 @@ public:
 
 	bool registerListener(IEngineListener* listener);
 
-	void start(Launch command, unsigned boardSize, tengen::Player botColour);
+	void start(Launch command, unsigned boardSize, const GameRules& rules, tengen::Player botColour);
 	void stop();
 	bool isRunning() const;
 
@@ -46,6 +46,7 @@ private:
 	IEngineListener* m_listener{nullptr};
 	tengen::Player m_botColour{tengen::Player::Black}; //!< The player takes the other one.
 	unsigned m_boardSize{9u};
+	GameRules m_rules{fromRuleSet(RuleSet::Japanese)};
 
 	std::atomic<bool> m_running{false}; //!< Engine thread running.
 	std::thread m_engineThread;
@@ -62,9 +63,10 @@ bool GtpEngine::Implementation::registerListener(IEngineListener* listener) {
 	return true;
 }
 
-void GtpEngine::Implementation::start(Launch command, const unsigned boardSize, const tengen::Player botColour) {
+void GtpEngine::Implementation::start(Launch command, const unsigned boardSize, const GameRules& rules, const tengen::Player botColour) {
 	assert(!m_running); // Starting twice would strand the engine that is already up.
 	m_boardSize = boardSize;
+	m_rules     = rules;
 	m_botColour = botColour;
 
 	// Bringing an engine up can cost seconds, so it is a request like any other.
@@ -197,8 +199,8 @@ bool GtpEngine::Implementation::setupGame() {
 	bool success = true;
 	success &= sendCommand(gtp::boardSize(m_boardSize), response);
 	success &= sendCommand(gtp::clearBoard(), response);
-	success &= sendCommand(gtp::komi(7.5f), response);
-	return success; // TODO: Take the komi from the game configuration.
+	success &= sendCommand(gtp::komi(m_rules.komi), response); // The only rule GTP itself knows. The engines take the rest their own way.
+	return success;
 }
 
 bool GtpEngine::Implementation::sendCommand(const std::string& command, std::string& response) {
@@ -249,8 +251,8 @@ void GtpEngine::genmove() {
 	m_pimpl->genmove();
 }
 
-void GtpEngine::launch(Launch command, const unsigned boardSize, const tengen::Player botColour) {
-	m_pimpl->start(std::move(command), boardSize, botColour);
+void GtpEngine::launch(Launch command, const unsigned boardSize, const GameRules& rules, const tengen::Player botColour) {
+	m_pimpl->start(std::move(command), boardSize, rules, botColour);
 }
 
 } // namespace tengen::engine

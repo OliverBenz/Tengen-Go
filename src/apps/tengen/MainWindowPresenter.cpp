@@ -50,10 +50,10 @@ void MainWindowPresenter::onBotDialogRequested() {
 	m_mainWindow.openBotDialog(engine::findEngines(rootPaths));
 }
 
-void MainWindowPresenter::onNewBotGameRequested(unsigned boardSize, const engine::EngineConfig& engineConfig, bool humanPlaysBlack) {
+void MainWindowPresenter::onNewBotGameRequested(unsigned boardSize, const GameRules& rules, const engine::EngineConfig& engineConfig, bool humanPlaysBlack) {
 	onShutdownRequested();
 
-	m_gameSession   = std::make_unique<app::BotSession>(boardSize, engine::makeEngine(engineConfig), humanPlaysBlack);
+	m_gameSession   = std::make_unique<app::BotSession>(boardSize, rules, engine::makeEngine(engineConfig), humanPlaysBlack);
 	m_gamePresenter = std::make_unique<GamePresenter>(*m_gameSession, m_mainWindow.gameWidget());
 }
 
@@ -70,11 +70,11 @@ void MainWindowPresenter::onConnectRequested(const QString& hostIp) {
 	m_gameSession = std::move(session);
 }
 
-void MainWindowPresenter::onHostRequested(const unsigned boardSize) {
+void MainWindowPresenter::onHostRequested(const unsigned boardSize, const GameRules& rules) {
 	onShutdownRequested();
 
 	auto session = std::make_unique<app::NetworkSession>();
-	session->host(boardSize);
+	session->host(boardSize, rules);
 
 	auto& game      = static_cast<app::IGameSession&>(*session);
 	auto& chat      = static_cast<app::IChatSession&>(*session);
