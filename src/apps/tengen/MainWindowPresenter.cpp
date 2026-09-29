@@ -24,19 +24,19 @@ MainWindowPresenter::MainWindowPresenter(gui::MainWindow& mainWindow)
 	QObject::connect(&m_mainWindow, &gui::MainWindow::hostRequested, this, &MainWindowPresenter::onHostRequested);
 	QObject::connect(&m_mainWindow, &gui::MainWindow::shutdownRequested, this, &MainWindowPresenter::onShutdownRequested);
 
-	startOpenPlay();
+	startOpenPlay(9u, fromRuleSet(RuleSet::Japanese));
 }
 
 MainWindowPresenter::~MainWindowPresenter() = default;
 
-void MainWindowPresenter::startOpenPlay() {
-	m_gameSession   = std::make_unique<app::OpenSession>(9u);
+void MainWindowPresenter::startOpenPlay(const unsigned boardSize, const GameRules& rules) {
+	m_gameSession   = std::make_unique<app::OpenSession>(boardSize, rules);
 	m_gamePresenter = std::make_unique<GamePresenter>(*m_gameSession, m_mainWindow.gameWidget());
 }
 
-void MainWindowPresenter::onNewLocalGameRequested() {
+void MainWindowPresenter::onNewLocalGameRequested(const unsigned boardSize, const GameRules& rules) {
 	onShutdownRequested();
-	startOpenPlay();
+	startOpenPlay(boardSize, rules);
 }
 
 void MainWindowPresenter::onBotDialogRequested() {

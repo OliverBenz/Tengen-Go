@@ -2,6 +2,7 @@
 
 #include "GamePresenter.hpp"
 #include "MainWindow.hpp"
+#include "core/gameRules.hpp"
 #include "engine/engineCatalog.hpp"
 #include "tengen/IGameSession.hpp"
 
@@ -18,7 +19,7 @@ public:
 	~MainWindowPresenter() override;
 
 private slots:
-	void onNewLocalGameRequested();
+	void onNewLocalGameRequested(unsigned boardSize, const GameRules& rules);
 	void onBotDialogRequested();
 	void onNewBotGameRequested(unsigned boardSize, const engine::EngineConfig& engineConfig, bool humanPlaysBlack);
 	void onConnectRequested(const QString& hostIp);
@@ -26,7 +27,7 @@ private slots:
 	void onShutdownRequested();
 
 private:
-	void startOpenPlay();
+	void startOpenPlay(unsigned boardSize, const GameRules& rules);
 
 private:
 	gui::MainWindow& m_mainWindow;                             //!< The main window.
