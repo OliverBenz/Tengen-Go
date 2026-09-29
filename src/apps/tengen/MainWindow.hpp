@@ -40,6 +40,7 @@ private:
 	void openLocalGameDialog();
 	void openConnectDialog();
 	void openHostDialog();
+	void openSettingsStyle();
 	void openHelp(HelpPage page);
 	void openAbout();
 

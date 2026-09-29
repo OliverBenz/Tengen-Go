@@ -1,6 +1,7 @@
 #include "MainWindow.hpp"
 
 #include "AboutDialog.hpp"
+#include "BoardStyleDialog.hpp"
 #include "BotDialog.hpp"
 #include "ConnectDialog.hpp"
 #include "HelpDialog.hpp"
@@ -61,6 +62,11 @@ void MainWindow::buildLayout() {
 	tools->addAction(actStartCameraDetection);
 	tools->addAction(actCalibrateDetection);
 
+	auto* settings = menuBar()->addMenu(tr("&Settings"));
+	auto* actStyle = new QAction("&Style", this);
+	settings->addAction(actStyle);
+	connect(actStyle, &QAction::triggered, this, &MainWindow::openSettingsStyle);
+
 	auto* help      = menuBar()->addMenu(tr("&Help"));
 	auto* actRules  = new QAction("&Rules", this);
 	auto* actEngine = new QAction("&Engine", this);
@@ -105,6 +111,15 @@ void MainWindow::openHostDialog() {
 
 	if (dialog.exec() == QDialog::Accepted) {
 		emit hostRequested(dialog.boardSize(), dialog.rules());
+	}
+}
+
+void MainWindow::openSettingsStyle() {
+	auto& board = m_gameWidget->boardWidget();
+	BoardStyleDialog dialog(board.backgroundTexture(), this);
+
+	if (dialog.exec() == QDialog::Accepted) {
+		board.setBackgroundTexture(dialog.texturePath());
 	}
 }
 
