@@ -1,7 +1,6 @@
 #include "gui/boardWidget.hpp"
 
 #include "boardRenderer.hpp"
-#include "gui/boardTextures.hpp"
 
 #include <QKeyEvent>
 #include <QMouseEvent>
@@ -171,16 +170,40 @@ void BoardWidget::renderBoard() {
 		m_boardRenderer->setNodes(boardSize);
 		m_boardRenderer->setBoardSizePx(size);
 	}
+	// The board lies on the window like an object: window colour around it and a soft shadow below.
+	const auto boardPx = static_cast<int>(m_boardRenderer->boardSizePx());
+	const QRect boardRect{boardOffset(), QSize{boardPx, boardPx}};
+
 	QPainter painter(this);
-	painter.fillRect(rect(), PLAIN_BOARD_COLOUR);
+	painter.fillRect(rect(), palette().window());
+	drawShadow(painter, boardRect);
+
 	painter.save();
-	painter.translate(boardOffset()); // Center in drawing area
+	painter.translate(boardRect.topLeft());
 	m_boardRenderer->draw(painter, m_board, {m_ghostStone, m_currentPlayer, m_ghostStoneDraw});
+	painter.restore();
+
+	painter.setPen(QColor(0, 0, 0, 60)); // Thin edge so light boards stand out on light themes.
+	painter.drawRect(boardRect.adjusted(0, 0, -1, -1));
+}
+
+void BoardWidget::drawShadow(QPainter& painter, const QRect& boardRect) const {
+	static constexpr int LAYERS = 10;     //!< Blur width [px]. Each layer adds a little darkness.
+	static constexpr QPoint OFFSET{2, 4}; //!< Light comes from the top left.
+	static const QColor layerColour{0, 0, 0, 7};
+
+	painter.save();
+	painter.setRenderHint(QPainter::Antialiasing, true);
+	painter.setPen(Qt::NoPen);
+	painter.setBrush(layerColour);
+	for (int i = LAYERS; i > 0; --i) {
+		painter.drawRoundedRect(QRectF(boardRect.translated(OFFSET)).adjusted(-i, -i, i, i), i, i);
+	}
 	painter.restore();
 }
 
 unsigned BoardWidget::boardPixelSize() const {
-	const auto side = std::min(width(), height());
+	const auto side = std::min(width(), height()) - 2 * BOARD_MARGIN;
 	return static_cast<unsigned>(std::max(side, 0));
 }
 
