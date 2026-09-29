@@ -52,11 +52,14 @@ private:
 	void handleClick(const QPoint& pos); //!< Resolve click position to board coordinate and emit an event if valid.
 	QRect stoneRect(Coord coord) const;  //!< Get the rectangle around a stone at given coordinates.
 	void renderBoard();
+	void drawShadow(QPainter& painter, const QRect& boardRect) const; //!< Soft shadow below the board.
 
 	unsigned boardPixelSize() const; //!< Space available for the board in pixels.
 	QPoint boardOffset() const;      //!< Offset of the drawn board's top left corner that centers it in the widget.
 
 private:
+	static constexpr int BOARD_MARGIN = 14; //!< Space around the board for its shadow [px].
+
 	Board m_board;
 	Board::Stone m_currentPlayer{Board::Stone::Black};
 	std::unique_ptr<BoardRenderer> m_boardRenderer;
