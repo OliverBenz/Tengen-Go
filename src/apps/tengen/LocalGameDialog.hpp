@@ -4,10 +4,9 @@
 
 #include <QDialog>
 
-class QComboBox;
-
 namespace tengen::gui {
 
+class BoardSizeWidget;
 class RulesConfigWidget;
 
 class LocalGameDialog : public QDialog {
@@ -20,8 +19,8 @@ public:
 	GameRules rules() const; //!< The rules the game is played under.
 
 private:
-	QComboBox* m_boardSize{nullptr};     //!< Selector for the board size.
-	RulesConfigWidget* m_rules{nullptr}; //!< Selector for the rules.
+	BoardSizeWidget* m_boardSize{nullptr}; //!< Selector for the board size.
+	RulesConfigWidget* m_rules{nullptr};   //!< Selector for the rules.
 };
 
 } // namespace tengen::gui
