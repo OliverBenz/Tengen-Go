@@ -156,7 +156,8 @@ void BoardRenderer::drawStarPoints(QPainter& painter) const {
 	const unsigned inset  = m_nodes >= 13u ? 3u : 2u;
 	const unsigned center = m_nodes / 2u;
 	const std::array<unsigned, 3> points{inset, center, m_nodes - 1u - inset};
-	const qreal radius = std::max(1.5 * LINE_WIDTH, m_stoneSize / 10.0); // Must stay wider than the lines to be visible.
+	const qreal stoneRatio = m_nodes >= 13u ? 8.0 : 10.0;                          // Large cells on small boards need relatively smaller points.
+	const qreal radius     = std::max(1.5 * LINE_WIDTH, m_stoneSize / stoneRatio); // Must stay wider than the lines to be visible.
 
 	painter.setBrush(Qt::black);
 	painter.setPen(Qt::NoPen);
