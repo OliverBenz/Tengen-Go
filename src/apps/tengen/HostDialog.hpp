@@ -2,9 +2,9 @@
 
 #include <QDialog>
 
-class QPushButton;
-
 namespace tengen::gui {
+
+class BoardSizeWidget;
 
 class HostDialog : public QDialog {
 	Q_OBJECT
@@ -15,9 +15,7 @@ public:
 	unsigned boardSize() const;
 
 private:
-	QPushButton* m_btn9;
-	QPushButton* m_btn13;
-	QPushButton* m_btn19;
+	BoardSizeWidget* m_boardSize{nullptr}; //!< Selector for the board size.
 };
 
 } // namespace tengen::gui

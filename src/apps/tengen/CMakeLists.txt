@@ -10,6 +10,7 @@ add_executable(${targetName}
     "${CMAKE_CURRENT_LIST_DIR}/MainWindowPresenter.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/GamePresenter.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/BoardPresenter.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/BoardSizeWidget.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/LocalGameDialog.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/RulesConfigWidget.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/BotDialog.cpp"

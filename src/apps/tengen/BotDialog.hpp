@@ -9,6 +9,7 @@ class QStackedWidget;
 
 namespace tengen::gui {
 
+class BoardSizeWidget;
 class GnuGoConfigWidget;
 class KataGoConfigWidget;
 
@@ -34,8 +35,8 @@ private:
 	GnuGoConfigWidget* m_gnuGo{nullptr};      //!< Configuration for the GnuGo engine.
 	KataGoConfigWidget* m_kataGo{nullptr};    //!< Configuration for the KataGo engine.
 
-	QComboBox* m_boardSize{nullptr}; //!< Slector for the board size.
-	QComboBox* m_colour{nullptr};    //!< Selector for which colour stones the player uses.
+	BoardSizeWidget* m_boardSize{nullptr}; //!< Selector for the board size.
+	QComboBox* m_colour{nullptr};          //!< Selector for which colour stones the player uses.
 };
 
 } // namespace tengen::gui
