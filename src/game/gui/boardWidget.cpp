@@ -1,8 +1,8 @@
 #include "gui/boardWidget.hpp"
 
 #include "boardRenderer.hpp"
+#include "gui/boardTextures.hpp"
 
-#include <QColor>
 #include <QKeyEvent>
 #include <QMouseEvent>
 #include <QPainter>
@@ -60,6 +60,16 @@ void BoardWidget::setCurrentPlayer(const Player player) {
 	}
 }
 
+const QString& BoardWidget::backgroundTexture() const {
+	return m_backgroundTexture;
+}
+
+void BoardWidget::setBackgroundTexture(const QString& path) {
+	m_backgroundTexture = path;
+	m_boardRenderer->setBackgroundTexture(path);
+	update();
+}
+
 void BoardWidget::resizeEvent(QResizeEvent* event) {
 	QWidget::resizeEvent(event);
 
@@ -78,8 +88,8 @@ void BoardWidget::mouseReleaseEvent(QMouseEvent* event) {
 }
 
 void BoardWidget::mouseMoveEvent(QMouseEvent* event) {
-	const auto sizePx = boardPixelSize();
-	const auto local  = event->pos() - boardOffset(sizePx);
+	const auto sizePx = m_boardRenderer->boardSizePx();
+	const auto local  = event->pos() - boardOffset();
 
 	Coord newGhost{};
 	// Ghost is valid when 1) mouse in board area 2) Mouse maps to a valid coordinate.
@@ -123,8 +133,8 @@ void BoardWidget::keyReleaseEvent(QKeyEvent* event) {
 }
 
 void BoardWidget::handleClick(const QPoint& pos) {
-	const auto sizePx = boardPixelSize();
-	const auto local  = pos - boardOffset(sizePx);
+	const auto sizePx = m_boardRenderer->boardSizePx();
+	const auto local  = pos - boardOffset();
 	if (sizePx == 0u) {
 		return;
 	}
@@ -142,7 +152,7 @@ void BoardWidget::handleClick(const QPoint& pos) {
 }
 
 QRect BoardWidget::stoneRect(const Coord coord) const {
-	return m_boardRenderer->stoneRect(coord).translated(boardOffset(boardPixelSize()));
+	return m_boardRenderer->stoneRect(coord).translated(boardOffset());
 }
 
 void BoardWidget::paintEvent(QPaintEvent* event) {
@@ -156,16 +166,15 @@ void BoardWidget::renderBoard() {
 		return;
 	}
 
-	const auto offset    = boardOffset(size);
 	const auto boardSize = static_cast<unsigned>(m_board.size());
 	if (m_boardRenderer->nodes() != boardSize) {
 		m_boardRenderer->setNodes(boardSize);
 		m_boardRenderer->setBoardSizePx(size);
 	}
 	QPainter painter(this);
-	painter.fillRect(rect(), QColor(220, 179, 92));
+	painter.fillRect(rect(), PLAIN_BOARD_COLOUR);
 	painter.save();
-	painter.translate(offset); // Center in drawing area
+	painter.translate(boardOffset()); // Center in drawing area
 	m_boardRenderer->draw(painter, m_board, {m_ghostStone, m_currentPlayer, m_ghostStoneDraw});
 	painter.restore();
 }
@@ -175,9 +184,10 @@ unsigned BoardWidget::boardPixelSize() const {
 	return static_cast<unsigned>(std::max(side, 0));
 }
 
-QPoint BoardWidget::boardOffset(unsigned boardSize) const {
-	const int dx = (width() - static_cast<int>(boardSize)) / 2;
-	const int dy = (height() - static_cast<int>(boardSize)) / 2;
+QPoint BoardWidget::boardOffset() const {
+	const auto boardSize = static_cast<int>(m_boardRenderer->boardSizePx());
+	const int dx         = (width() - boardSize) / 2;
+	const int dy         = (height() - boardSize) / 2;
 	return {dx, dy};
 }
 
