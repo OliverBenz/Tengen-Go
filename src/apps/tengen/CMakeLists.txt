@@ -21,6 +21,7 @@ add_executable(${targetName}
     "${CMAKE_CURRENT_LIST_DIR}/HostDialog.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/HelpDialog.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/AboutDialog.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/BoardStyleDialog.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/Logging.cpp"
 )
 
