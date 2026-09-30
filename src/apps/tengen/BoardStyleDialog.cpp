@@ -6,7 +6,6 @@
 #include <QDialogButtonBox>
 #include <QFileInfo>
 #include <QHBoxLayout>
-#include <QImageReader>
 #include <QListWidget>
 #include <QVBoxLayout>
 
@@ -32,6 +31,7 @@ BoardStyleDialog::BoardStyleDialog(const QString& currentTexture, QWidget* paren
 	m_textures = new QListWidget(this);
 	m_textures->setViewMode(QListView::IconMode);
 	m_textures->setIconSize({PREVIEW_SIZE, PREVIEW_SIZE});
+	m_textures->setGridSize({PREVIEW_SIZE + 40, PREVIEW_SIZE + 2 * fontMetrics().height() + 10}); // Same cell for all: room for two lines of name.
 	m_textures->setFlow(QListView::TopToBottom);
 	m_textures->setWrapping(false);
 	m_textures->setMovement(QListView::Static);
@@ -60,17 +60,20 @@ QString BoardStyleDialog::texturePath() const {
 }
 
 void BoardStyleDialog::addTexturePreviews() {
-	QPixmap plain(PREVIEW_SIZE, PREVIEW_SIZE);
+	const qreal ratio = devicePixelRatioF();
+	const int side    = qRound(PREVIEW_SIZE * ratio); // Physical pixels, so previews stay sharp on scaled displays.
+
+	QPixmap plain(side, side);
 	plain.fill(PLAIN_BOARD_COLOUR);
+	plain.setDevicePixelRatio(ratio);
 	new QListWidgetItem(untintedIcon(plain), tr("Plain"), m_textures); // Empty path: no texture.
 
 	for (const auto& path: boardTexturePaths()) {
-		QImageReader reader(path);
-		reader.setAutoTransform(true);
-		const QImage preview = reader.read().scaled(PREVIEW_SIZE, PREVIEW_SIZE, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+		QImage preview = loadBoardTexture(path).scaled(side, side, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 		if (preview.isNull()) {
 			continue; // Unreadable file: nothing to preview.
 		}
+		preview.setDevicePixelRatio(ratio);
 
 		auto* item = new QListWidgetItem(untintedIcon(QPixmap::fromImage(preview)), QFileInfo(path).completeBaseName(), m_textures);
 		item->setData(Qt::UserRole, path);
