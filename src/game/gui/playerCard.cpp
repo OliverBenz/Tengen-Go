@@ -56,7 +56,7 @@ void PlayerCard::setPlayer(const Player colour, const QString& name) {
 	m_name->setText(name);
 
 	const qreal ratio = devicePixelRatioF();
-	QPixmap stone     = QPixmap::fromImage(loadStone(colour));
+	QPixmap stone     = QPixmap::fromImage(stoneStyle::loadTexture(colour));
 	if (!stone.isNull()) {
 		stone = stone.scaled(QSize(STONE_SIZE, STONE_SIZE) * ratio, Qt::KeepAspectRatio, Qt::SmoothTransformation);
 		stone.setDevicePixelRatio(ratio);

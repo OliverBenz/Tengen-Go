@@ -58,13 +58,13 @@ void BoardWidget::setCurrentPlayer(const Player player) {
 	}
 }
 
-const QString& BoardWidget::backgroundTexture() const {
+boardStyle::Texture BoardWidget::backgroundTexture() const {
 	return m_backgroundTexture;
 }
 
-void BoardWidget::setBackgroundTexture(const QString& path) {
-	m_backgroundTexture = path;
-	m_boardRenderer->setBackgroundTexture(path);
+void BoardWidget::setBackgroundTexture(const boardStyle::Texture texture) {
+	m_backgroundTexture = texture;
+	m_boardRenderer->setBackgroundTexture(texture);
 	update();
 }
 

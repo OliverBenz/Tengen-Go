@@ -1,8 +1,8 @@
 #pragma once
 
+#include "gui/resources.hpp"
 #include "model/board.hpp"
 
-#include <QString>
 #include <QWidget>
 
 #include <memory>
@@ -35,8 +35,8 @@ public:
 	void setBoard(const Board& board);
 	void setCurrentPlayer(Player player);
 
-	const QString& backgroundTexture() const;
-	void setBackgroundTexture(const QString& path); //!< Image to draw the board on. Empty for the plain board colour.
+	boardStyle::Texture backgroundTexture() const;
+	void setBackgroundTexture(boardStyle::Texture texture); //!< Image to draw the board on.
 
 signals:
 	void boardEvent(const BoardWidgetEvent& event);
@@ -61,7 +61,7 @@ private:
 	Board m_board;
 	Board::Stone m_currentPlayer{Board::Stone::Black};
 	std::unique_ptr<BoardRenderer> m_boardRenderer;
-	QString m_backgroundTexture;
+	boardStyle::Texture m_backgroundTexture{boardStyle::Texture::Plain};
 
 	// Ghost stone: A translucent stone on mouse position to show where the placement is done.
 	Coord m_ghostStone{0u, 0u};

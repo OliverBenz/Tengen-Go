@@ -37,8 +37,9 @@ To change the stone resolution, re-render the SVGs (e.g. with Inkscape) instead 
 
 ## Board textures
 
-Every image in `board_textures/` shows up in **Settings → Style**, listed by its file name without extension.
-Without a selected texture the board is drawn in a plain colour.
+The textures listed in `TEXTURES` in [`resources.cpp`](../resources.cpp) show up in **Settings → Style**, under their display name.
+The code refers to them by the `BoardTexture` enum; that table is the only place that knows their files.
+The plain texture has no file: the board is drawn in a plain colour.
 
 | Texture                      | Source                                    | License                                                   | Format | Modified | Accessed   |
 | ---------------------------- | ----------------------------------------- | --------------------------------------------------------- | ------ | -------- | ---------- |
@@ -58,6 +59,8 @@ Without a selected texture the board is drawn in a plain colour.
 [ambientcg-license]: https://docs.ambientcg.com/license/
 
 ### Adding a texture
+
+- **Register:** Add a value to `BoardTexture` in [`resources.hpp`](../include/gui/resources.hpp) and a row with its display name and file to `TEXTURES` in [`resources.cpp`](../resources.cpp). The row order is the order in the settings.
 
 - **Format:** Any format Qt can read. JPEG keeps photos small; PNG of the same image is several times larger.
 - **Which file:** Texture sites ship PBR sets with several maps. Only the colour map is needed (named _Color_, _Albedo_, _Diffuse_ or _BaseColor_).

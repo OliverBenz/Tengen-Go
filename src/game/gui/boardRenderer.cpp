@@ -15,8 +15,8 @@ static constexpr int LINE_WIDTH = 2; //!< Grid line width [px].
 
 BoardRenderer::BoardRenderer(const unsigned nodes)
     : m_nodes(nodes) {
-	m_textureBlack = loadStone(Player::Black);
-	m_textureWhite = loadStone(Player::White);
+	m_textureBlack = stoneStyle::loadTexture(Player::Black);
+	m_textureWhite = stoneStyle::loadTexture(Player::White);
 	m_ready        = m_nodes > 0 && !m_textureBlack.isNull() && !m_textureWhite.isNull();
 }
 
@@ -54,8 +54,8 @@ void BoardRenderer::setDevicePixelRatio(const qreal ratio) {
 	updateBackgroundTexture();
 }
 
-void BoardRenderer::setBackgroundTexture(const QString& path) {
-	m_textureBackground = loadBoardTexture(path);
+void BoardRenderer::setBackgroundTexture(const boardStyle::Texture texture) {
+	m_textureBackground = boardStyle::loadTexture(texture);
 	updateBackgroundTexture();
 }
 
@@ -138,7 +138,7 @@ void BoardRenderer::drawBackground(QPainter& painter) const {
 	painter.save();
 	painter.setRenderHint(QPainter::Antialiasing, true);
 	if (m_scaledBackground.isNull()) {
-		painter.fillRect(QRect{0, 0, static_cast<int>(m_boardSize), static_cast<int>(m_boardSize)}, PLAIN_BOARD_COLOUR);
+		painter.fillRect(QRect{0, 0, static_cast<int>(m_boardSize), static_cast<int>(m_boardSize)}, boardStyle::PLAIN_COLOUR);
 	} else {
 		painter.drawImage(QPoint{0, 0}, m_scaledBackground);
 	}

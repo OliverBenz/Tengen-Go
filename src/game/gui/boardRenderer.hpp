@@ -1,5 +1,6 @@
 #pragma once
 
+#include "gui/resources.hpp"
 #include "model/board.hpp"
 
 #include <QImage>
@@ -25,7 +26,7 @@ public:
 	void setNodes(unsigned nodes);                  //!< Set the board size in lines.
 	void setBoardSizePx(unsigned boardSizePx);      //!< Set the available board size [px].
 	void setDevicePixelRatio(qreal ratio);          //!< Set the display scaling. Keeps textures sharp.
-	void setBackgroundTexture(const QString& path); //!< Set the board image. Empty draws the plain colour.
+	void setBackgroundTexture(boardStyle::Texture texture); //!< Set the board image.
 
 	void draw(QPainter& painter, const Board& board, const Ghost& ghost) const; //!< Draw board, ghost stone and stones.
 	QRect stoneRect(Coord coord) const;                                         //!< Area of a stone [px].
