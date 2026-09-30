@@ -32,6 +32,7 @@ public:
 	bool pixelToCoord(int pX, int pY, Coord& coord) const;                      //!< Convert a pixel to a board coordinate.
 
 private:
+	void updateLayout();                      //!< Apply nodes and requested size. Rescales only textures whose size changed.
 	void updateMetrics(unsigned boardSizePx); //!< Compute stone size and line positions.
 	void updateStoneTextures();               //!< Rescale the stones to the stone size.
 	void updateBackgroundTexture();           //!< Rescale the background to the board size.

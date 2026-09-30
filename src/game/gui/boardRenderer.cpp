@@ -30,21 +30,15 @@ void BoardRenderer::setNodes(unsigned nodes) {
 	}
 	m_nodes = nodes;
 	m_ready = m_nodes > 0 && !m_textureBlack.isNull() && !m_textureWhite.isNull();
-	if (m_boardSizePxRequested > 0 && m_nodes > 0) {
-		updateMetrics(m_boardSizePxRequested);
-		updateStoneTextures();
-		updateBackgroundTexture();
-	}
+	updateLayout();
 }
 
 void BoardRenderer::setBoardSizePx(const unsigned boardSizePx) {
-	m_boardSizePxRequested = boardSizePx;
-	if (boardSizePx == 0 || m_nodes == 0) {
+	if (boardSizePx == m_boardSizePxRequested) {
 		return;
 	}
-	updateMetrics(boardSizePx);
-	updateStoneTextures();
-	updateBackgroundTexture();
+	m_boardSizePxRequested = boardSizePx;
+	updateLayout();
 }
 
 unsigned BoardRenderer::boardSizePx() const {
@@ -63,6 +57,24 @@ void BoardRenderer::setDevicePixelRatio(const qreal ratio) {
 void BoardRenderer::setBackgroundTexture(const QString& path) {
 	m_textureBackground = loadBoardTexture(path);
 	updateBackgroundTexture();
+}
+
+void BoardRenderer::updateLayout() {
+	if (m_boardSizePxRequested == 0 || m_nodes == 0) {
+		return;
+	}
+
+	// Rescaling is expensive: only redo the textures whose size changed.
+	// The board snaps to a multiple of the nodes, so most resize steps change neither.
+	const unsigned oldBoardSize = m_boardSize;
+	const unsigned oldStoneSize = m_stoneSize;
+	updateMetrics(m_boardSizePxRequested);
+	if (m_stoneSize != oldStoneSize) {
+		updateStoneTextures();
+	}
+	if (m_boardSize != oldBoardSize) {
+		updateBackgroundTexture();
+	}
 }
 
 void BoardRenderer::updateMetrics(const unsigned boardSizePx) {
