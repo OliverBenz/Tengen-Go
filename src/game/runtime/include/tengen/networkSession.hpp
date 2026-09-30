@@ -44,7 +44,7 @@ public:
 
 	// Network interface
 	void connect(const std::string& hostIp);
-	void host(unsigned boardSize, const GameRules& rules);
+	void host(unsigned boardSize, const GameRules& rules, Player hostColour); //!< The one who joins plays the other colour.
 	void disconnect();
 
 	// Chat

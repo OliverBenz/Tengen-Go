@@ -23,7 +23,7 @@ private slots:
 	void onBotDialogRequested();
 	void onNewBotGameRequested(unsigned boardSize, const GameRules& rules, const engine::EngineConfig& engineConfig, bool humanPlaysBlack);
 	void onConnectRequested(const QString& hostIp);
-	void onHostRequested(unsigned boardSize, const GameRules& rules);
+	void onHostRequested(unsigned boardSize, const GameRules& rules, Player hostColour);
 	void onShutdownRequested();
 
 private:

@@ -3,9 +3,8 @@
 #include "BoardSizeWidget.hpp"
 #include "GnuGoConfigWidget.hpp"
 #include "KataGoConfigWidget.hpp"
-#include "Logging.hpp"
+#include "PlayerColourWidget.hpp"
 #include "RulesConfigWidget.hpp"
-#include "model/player.hpp"
 
 #include <QComboBox>
 #include <QDialogButtonBox>
@@ -44,13 +43,8 @@ BotDialog::BotDialog(const engine::InstalledEngines& engines, QWidget* parent)
 	}
 
 	m_boardSize = new BoardSizeWidget(this);
-
-	m_colour = new QComboBox(this);
-	m_colour->addItem("Black", static_cast<int>(Player::Black));
-	m_colour->addItem("White", static_cast<int>(Player::White));
-	m_colour->setCurrentIndex(0);
-
-	m_rules = new RulesConfigWidget(this);
+	m_colour    = new PlayerColourWidget(this);
+	m_rules     = new RulesConfigWidget(this);
 
 	// Every engine counts its strength its own way. Its config widget shows which, so the row only says what it sets.
 	auto* form = new QFormLayout();
@@ -96,13 +90,7 @@ engine::EngineConfig BotDialog::engineConfig() const {
 }
 
 bool BotDialog::humanPlaysBlack() const {
-	const int player = m_colour->currentData().toInt();
-
-	if (player != static_cast<int>(Player::White) && player != static_cast<int>(Player::Black)) {
-		Logger().Log(Logging::LogLevel::Error, "Invalid player selection in Bot game. Choosing Black.");
-		return true;
-	}
-	return static_cast<Player>(player) == Player::Black;
+	return m_colour->player() == Player::Black;
 }
 
 void BotDialog::addEngine(const QString& name, QWidget* configWidget, const bool installed) {

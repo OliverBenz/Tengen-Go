@@ -33,6 +33,7 @@ public:
 	void stop();
 
 	bool registerHandler(IServerHandler* handler); //!< Register a single handler. Returns false if already registered.
+	void setFirstSeat(Seat seat);                  //!< Seat the first player to connect takes; the second takes the other. Black unless set. Call before start().
 
 	bool send(SessionId sessionId, const ServerEvent& event); //!< Send event to client with given sessionId. Returns false on failure.
 	bool broadcast(const ServerEvent& event);                 //!< Send event to all connected clients. Returns true if any send succeeded.

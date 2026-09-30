@@ -6,6 +6,7 @@
 #include "sessionManager.hpp"
 
 #include <atomic>
+#include <cassert>
 #include <thread>
 
 namespace tengen::network {
@@ -17,6 +18,7 @@ public:
 	void start();
 	void stop();
 	bool registerHandler(IServerHandler* handler);
+	void setFirstSeat(Seat seat);
 
 	bool send(SessionId sessionId, const ServerEvent& event); //!< Send event to client with given sessionId.
 	bool broadcast(const ServerEvent& event);                 //!< Send event to all connected clients.
@@ -50,6 +52,7 @@ private:
 	core::TcpServer m_network;
 
 	IServerHandler* m_handler{nullptr};       //!< The class that will handle server events.
+	Seat m_firstSeat{Seat::Black};            //!< Seat handed out first while both are free.
 	SafeQueue<ServerQueueEvent> m_eventQueue; //!< Event queue between network threads and server thread.
 };
 
@@ -96,6 +99,11 @@ bool Server::Implementation::registerHandler(IServerHandler* handler) {
 	}
 	m_handler = handler;
 	return true;
+}
+
+void Server::Implementation::setFirstSeat(const Seat seat) {
+	assert(isPlayer(seat));
+	m_firstSeat = seat;
 }
 
 bool Server::Implementation::send(SessionId sessionId, const ServerEvent& event) {
@@ -236,11 +244,13 @@ void Server::Implementation::processShutdown(const ServerQueueEvent&) {
 }
 
 Seat Server::Implementation::freeSeat() const {
-	if (!m_sessionManager.getConnectionIdBySeat(Seat::Black)) {
-		return Seat::Black;
+	const Seat secondSeat = m_firstSeat == Seat::Black ? Seat::White : Seat::Black;
+
+	if (!m_sessionManager.getConnectionIdBySeat(m_firstSeat)) {
+		return m_firstSeat;
 	}
-	if (!m_sessionManager.getConnectionIdBySeat(Seat::White)) {
-		return Seat::White;
+	if (!m_sessionManager.getConnectionIdBySeat(secondSeat)) {
+		return secondSeat;
 	}
 	return Seat::Observer;
 }
@@ -266,6 +276,10 @@ void Server::stop() {
 
 bool Server::registerHandler(IServerHandler* handler) {
 	return m_pimpl->registerHandler(handler);
+}
+
+void Server::setFirstSeat(const Seat seat) {
+	m_pimpl->setFirstSeat(seat);
 }
 
 bool Server::send(SessionId sessionId, const ServerEvent& event) {
