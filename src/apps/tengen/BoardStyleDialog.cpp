@@ -8,6 +8,7 @@
 #include <QHBoxLayout>
 #include <QListWidget>
 #include <QVBoxLayout>
+#include <QtConcurrent/QtConcurrentMap>
 
 namespace tengen::gui {
 
@@ -54,6 +55,10 @@ BoardStyleDialog::BoardStyleDialog(const QString& currentTexture, QWidget* paren
 	mainLayout->addWidget(buttons);
 }
 
+BoardStyleDialog::~BoardStyleDialog() {
+	m_previewLoader.cancel(); // Closed before all previews loaded: skip the rest.
+}
+
 QString BoardStyleDialog::texturePath() const {
 	const auto* item = m_textures->currentItem();
 	return item ? item->data(Qt::UserRole).toString() : QString{};
@@ -68,16 +73,37 @@ void BoardStyleDialog::addTexturePreviews() {
 	plain.setDevicePixelRatio(ratio);
 	new QListWidgetItem(untintedIcon(plain), tr("Plain"), m_textures); // Empty path: no texture.
 
-	for (const auto& path: boardTexturePaths()) {
-		QImage preview = loadBoardTexture(path).scaled(side, side, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
-		if (preview.isNull()) {
-			continue; // Unreadable file: nothing to preview.
-		}
-		preview.setDevicePixelRatio(ratio);
+	// Blank until the preview is loaded. Keeps the item size stable.
+	QPixmap loading(side, side);
+	loading.fill(Qt::transparent);
+	loading.setDevicePixelRatio(ratio);
 
-		auto* item = new QListWidgetItem(untintedIcon(QPixmap::fromImage(preview)), QFileInfo(path).completeBaseName(), m_textures);
+	const QStringList paths = boardTexturePaths();
+	QList<QListWidgetItem*> items;
+	for (const auto& path: paths) {
+		auto* item = new QListWidgetItem(untintedIcon(loading), QFileInfo(path).completeBaseName(), m_textures);
 		item->setData(Qt::UserRole, path);
+		items.append(item);
 	}
+
+	// Decoding large textures is slow: load them in the background and show each preview once ready.
+	connect(&m_previewLoader, &QFutureWatcher<QImage>::resultReadyAt, this, [this, items](const int index) {
+		const QImage preview = m_previewLoader.resultAt(index);
+		if (preview.isNull()) {
+			const bool wasCurrent = m_textures->currentItem() == items[index];
+			delete items[index]; // Unreadable file: nothing to preview.
+			if (wasCurrent) {
+				m_textures->setCurrentRow(0); // Qt would select the neighbour instead: fall back to plain.
+			}
+			return;
+		}
+		items[index]->setIcon(untintedIcon(QPixmap::fromImage(preview)));
+	});
+	m_previewLoader.setFuture(QtConcurrent::mapped(paths, [side, ratio](const QString& path) {
+		QImage preview = loadBoardTexture(path).scaled(side, side, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+		preview.setDevicePixelRatio(ratio);
+		return preview;
+	}));
 }
 
 void BoardStyleDialog::selectTexture(const QString& path) {
