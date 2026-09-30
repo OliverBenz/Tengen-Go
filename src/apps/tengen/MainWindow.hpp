@@ -36,7 +36,6 @@ signals:
 private:
 	//! Initial setup constructing the layout of the window.
 	void buildLayout();
-	void applyDefaultBoardTexture(); //!< Start with a wood board if its texture is available.
 
 private:
 	void openLocalGameDialog();

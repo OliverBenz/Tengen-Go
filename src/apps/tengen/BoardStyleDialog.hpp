@@ -1,9 +1,10 @@
 #pragma once
 
+#include "gui/resources.hpp"
+
 #include <QDialog>
 #include <QFutureWatcher>
 #include <QImage>
-#include <QString>
 
 class QListWidget;
 
@@ -16,14 +17,14 @@ class BoardStyleDialog : public QDialog {
 	Q_OBJECT
 
 public:
-	explicit BoardStyleDialog(const QString& currentTexture, QWidget* parent = nullptr);
+	explicit BoardStyleDialog(boardStyle::Texture currentTexture, QWidget* parent = nullptr);
 	~BoardStyleDialog() override;
 
-	QString texturePath() const; //!< Selected texture. Empty for the plain board colour.
+	boardStyle::Texture texture() const; //!< Selected texture.
 
 private:
 	void addTexturePreviews();
-	void selectTexture(const QString& path);
+	void selectTexture(boardStyle::Texture texture); //!< Falls back to plain if the texture is not listed.
 
 private:
 	QListWidget* m_textures = nullptr;

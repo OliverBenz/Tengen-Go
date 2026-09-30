@@ -10,7 +10,6 @@
 #include "gui/gameWidget.hpp"
 #include "gui/resources.hpp"
 
-#include <QFileInfo>
 #include <QMenuBar>
 #include <cassert>
 
@@ -82,19 +81,7 @@ void MainWindow::buildLayout() {
 
 	m_gameWidget = new GameWidget();
 	setCentralWidget(m_gameWidget);
-	applyDefaultBoardTexture();
-}
-
-void MainWindow::applyDefaultBoardTexture() {
-	static constexpr auto DEFAULT_TEXTURE = "Wood095_2K-PNG_Color.png";
-
-	for (const auto& path: boardTexturePaths()) {
-		if (QFileInfo(path).fileName() == DEFAULT_TEXTURE) {
-			m_gameWidget->boardWidget().setBackgroundTexture(path);
-			return;
-		}
-	}
-	// Texture not shipped: the board keeps its plain colour.
+	m_gameWidget->boardWidget().setBackgroundTexture(boardStyle::defaultTexture());
 }
 
 void MainWindow::openLocalGameDialog() {
@@ -134,7 +121,7 @@ void MainWindow::openSettingsStyle() {
 	BoardStyleDialog dialog(board.backgroundTexture(), this);
 
 	if (dialog.exec() == QDialog::Accepted) {
-		board.setBackgroundTexture(dialog.texturePath());
+		board.setBackgroundTexture(dialog.texture());
 	}
 }
 
