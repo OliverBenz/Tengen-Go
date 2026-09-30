@@ -1,8 +1,7 @@
 #include "boardRenderer.hpp"
 
-#include "gui/boardTextures.hpp"
+#include "gui/resources.hpp"
 
-#include <QImageReader>
 #include <QPainter>
 #include <algorithm>
 #include <array>
@@ -16,19 +15,9 @@ static constexpr int LINE_WIDTH = 2; //!< Grid line width [px].
 
 BoardRenderer::BoardRenderer(const unsigned nodes)
     : m_nodes(nodes) {
-	m_ready = m_nodes > 0;
-
-	const auto loadTexture = [this](const char* path, QImage& target) {
-		QImageReader reader(path);
-		reader.setAutoTransform(true);
-		target = reader.read();
-		if (target.isNull()) {
-			this->m_ready = false;
-		}
-	};
-
-	loadTexture(GUI_RESOURCES_DIR "/anime_black.png", m_textureBlack);
-	loadTexture(GUI_RESOURCES_DIR "/anime_white.png", m_textureWhite);
+	m_textureBlack = loadStone(Player::Black);
+	m_textureWhite = loadStone(Player::White);
+	m_ready        = m_nodes > 0 && !m_textureBlack.isNull() && !m_textureWhite.isNull();
 }
 
 unsigned BoardRenderer::nodes() const {

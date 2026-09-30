@@ -1,7 +1,7 @@
 #include "BoardStyleDialog.hpp"
 
-#include "gui/boardTextures.hpp"
 #include "gui/boardWidget.hpp"
+#include "gui/resources.hpp"
 
 #include <QDialogButtonBox>
 #include <QFileInfo>

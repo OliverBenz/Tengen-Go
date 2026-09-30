@@ -1,4 +1,4 @@
-#include "gui/boardTextures.hpp"
+#include "gui/resources.hpp"
 
 #include <QDir>
 #include <QImageReader>
@@ -28,6 +28,12 @@ QImage loadBoardTexture(const QString& path) {
 	// The board is square: use the center of the image rather than stretching it.
 	const int side = std::min(image.width(), image.height());
 	return image.copy((image.width() - side) / 2, (image.height() - side) / 2, side, side);
+}
+
+QImage loadStone(const Player player) {
+	QImageReader reader(player == Player::Black ? GUI_RESOURCES_DIR "/anime_black.png" : GUI_RESOURCES_DIR "/anime_white.png");
+	reader.setAutoTransform(true);
+	return reader.read();
 }
 
 } // namespace tengen::gui

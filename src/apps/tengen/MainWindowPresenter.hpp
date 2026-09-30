@@ -29,6 +29,9 @@ private slots:
 private:
 	void startOpenPlay(unsigned boardSize, const GameRules& rules);
 
+	void showLocalPlayers();                                         //!< Local game: both sides are named by their colour.
+	void showPlayers(Player ownColour, const QString& opponentName); //!< Set the player strings in the status box based given your stone colour and the opponent name. You get the name "You".
+
 private:
 	gui::MainWindow& m_mainWindow;                             //!< The main window.
 	std::unique_ptr<app::IGameSession> m_gameSession{nullptr}; //!< The actual game.

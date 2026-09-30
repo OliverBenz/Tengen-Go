@@ -1,5 +1,7 @@
 #pragma once
 
+#include "model/player.hpp"
+
 #include <QColor>
 #include <QImage>
 #include <QStringList>
@@ -13,5 +15,8 @@ QStringList boardTexturePaths();
 
 //! Centre square of a board texture, as the board shows it. Null if unreadable.
 QImage loadBoardTexture(const QString& path);
+
+//! Stone image of a player at full resolution. Callers scale it to their size. Null if unreadable.
+QImage loadStone(Player player);
 
 } // namespace tengen::gui
