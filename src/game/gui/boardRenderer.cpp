@@ -62,6 +62,15 @@ unsigned BoardRenderer::boardSizePx() const {
 	return m_boardSize;
 }
 
+void BoardRenderer::setDevicePixelRatio(const qreal ratio) {
+	if (ratio == m_devicePixelRatio) {
+		return;
+	}
+	m_devicePixelRatio = ratio;
+	updateStoneTextures();
+	updateBackgroundTexture();
+}
+
 void BoardRenderer::setBackgroundTexture(const QString& path) {
 	QImageReader reader(path);
 	reader.setAutoTransform(true);
@@ -86,9 +95,12 @@ void BoardRenderer::updateStoneTextures() {
 		return;
 	}
 
-	const QSize targetSize{static_cast<int>(m_stoneSize), static_cast<int>(m_stoneSize)};
+	const int side = qRound(m_stoneSize * m_devicePixelRatio);
+	const QSize targetSize{side, side};
 	m_scaledBlack = m_textureBlack.scaled(targetSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
 	m_scaledWhite = m_textureWhite.scaled(targetSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+	m_scaledBlack.setDevicePixelRatio(m_devicePixelRatio);
+	m_scaledWhite.setDevicePixelRatio(m_devicePixelRatio);
 }
 
 void BoardRenderer::updateBackgroundTexture() {
@@ -97,8 +109,9 @@ void BoardRenderer::updateBackgroundTexture() {
 		return;
 	}
 
-	const auto side    = static_cast<int>(m_boardSize);
+	const int side     = qRound(m_boardSize * m_devicePixelRatio);
 	m_scaledBackground = m_textureBackground.scaled(side, side, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+	m_scaledBackground.setDevicePixelRatio(m_devicePixelRatio);
 }
 
 void BoardRenderer::draw(QPainter& painter, const Board& board, const Ghost& ghost) const {

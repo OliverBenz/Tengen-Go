@@ -170,6 +170,8 @@ void BoardWidget::renderBoard() {
 		m_boardRenderer->setNodes(boardSize);
 		m_boardRenderer->setBoardSizePx(size);
 	}
+	m_boardRenderer->setDevicePixelRatio(devicePixelRatioF()); // Here rather than on resize: moving to another screen changes it.
+
 	// The board lies on the window like an object: window colour around it and a soft shadow below.
 	const auto boardPx = static_cast<int>(m_boardRenderer->boardSizePx());
 	const QRect boardRect{boardOffset(), QSize{boardPx, boardPx}};
