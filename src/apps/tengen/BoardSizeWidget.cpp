@@ -18,7 +18,7 @@ BoardSizeWidget::BoardSizeWidget(QWidget* parent)
 	layout->setContentsMargins(0, 0, 0, 0);
 
 	for (const unsigned size: SIZES) {
-		auto* button = new QPushButton(QString::number(size), this);
+		auto* button = new QPushButton(QString("%1x%1").arg(size), this);
 		button->setCheckable(true);
 		m_sizes->addButton(button, static_cast<int>(size));
 		layout->addWidget(button);
