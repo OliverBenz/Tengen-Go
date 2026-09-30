@@ -16,7 +16,7 @@ namespace app {
 
 class GameServer : public network::IServerHandler, public IGameStateListener {
 public:
-	GameServer(std::size_t boardSize, const GameRules& rules);
+	GameServer(std::size_t boardSize, const GameRules& rules, Player firstPlayer); //!< The first client to connect plays firstPlayer.
 	~GameServer();
 
 	void start(); //!< Boot the network listener and the server event loop.

@@ -13,6 +13,7 @@ namespace tengen::gui {
 class BoardSizeWidget;
 class GnuGoConfigWidget;
 class KataGoConfigWidget;
+class PlayerColourWidget;
 class RulesConfigWidget;
 
 class BotDialog : public QDialog {
@@ -39,7 +40,7 @@ private:
 	KataGoConfigWidget* m_kataGo{nullptr};    //!< Configuration for the KataGo engine.
 
 	BoardSizeWidget* m_boardSize{nullptr}; //!< Selector for the board size.
-	QComboBox* m_colour{nullptr};          //!< Selector for which colour stones the player uses.
+	PlayerColourWidget* m_colour{nullptr}; //!< Selector for which colour stones the player uses.
 	RulesConfigWidget* m_rules{nullptr};   //!< Selector for the rules.
 };
 

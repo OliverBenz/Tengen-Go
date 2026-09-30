@@ -70,11 +70,11 @@ void MainWindowPresenter::onConnectRequested(const QString& hostIp) {
 	m_gameSession = std::move(session);
 }
 
-void MainWindowPresenter::onHostRequested(const unsigned boardSize, const GameRules& rules) {
+void MainWindowPresenter::onHostRequested(const unsigned boardSize, const GameRules& rules, const Player hostColour) {
 	onShutdownRequested();
 
 	auto session = std::make_unique<app::NetworkSession>();
-	session->host(boardSize, rules);
+	session->host(boardSize, rules, hostColour);
 
 	auto& game      = static_cast<app::IGameSession&>(*session);
 	auto& chat      = static_cast<app::IChatSession&>(*session);

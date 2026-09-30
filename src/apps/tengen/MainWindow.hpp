@@ -2,6 +2,7 @@
 
 #include "engine/engineCatalog.hpp"
 #include "model/gameRules.hpp"
+#include "model/player.hpp"
 
 #include <QCloseEvent>
 #include <QMainWindow>
@@ -29,7 +30,7 @@ signals:
 	void botDialogRequested(); //!< The user wants a bot game. Answer with openBotDialog().
 	void gameBotRequested(unsigned boardSize, const GameRules& rules, const engine::EngineConfig& engineConfig, bool humanPlaysBlack);
 	void connectRequested(const QString& hostIp);
-	void hostRequested(unsigned boardSize, const GameRules& rules);
+	void hostRequested(unsigned boardSize, const GameRules& rules, Player hostColour);
 	void shutdownRequested();
 
 private:

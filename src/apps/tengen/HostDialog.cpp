@@ -1,6 +1,7 @@
 #include "HostDialog.hpp"
 
 #include "BoardSizeWidget.hpp"
+#include "PlayerColourWidget.hpp"
 #include "RulesConfigWidget.hpp"
 
 #include <QDialogButtonBox>
@@ -13,11 +14,13 @@ HostDialog::HostDialog(QWidget* parent) : QDialog(parent) {
 	setWindowTitle("Host Server");
 
 	m_boardSize = new BoardSizeWidget(this);
+	m_colour    = new PlayerColourWidget(this);
 	m_rules     = new RulesConfigWidget(this);
 
 	auto* form = new QFormLayout();
 	form->addRow(tr("Board size:"), m_boardSize);
-	form->addRow(tr("Rules:"), m_rules);
+	form->addRow(tr("Your color:"), m_colour);
+	form->addRow(tr("Rules:"), m_rules); // Last, so the custom rules unfold below everything else.
 
 	auto* buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
 	connect(buttons, &QDialogButtonBox::accepted, this, &QDialog::accept);
@@ -31,6 +34,10 @@ HostDialog::HostDialog(QWidget* parent) : QDialog(parent) {
 
 unsigned HostDialog::boardSize() const {
 	return m_boardSize->boardSize();
+}
+
+Player HostDialog::hostColour() const {
+	return m_colour->player();
 }
 
 GameRules HostDialog::rules() const {

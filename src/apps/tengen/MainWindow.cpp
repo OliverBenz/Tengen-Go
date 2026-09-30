@@ -125,7 +125,7 @@ void MainWindow::openHostDialog() {
 	HostDialog dialog(this);
 
 	if (dialog.exec() == QDialog::Accepted) {
-		emit hostRequested(dialog.boardSize(), dialog.rules());
+		emit hostRequested(dialog.boardSize(), dialog.rules(), dialog.hostColour());
 	}
 }
 
