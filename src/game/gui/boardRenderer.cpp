@@ -72,13 +72,7 @@ void BoardRenderer::setDevicePixelRatio(const qreal ratio) {
 }
 
 void BoardRenderer::setBackgroundTexture(const QString& path) {
-	QImageReader reader(path);
-	reader.setAutoTransform(true);
-	const QImage image = reader.read();
-
-	// The board is square: use the center of the image rather than stretching it.
-	const int side      = std::min(image.width(), image.height());
-	m_textureBackground = image.copy((image.width() - side) / 2, (image.height() - side) / 2, side, side);
+	m_textureBackground = loadBoardTexture(path);
 	updateBackgroundTexture();
 }
 
