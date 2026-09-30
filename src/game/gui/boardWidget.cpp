@@ -41,9 +41,8 @@ void BoardWidget::setBoard(const Board& board) {
 	const auto oldSize = m_board.size();
 	m_board            = board;
 	if (m_board.size() != oldSize) {
-		m_boardRenderer->setNodes(static_cast<unsigned>(m_board.size()));
+		m_boardRenderer->setNodes(static_cast<unsigned>(m_board.size())); // The pixel size only changes on resize.
 	}
-	m_boardRenderer->setBoardSizePx(boardPixelSize());
 	update();
 }
 
@@ -160,16 +159,10 @@ void BoardWidget::paintEvent(QPaintEvent* event) {
 }
 
 void BoardWidget::renderBoard() {
-	const auto size = boardPixelSize();
-	if (size == 0u) {
+	if (boardPixelSize() == 0u) {
 		return;
 	}
 
-	const auto boardSize = static_cast<unsigned>(m_board.size());
-	if (m_boardRenderer->nodes() != boardSize) {
-		m_boardRenderer->setNodes(boardSize);
-		m_boardRenderer->setBoardSizePx(size);
-	}
 	m_boardRenderer->setDevicePixelRatio(devicePixelRatioF()); // Here rather than on resize: moving to another screen changes it.
 
 	// The board lies on the window like an object: window colour around it and a soft shadow below.
