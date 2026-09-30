@@ -30,8 +30,17 @@ MainWindowPresenter::MainWindowPresenter(gui::MainWindow& mainWindow)
 MainWindowPresenter::~MainWindowPresenter() = default;
 
 void MainWindowPresenter::startOpenPlay(const unsigned boardSize, const GameRules& rules) {
+	showLocalPlayers();
 	m_gameSession   = std::make_unique<app::OpenSession>(boardSize, rules);
 	m_gamePresenter = std::make_unique<GamePresenter>(*m_gameSession, m_mainWindow.gameWidget());
+}
+
+void MainWindowPresenter::showLocalPlayers() {
+	m_mainWindow.gameWidget().setPlayers(tr("White"), tr("Black"), Player::White);
+}
+
+void MainWindowPresenter::showPlayers(const Player ownColour, const QString& opponentName) {
+	m_mainWindow.gameWidget().setPlayers(tr("You"), opponentName, ownColour);
 }
 
 void MainWindowPresenter::onNewLocalGameRequested(const unsigned boardSize, const GameRules& rules) {
@@ -53,12 +62,16 @@ void MainWindowPresenter::onBotDialogRequested() {
 void MainWindowPresenter::onNewBotGameRequested(unsigned boardSize, const GameRules& rules, const engine::EngineConfig& engineConfig, bool humanPlaysBlack) {
 	onShutdownRequested();
 
+	showPlayers(humanPlaysBlack ? Player::Black : Player::White, tr("Bot"));
 	m_gameSession   = std::make_unique<app::BotSession>(boardSize, rules, engine::makeEngine(engineConfig), humanPlaysBlack);
 	m_gamePresenter = std::make_unique<GamePresenter>(*m_gameSession, m_mainWindow.gameWidget());
 }
 
 void MainWindowPresenter::onConnectRequested(const QString& hostIp) {
 	onShutdownRequested();
+
+	// TODO: The server does not tell us our seat yet, so show the colours like a local game until it does.
+	showLocalPlayers();
 
 	auto session = std::make_unique<app::NetworkSession>();
 	session->connect(hostIp.toStdString());
@@ -72,6 +85,7 @@ void MainWindowPresenter::onConnectRequested(const QString& hostIp) {
 
 void MainWindowPresenter::onHostRequested(const unsigned boardSize, const GameRules& rules, const Player hostColour) {
 	onShutdownRequested();
+	showPlayers(hostColour, tr("Opponent"));
 
 	auto session = std::make_unique<app::NetworkSession>();
 	session->host(boardSize, rules, hostColour);

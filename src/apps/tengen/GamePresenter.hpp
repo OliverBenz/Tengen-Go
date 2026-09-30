@@ -28,6 +28,9 @@ private slots:
 	void onResignRequested(); //!< Handle resign event from Board Widget.
 
 private:
+	void showStatus(); //!< Show the session's status and whose move it is.
+
+private:
 	app::IGameSession& m_game;
 	gui::GameWidget& m_gameWidget;
 	std::unique_ptr<BoardPresenter> m_boardPresenter = nullptr;

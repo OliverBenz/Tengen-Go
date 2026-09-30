@@ -9,26 +9,14 @@
 
 namespace tengen {
 
-static QString currentPlayerText(const tengen::Player player) {
-	switch (player) {
-	case tengen::Player::Black:
-		return QStringLiteral("Current Player: Black");
-	case tengen::Player::White:
-		return QStringLiteral("Current Player: White");
-	default:
-		assert(false);
-		return {};
-	}
-}
-
-static QString gameStateText(const tengen::GameStatus status) {
+static QString gameStateText(const tengen::GameStatus status, const tengen::Player player) {
 	switch (status) {
 	case tengen::GameStatus::Idle:
 		return QStringLiteral("Idle");
 	case tengen::GameStatus::Ready:
 		return QStringLiteral("Waiting for Player");
 	case tengen::GameStatus::Active:
-		return QStringLiteral("Active");
+		return player == tengen::Player::Black ? QStringLiteral("Black to move") : QStringLiteral("White to move");
 	case tengen::GameStatus::Done:
 		return QStringLiteral("Game Finished");
 	default:
@@ -44,9 +32,7 @@ GamePresenter::GamePresenter(app::IGameSession& game, gui::GameWidget& gameWidge
 	m_boardPresenter = std::make_unique<BoardPresenter>(m_game, m_gameWidget.boardWidget());
 	m_gameWidget.setChatEnabled(false);
 
-	m_gameWidget.setCurrentPlayerText(currentPlayerText(m_game.currentPlayer()));
-	m_gameWidget.setGameStateText(gameStateText(m_game.status()));
-
+	showStatus();
 	m_game.subscribe(this, app::AS_PlayerChange | app::AS_StateChange);
 }
 
@@ -62,21 +48,22 @@ void GamePresenter::addChatWindow(app::IChatSession& chat) {
 }
 
 void GamePresenter::onAppEvent(const app::AppSignal signal) {
-	auto* widget = &m_gameWidget;
 	switch (signal) {
-	case app::AS_PlayerChange: {
-		const auto text = currentPlayerText(m_game.currentPlayer());
-		QMetaObject::invokeMethod(widget, [widget, text]() { widget->setCurrentPlayerText(text); }, Qt::QueuedConnection);
+	case app::AS_PlayerChange:
+	case app::AS_StateChange:
+		QMetaObject::invokeMethod(this, [this]() { showStatus(); }, Qt::QueuedConnection);
 		return;
-	}
-	case app::AS_StateChange: {
-		const auto text = gameStateText(m_game.status());
-		QMetaObject::invokeMethod(widget, [widget, text]() { widget->setGameStateText(text); }, Qt::QueuedConnection);
-		return;
-	}
 	default:
 		return;
 	}
+}
+
+void GamePresenter::showStatus() {
+	const auto status = m_game.status();
+	const auto player = m_game.currentPlayer();
+
+	m_gameWidget.setGameStateText(gameStateText(status, player));
+	m_gameWidget.setCurrentPlayer(status == GameStatus::Active ? std::optional{player} : std::nullopt);
 }
 
 void GamePresenter::onPassRequested() {

@@ -4,7 +4,7 @@
 #include <iostream>
 
 int main(int, char**) {
-	tengen::app::GameServer server(9u, tengen::fromRuleSet(tengen::RuleSet::Japanese));
+	tengen::app::GameServer server(9u, tengen::fromRuleSet(tengen::RuleSet::Japanese), tengen::Player::Black);
 	server.start();
 
 	// NOTE: Can extend to allow more commands

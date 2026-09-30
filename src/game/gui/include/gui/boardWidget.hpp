@@ -12,9 +12,7 @@ namespace tengen::gui {
 class BoardRenderer;
 
 struct BoardWidgetEvent {
-	enum class Type { Place,
-		              Pass,
-		              Resign };
+	enum class Type { Place, Pass, Resign };
 
 	Type type{Type::Place};
 	Coord coord{0u, 0u};
@@ -28,6 +26,8 @@ class BoardWidget : public QWidget {
 	Q_OBJECT
 
 public:
+	static constexpr int BOARD_MARGIN = 14; //!< Space around the board for its shadow [px].
+
 	explicit BoardWidget(QWidget* parent = nullptr);
 	~BoardWidget();
 
@@ -58,8 +58,6 @@ private:
 	QPoint boardOffset() const;      //!< Offset of the drawn board's top left corner that centers it in the widget.
 
 private:
-	static constexpr int BOARD_MARGIN = 14; //!< Space around the board for its shadow [px].
-
 	Board m_board;
 	Board::Stone m_currentPlayer{Board::Stone::Black};
 	std::unique_ptr<BoardRenderer> m_boardRenderer;

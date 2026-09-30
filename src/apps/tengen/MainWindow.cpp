@@ -7,8 +7,8 @@
 #include "HelpDialog.hpp"
 #include "HostDialog.hpp"
 #include "LocalGameDialog.hpp"
-#include "gui/boardTextures.hpp"
 #include "gui/gameWidget.hpp"
+#include "gui/resources.hpp"
 
 #include <QFileInfo>
 #include <QMenuBar>
