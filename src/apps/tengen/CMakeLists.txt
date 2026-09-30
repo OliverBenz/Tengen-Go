@@ -2,7 +2,7 @@ include_guard(GLOBAL)
 
 set(targetName tengen)
 
-find_package(Qt6 REQUIRED COMPONENTS Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Concurrent)
 
 add_executable(${targetName}
     "${CMAKE_CURRENT_LIST_DIR}/main.cpp"
@@ -31,6 +31,7 @@ target_link_libraries(${targetName}
         tengen::game::runtime
         tengen::game::gui
         Qt6::Widgets
+        Qt6::Concurrent
 )
 
 target_compile_definitions(${targetName}

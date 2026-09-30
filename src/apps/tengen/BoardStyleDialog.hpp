@@ -1,6 +1,8 @@
 #pragma once
 
 #include <QDialog>
+#include <QFutureWatcher>
+#include <QImage>
 #include <QString>
 
 class QListWidget;
@@ -15,6 +17,7 @@ class BoardStyleDialog : public QDialog {
 
 public:
 	explicit BoardStyleDialog(const QString& currentTexture, QWidget* parent = nullptr);
+	~BoardStyleDialog() override;
 
 	QString texturePath() const; //!< Selected texture. Empty for the plain board colour.
 
@@ -25,6 +28,7 @@ private:
 private:
 	QListWidget* m_textures = nullptr;
 	BoardWidget* m_board    = nullptr;
+	QFutureWatcher<QImage> m_previewLoader; //!< Loads the texture previews in the background.
 };
 
 } // namespace tengen::gui
