@@ -89,6 +89,9 @@ cmake --preset Win64 && cmake --build --preset Win64-Debug
 Qt 6 and OpenCV are required. On Linux they come from the system package manager.
 On Windows you install both by hand and add them to your environment variables, see the [Compilation Instructions](docs/Compilation.md).
 
+The Visual Studio generator can't write `compile_commands.json` for clangd.
+On Windows, run [`scripts/configure-clangd.ps1`](scripts/configure-clangd.ps1) instead: it configures the `Win64-Ninja` preset (MSVC + Ninja) from an x64 VS developer shell and copies the file to the project root.
+
 ## Bot Games
 
 Bot games are played against [GNU Go](https://www.gnu.org/software/gnugo/) or [KataGo](https://github.com/lightvector/KataGo).
