@@ -11,8 +11,9 @@ Rules engine for Go. For the conceptual picture, see [docs/Core.md](../../../doc
 ## Where to look
 
 - `game.*` — event loop and orchestration.
-- `gameState.*` — rules state of one game: position, turn order, ko history, game end.
-- `moveChecker.*` — legality, captures, liberties.
+- `gameState.*` — rules state of one game: turn order, game end. Runs every move through the two below.
+- `moveChecker.*` — board mechanics: captures, liberties, suicide. Knows nothing about the game history.
+- `positionHistory.*` — earlier positions and the ko rule.
 - `position.*` — `GamePosition`.
 - `eventHub.*`, `IGameSignalListener.hpp`, `IGameStateListener.hpp` — the notification system.
 - `zobristHash.hpp` / `IZobristHash.hpp` — hashing.

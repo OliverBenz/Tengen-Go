@@ -11,7 +11,8 @@ namespace tengen {
 using EventQueue = SafeQueue<GameEvent>;
 
 //! Core game setup.
-//! This owns the rules loop and emits deltas; external code should only push events and listen.
+//! You first register as a game (signal/state) listener to get notified on game changes.
+//! Then, you push events. The game will forward these to the GameState class and signal you on updates.
 class Game {
 public:
 	//! Setup a game of certain board size without starting the game loop.
@@ -20,6 +21,8 @@ public:
 	void run();                      //!< Handle events until a ShutdownEvent (blocking). Keeps running after the game ended.
 	void pushEvent(GameEvent event); //!< Push an event to the event queue.
 
+	// TODO: Remove. Callers know the size from construction, and reading it off the game thread races with run().
+	// TODO: We should signal on game start to make the event stream complete. Let the listeners know game start+rules+boardSize, etc.
 	std::size_t boardSize() const;
 
 public:
