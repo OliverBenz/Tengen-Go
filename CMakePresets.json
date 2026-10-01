@@ -13,15 +13,9 @@
 			"installDir": "${sourceDir}/build/install/${presetName}"
 		},
 		{
-			"name": "Win64",
-			"displayName": "Windows x64",
-			"description": "Windows x64 configuration with Debug, Release, and RelWithDebInfo (multi-config generator).",
+			"name": "Win64-Base",
+			"hidden": true,
 			"inherits": "base",
-			"generator": "Visual Studio 17 2022",
-			"architecture": {
-				"value": "x64",
-				"strategy": "set"
-			},
 			"condition": {
 				"type": "equals",
 				"lhs": "${hostSystemName}",
@@ -29,6 +23,32 @@
 			},
 			"cacheVariables": {
 				"OpenCV_DIR": "C:/opencv/build"
+			}
+		},
+		{
+			"name": "Win64",
+			"displayName": "Windows x64",
+			"description": "Windows x64 configuration with Debug, Release, and RelWithDebInfo (multi-config generator).",
+			"inherits": "Win64-Base",
+			"generator": "Visual Studio 17 2022",
+			"architecture": {
+				"value": "x64",
+				"strategy": "set"
+			}
+		},
+		{
+			"name": "Win64-Ninja",
+			"displayName": "Windows x64 Ninja Debug",
+			"description": "MSVC with Ninja, mainly to generate compile_commands.json for clangd. Requires an x64 VS developer shell (see scripts/configure-clangd.ps1).",
+			"inherits": "Win64-Base",
+			"generator": "Ninja",
+			"architecture": {
+				"value": "x64",
+				"strategy": "external"
+			},
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "Debug",
+				"CMAKE_CXX_COMPILER": "cl.exe"
 			}
 		},
 		{
@@ -85,6 +105,10 @@
 			"name": "Win64-RelWithDebInfo",
 			"configurePreset": "Win64",
 			"configuration": "RelWithDebInfo"
+		},
+		{
+			"name": "Win64-Ninja",
+			"configurePreset": "Win64-Ninja"
 		},
 		{
 			"name": "Linux64-Debug",

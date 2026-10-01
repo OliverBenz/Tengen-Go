@@ -8,11 +8,13 @@ project(Tengen
 
 # Create build info file for language server. Symlink to root so clangd finds it.
 # Only Ninja and Makefile generators write the file (e.g. not Visual Studio).
+# The link is best effort: Windows needs Developer Mode for symlinks, scripts/configure-clangd.ps1 copies it instead.
 if(CMAKE_GENERATOR MATCHES "Ninja|Makefiles")
 	set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 	file(CREATE_LINK
 		"${CMAKE_BINARY_DIR}/compile_commands.json"
 		"${CMAKE_SOURCE_DIR}/compile_commands.json"
+		RESULT TENGEN_COMPILE_COMMANDS_LINK_RESULT # Store result in var so cmake does not exit with failure
 		SYMBOLIC
 	)
 endif()
@@ -35,9 +37,9 @@ if(TENGEN_BUILD_TOOLS)
 endif()
 
 if(TENGEN_BUILD_TESTS)
-    include(CTest)
-    enable_testing()
-    add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/tests")
+	include(CTest)
+	enable_testing()
+	add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/tests")
 endif()
 
 # if(TENGEN_BUILD_SANDBOX)
