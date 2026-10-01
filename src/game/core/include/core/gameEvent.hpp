@@ -40,7 +40,7 @@ struct GameDelta {
 	GameAction action;           //!< Move type.
 	Player player;               //!< Player to make move.
 	std::optional<Coord> coord;  //!< For place action: Coordinate of place.
-	std::vector<Coord> captures; //!< Captures stones if any.
+	std::vector<Coord> captures; //!< Stones removed from the board. On suicide also the player's own.
 	Player nextPlayer;           //!< Next player to make a move. In case we add handicap, penalties, etc.
 	bool gameActive;             //!< Game active after the move.
 };

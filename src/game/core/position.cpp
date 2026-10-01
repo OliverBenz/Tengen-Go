@@ -1,24 +1,22 @@
 #include "core/position.hpp"
 
+#include <utility>
+
 namespace tengen {
 
 GamePosition::GamePosition(std::size_t boardSize) : board{boardSize} {
 }
 
-void GamePosition::putStone(Coord c, IZobristHash& hasher) {
-	board.place(c, toStone(currentPlayer));
-	hash ^= hasher.stone(c, currentPlayer);
+void GamePosition::play(Board nextBoard, const uint64_t nextHash) {
+	board = std::move(nextBoard);
+	hash  = nextHash;
 
 	currentPlayer = opponent(currentPlayer);
-	hash ^= hasher.togglePlayer();
-
 	++moveId;
 }
 
-void GamePosition::pass(IZobristHash& hasher) {
+void GamePosition::pass() {
 	currentPlayer = opponent(currentPlayer);
-	hash ^= hasher.togglePlayer();
-
 	++moveId;
 }
 
