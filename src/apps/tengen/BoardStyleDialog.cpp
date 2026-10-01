@@ -3,6 +3,7 @@
 #include "gui/boardWidget.hpp"
 
 #include <QDialogButtonBox>
+#include <QEvent>
 #include <QHBoxLayout>
 #include <QListWidget>
 #include <QVBoxLayout>
@@ -40,6 +41,8 @@ BoardStyleDialog::BoardStyleDialog(const boardStyle::Texture currentTexture, QWi
 	m_textures->setMovement(QListView::Static);
 	m_textures->setWordWrap(true);
 	m_textures->setFixedWidth(PREVIEW_SIZE + 60);
+	m_textures->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+	m_textures->viewport()->installEventFilter(this); // The width shrinks while the scroll bar shows.
 	connect(m_textures, &QListWidget::currentItemChanged, this, [this] { m_board->setBackgroundTexture(texture()); });
 	addTexturePreviews();
 	selectTexture(currentTexture);
@@ -64,6 +67,23 @@ BoardStyleDialog::~BoardStyleDialog() {
 boardStyle::Texture BoardStyleDialog::texture() const {
 	const auto* item = m_textures->currentItem();
 	return item ? textureOf(*item) : boardStyle::Texture::Plain;
+}
+
+bool BoardStyleDialog::eventFilter(QObject* watched, QEvent* event) {
+	if (watched == m_textures->viewport() && event->type() == QEvent::Resize) {
+		fitPreviewCells();
+	}
+	return QDialog::eventFilter(watched, event);
+}
+
+//! Flowing top to bottom, Qt centres an item in its cell vertically only and shrinks it to its content.
+//! Stretching cells and items to the full list width lets the delegate centre icon and name.
+void BoardStyleDialog::fitPreviewCells() {
+	const QSize cell{m_textures->viewport()->width(), m_textures->gridSize().height()};
+	m_textures->setGridSize(cell);
+	for (int row = 0; row != m_textures->count(); ++row) {
+		m_textures->item(row)->setSizeHint(cell);
+	}
 }
 
 void BoardStyleDialog::addTexturePreviews() {

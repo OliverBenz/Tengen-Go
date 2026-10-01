@@ -22,9 +22,13 @@ public:
 
 	boardStyle::Texture texture() const; //!< Selected texture.
 
+protected:
+	bool eventFilter(QObject* watched, QEvent* event) override;
+
 private:
 	void addTexturePreviews();
 	void selectTexture(boardStyle::Texture texture); //!< Falls back to plain if the texture is not listed.
+	void fitPreviewCells();                          //!< Stretch the preview cells over the whole list width.
 
 private:
 	QListWidget* m_textures = nullptr;
