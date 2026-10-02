@@ -8,7 +8,8 @@
 
 namespace tengen {
 
-BoardPresenter::BoardPresenter(app::IGameSession& game, gui::BoardWidget& boardWidget) : m_game(game), m_boardWidget(boardWidget) {
+BoardPresenter::BoardPresenter(app::IGameSession& game, gui::BoardWidget& boardWidget)
+    : m_game(game), m_boardWidget(boardWidget) {
 	QObject::connect(&m_boardWidget, &gui::BoardWidget::boardEvent, this, &BoardPresenter::onBoardEvent);
 	m_boardWidget.setBoard(m_game.board());
 	m_boardWidget.setCurrentPlayer(m_game.currentPlayer());
@@ -20,10 +21,11 @@ BoardPresenter::~BoardPresenter() {
 }
 
 void BoardPresenter::onAppEvent(const app::AppSignal signal) {
-	auto* widget      = &m_boardWidget;
+	auto* widget = &m_boardWidget;
 	switch (signal) {
 	case app::AS_BoardChange: {
 		const Board board = m_game.board();
+		QMetaObject::invokeMethod(this, [this]() { m_soundPlayer.playStonePlace(); }, Qt::QueuedConnection);
 		QMetaObject::invokeMethod(widget, [widget, board]() { widget->setBoard(board); }, Qt::QueuedConnection);
 		return;
 	}

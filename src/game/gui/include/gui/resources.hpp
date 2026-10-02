@@ -38,4 +38,12 @@ QImage loadTexture(Player player);
 
 } // namespace stoneStyle
 
+
+namespace sound {
+
+//! Path to the stone placement sound effect, for gui::SoundPlayer to load.
+QString stonePlace();
+
+} // namespace sound
+
 } // namespace tengen::gui

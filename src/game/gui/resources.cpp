@@ -92,4 +92,12 @@ QImage loadTexture(const Player player) {
 
 } // namespace stoneStyle
 
+namespace sound {
+
+QString stonePlace() {
+	return resourcePath(QStringLiteral("audio/stone_1.wav"));
+}
+
+} // namespace sound
+
 } // namespace tengen::gui
