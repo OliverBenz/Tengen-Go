@@ -2,13 +2,14 @@
 
 #include "core/gameEvent.hpp"
 #include "logging.hpp"
+#include "model/gameRules.hpp"
 
 #include <cassert>
 
 namespace tengen::app {
 
-BotSession::BotSession(const unsigned boardSize, std::unique_ptr<engine::GtpEngine> botEngine, const bool playerPlaysAsBlack)
-    : m_game(boardSize), m_engine(std::move(botEngine)), m_botColour(playerPlaysAsBlack ? Player::White : Player::Black) {
+BotSession::BotSession(const unsigned boardSize, const GameRules& rules, std::unique_ptr<engine::GtpEngine> botEngine, const bool playerPlaysAsBlack)
+    : m_game(boardSize, rules), m_engine(std::move(botEngine)), m_botColour(playerPlaysAsBlack ? Player::White : Player::Black) {
 	assert(m_engine);
 	m_position.init(boardSize);
 	m_position.setStatus(GameStatus::Ready); // The bot is not up yet, so the board takes no moves.
@@ -18,7 +19,7 @@ BotSession::BotSession(const unsigned boardSize, std::unique_ptr<engine::GtpEngi
 	// Bringing the engine up costs seconds, so it answers on its own thread like any other request.
 	// The session stays idle until it is up: the status only opens the board once it answers.
 	m_engine->registerListener(this);
-	m_engine->start(boardSize, m_botColour);
+	m_engine->start(boardSize, rules, m_botColour);
 }
 
 BotSession::~BotSession() {

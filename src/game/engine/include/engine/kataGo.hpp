@@ -10,7 +10,7 @@ class KataGo : public GtpEngine {
 public:
 	explicit KataGo(KataGoConfig config);
 
-	void start(unsigned boardSize, tengen::Player botColour) override;
+	void start(unsigned boardSize, const GameRules& rules, tengen::Player botColour) override;
 
 private:
 	KataGoConfig m_config; //!< Where the engine relevant files physically lie and how the engine should play.

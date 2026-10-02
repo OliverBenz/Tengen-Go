@@ -1,7 +1,9 @@
 #include "boardRenderer.hpp"
 
-#include <QImageReader>
+#include "gui/resources.hpp"
+
 #include <QPainter>
+#include <algorithm>
 #include <array>
 #include <cassert>
 #include <cmath>
@@ -9,20 +11,13 @@
 
 namespace tengen::gui {
 
-BoardRenderer::BoardRenderer(const unsigned nodes) : m_nodes(nodes) {
-	m_ready = m_nodes > 0;
+static constexpr int LINE_WIDTH = 2; //!< Grid line width [px].
 
-	const auto loadTexture = [this](const char* path, QImage& target) {
-		QImageReader reader(path);
-		reader.setAutoTransform(true);
-		target = reader.read();
-		if (target.isNull()) {
-			this->m_ready = false;
-		}
-	};
-
-	loadTexture(GUI_RESOURCES_DIR "/anime_black.png", m_textureBlack);
-	loadTexture(GUI_RESOURCES_DIR "/anime_white.png", m_textureWhite);
+BoardRenderer::BoardRenderer(const unsigned nodes)
+    : m_nodes(nodes) {
+	m_textureBlack = stoneStyle::loadTexture(Player::Black);
+	m_textureWhite = stoneStyle::loadTexture(Player::White);
+	m_ready        = m_nodes > 0 && !m_textureBlack.isNull() && !m_textureWhite.isNull();
 }
 
 unsigned BoardRenderer::nodes() const {
@@ -35,19 +30,51 @@ void BoardRenderer::setNodes(unsigned nodes) {
 	}
 	m_nodes = nodes;
 	m_ready = m_nodes > 0 && !m_textureBlack.isNull() && !m_textureWhite.isNull();
-	if (m_boardSizePxRequested > 0 && m_nodes > 0) {
-		updateMetrics(m_boardSizePxRequested);
-		updateStoneTextures();
-	}
+	updateLayout();
 }
 
 void BoardRenderer::setBoardSizePx(const unsigned boardSizePx) {
-	m_boardSizePxRequested = boardSizePx;
-	if (boardSizePx == 0 || m_nodes == 0) {
+	if (boardSizePx == m_boardSizePxRequested) {
 		return;
 	}
-	updateMetrics(boardSizePx);
+	m_boardSizePxRequested = boardSizePx;
+	updateLayout();
+}
+
+unsigned BoardRenderer::boardSizePx() const {
+	return m_boardSize;
+}
+
+void BoardRenderer::setDevicePixelRatio(const qreal ratio) {
+	if (ratio == m_devicePixelRatio) {
+		return;
+	}
+	m_devicePixelRatio = ratio;
 	updateStoneTextures();
+	updateBackgroundTexture();
+}
+
+void BoardRenderer::setBackgroundTexture(const boardStyle::Texture texture) {
+	m_textureBackground = boardStyle::loadTexture(texture);
+	updateBackgroundTexture();
+}
+
+void BoardRenderer::updateLayout() {
+	if (m_boardSizePxRequested == 0 || m_nodes == 0) {
+		return;
+	}
+
+	// Rescaling is expensive: only redo the textures whose size changed.
+	// The board snaps to a multiple of the nodes, so most resize steps change neither.
+	const unsigned oldBoardSize = m_boardSize;
+	const unsigned oldStoneSize = m_stoneSize;
+	updateMetrics(m_boardSizePxRequested);
+	if (m_stoneSize != oldStoneSize) {
+		updateStoneTextures();
+	}
+	if (m_boardSize != oldBoardSize) {
+		updateBackgroundTexture();
+	}
 }
 
 void BoardRenderer::updateMetrics(const unsigned boardSizePx) {
@@ -55,7 +82,7 @@ void BoardRenderer::updateMetrics(const unsigned boardSizePx) {
 	m_stoneSize  = m_boardSize / m_nodes;
 	m_drawStepPx = m_stoneSize / 2;
 	m_coordStart = m_drawStepPx;
-	m_coordEnd   = m_boardSize > m_drawStepPx ? m_boardSize - m_drawStepPx : 0;
+	m_coordEnd   = m_coordStart + (m_nodes - 1) * m_stoneSize; // Last line, exact even for odd stone sizes.
 }
 
 void BoardRenderer::updateStoneTextures() {
@@ -63,9 +90,23 @@ void BoardRenderer::updateStoneTextures() {
 		return;
 	}
 
-	const QSize targetSize{static_cast<int>(m_stoneSize), static_cast<int>(m_stoneSize)};
+	const int side = qRound(m_stoneSize * m_devicePixelRatio);
+	const QSize targetSize{side, side};
 	m_scaledBlack = m_textureBlack.scaled(targetSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
 	m_scaledWhite = m_textureWhite.scaled(targetSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+	m_scaledBlack.setDevicePixelRatio(m_devicePixelRatio);
+	m_scaledWhite.setDevicePixelRatio(m_devicePixelRatio);
+}
+
+void BoardRenderer::updateBackgroundTexture() {
+	if (m_textureBackground.isNull() || m_boardSize == 0) {
+		m_scaledBackground = {};
+		return;
+	}
+
+	const int side     = qRound(m_boardSize * m_devicePixelRatio);
+	m_scaledBackground = m_textureBackground.scaled(side, side, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+	m_scaledBackground.setDevicePixelRatio(m_devicePixelRatio);
 }
 
 void BoardRenderer::draw(QPainter& painter, const Board& board, const Ghost& ghost) const {
@@ -94,14 +135,15 @@ bool BoardRenderer::isReady() const {
 }
 
 void BoardRenderer::drawBackground(QPainter& painter) const {
-	static constexpr int LW = 2; //!< Line width for grid
-	static const QColor background{220, 179, 92};
-
 	painter.save();
 	painter.setRenderHint(QPainter::Antialiasing, true);
-	painter.fillRect(QRect{0, 0, static_cast<int>(m_boardSize), static_cast<int>(m_boardSize)}, background);
+	if (m_scaledBackground.isNull()) {
+		painter.fillRect(QRect{0, 0, static_cast<int>(m_boardSize), static_cast<int>(m_boardSize)}, boardStyle::PLAIN_COLOUR);
+	} else {
+		painter.drawImage(QPoint{0, 0}, m_scaledBackground);
+	}
 
-	painter.setPen(QPen(Qt::black, LW));
+	painter.setPen(QPen(Qt::black, LINE_WIDTH));
 	const int effBoardWidth = static_cast<int>(m_coordEnd - m_coordStart);
 	const int coordStart    = static_cast<int>(m_coordStart);
 	const int coordEnd      = coordStart + effBoardWidth;
@@ -122,15 +164,16 @@ void BoardRenderer::drawStarPoints(QPainter& painter) const {
 	const unsigned inset  = m_nodes >= 13u ? 3u : 2u;
 	const unsigned center = m_nodes / 2u;
 	const std::array<unsigned, 3> points{inset, center, m_nodes - 1u - inset};
-	const int radius = std::max(2, static_cast<int>(m_stoneSize / 10u));
+	const qreal stoneRatio = m_nodes >= 13u ? 8.0 : 10.0;                          // Large cells on small boards need relatively smaller points.
+	const qreal radius     = std::max(1.5 * LINE_WIDTH, m_stoneSize / stoneRatio); // Must stay wider than the lines to be visible.
 
 	painter.setBrush(Qt::black);
 	painter.setPen(Qt::NoPen);
 
 	const auto drawPoint = [this, &painter, radius](const unsigned x, const unsigned y) {
-		const int centerX = static_cast<int>(m_coordStart + x * m_stoneSize);
-		const int centerY = static_cast<int>(m_coordStart + y * m_stoneSize);
-		painter.drawEllipse(QPoint{centerX, centerY}, radius, radius);
+		const auto centerX = static_cast<qreal>(m_coordStart + x * m_stoneSize);
+		const auto centerY = static_cast<qreal>(m_coordStart + y * m_stoneSize);
+		painter.drawEllipse(QPointF{centerX, centerY}, radius, radius);
 	};
 
 	drawPoint(points[0], points[0]);

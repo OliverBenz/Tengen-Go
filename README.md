@@ -86,9 +86,11 @@ The project is configured via [`CMakePresets.json`](CMakePresets.json): `Win64` 
 cmake --preset Win64 && cmake --build --preset Win64-Debug
 ```
 
-OpenCV has no package manager on Windows, so `OpenCV_DIR` must point at the OpenCV build directory containing `OpenCVConfig.cmake`.
-The `Win64` preset currently hardcodes this to `C:/opencv/build`; if your install lives elsewhere, edit that path or override it in a local `CMakeUserPresets.json`.
-On Linux, OpenCV is expected to come from the system package manager, so no manual step is needed there.
+Qt 6 and OpenCV are required. On Linux they come from the system package manager.
+On Windows you install both by hand and add them to your environment variables, see the [Compilation Instructions](docs/Compilation.md).
+
+The Visual Studio generator can't write `compile_commands.json` for clangd.
+On Windows, run [`scripts/configure-clangd.ps1`](scripts/configure-clangd.ps1) instead: it configures the `Win64-Ninja` preset (MSVC + Ninja) from an x64 VS developer shell and copies the file to the project root.
 
 ## Bot Games
 
@@ -142,6 +144,7 @@ KataGo imitates a human of the rank you pick in the bot dialog, from 20k to 3d.
 
 ## General Documentation
 
+- [Compilation](docs/Compilation.md) — installing dependencies and building
 - [Core](docs/Core.md) — core rules/logic overview
 - [GUI](docs/GUI.md) — GUI architecture and rendering notes
 - [Networking](docs/Networking.md) — higher-level networking notes
@@ -159,3 +162,5 @@ KataGo imitates a human of the rank you pick in the bot dialog, from 20k to 3d.
 Licensed under the GNU Affero General Public License v3.0 (AGPL-3.0-or-later). See `LICENSE`.
 
 Copyright (C) 2024 Oliver Benz.
+
+Third-party assets (stone images, board textures) keep their own licenses, listed in [src/game/gui/resources](src/game/gui/resources/README.md).

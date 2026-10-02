@@ -10,7 +10,8 @@ GnuGo::GnuGo(GnuGoConfig config)
     : m_config(std::move(config)) {
 }
 
-void GnuGo::start(const unsigned boardSize, const tengen::Player botColour) {
+// TODO: Forward the ko, scoring and suicide rules. So far only the komi set and and we always use Ko::Situational.
+void GnuGo::start(const unsigned boardSize, const GameRules& rules, const tengen::Player botColour) {
 	const int level              = std::clamp(m_config.level, GnuGoConfig::weakestLevel, GnuGoConfig::strongestLevel);
 	const std::string executable = m_config.files.executable.string();
 
@@ -26,7 +27,7 @@ void GnuGo::start(const unsigned boardSize, const tengen::Player botColour) {
 	        },
 	        .requiredFiles = {executable},
 	        .logFile       = "gnugo.log"},
-	       boardSize, botColour);
+	       boardSize, rules, botColour);
 }
 
 } // namespace tengen::engine

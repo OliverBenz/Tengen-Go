@@ -17,7 +17,7 @@ jobs:
     - name: Install dependencies
       run: |
         pacman -Syu --noconfirm --needed \
-          git cmake ninja opencv qt6-base
+          git cmake ninja opencv qt6-base qt6-multimedia
 
     - uses: actions/checkout@v4
       with:

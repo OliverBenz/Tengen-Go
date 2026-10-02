@@ -1,5 +1,6 @@
 #pragma once
 
+#include "gui/resources.hpp"
 #include "model/board.hpp"
 
 #include <QImage>
@@ -18,45 +19,49 @@ public:
 		bool draw;           //!< Draw a ghost stone or not.
 	};
 
-	unsigned nodes() const;
-	void setNodes(unsigned nodes);
-	void setBoardSizePx(unsigned boardSizePx);
-	void draw(QPainter& painter, const Board& board, const Ghost& ghost) const;
-	QRect stoneRect(Coord coord) const;
-	bool isReady() const;
+	unsigned nodes() const;       //!< Board size in lines.
+	unsigned boardSizePx() const; //!< Drawn board size [px]. Snapped to a multiple of the nodes.
+	bool isReady() const;         //!< Textures loaded and size set.
 
-	//! Try to convert pixel values to a board coordinate.
-	bool pixelToCoord(int pX, int pY, Coord& coord) const;
+	void setNodes(unsigned nodes);                  //!< Set the board size in lines.
+	void setBoardSizePx(unsigned boardSizePx);      //!< Set the available board size [px].
+	void setDevicePixelRatio(qreal ratio);          //!< Set the display scaling. Keeps textures sharp.
+	void setBackgroundTexture(boardStyle::Texture texture); //!< Set the board image.
 
-private:
-	//! Draw the board background.
-	void drawBackground(QPainter& painter) const;
-	//! Draw star points for standard board sizes.
-	void drawStarPoints(QPainter& painter) const;
-	//! Draw all stones given a board.
-	void drawStones(QPainter& painter, const Board& board) const;
-	//! Draw a single stone at a given index.
-	void drawStone(QPainter& painter, unsigned x, unsigned y, Board::Stone player) const;
-
-	//! Transforms pixel value to board coordinate.
-	bool pixelToCoord(int px, unsigned& coord) const;
-	void updateMetrics(unsigned boardSizePx);
-	void updateStoneTextures();
+	void draw(QPainter& painter, const Board& board, const Ghost& ghost) const; //!< Draw board, ghost stone and stones.
+	QRect stoneRect(Coord coord) const;                                         //!< Area of a stone [px].
+	bool pixelToCoord(int pX, int pY, Coord& coord) const;                      //!< Convert a pixel to a board coordinate.
 
 private:
-	unsigned m_boardSize            = 0; //!< Pixels for the whole board (without coordinate text).
-	unsigned m_stoneSize            = 0; //!< Pixel diameter of a stone.
-	unsigned m_nodes                = 0; //!< Number of line intersection (Game board size).
-	unsigned m_boardSizePxRequested = 0;
-	unsigned m_drawStepPx           = 0; //!< Half a stone offset from border [px]
-	unsigned m_coordStart           = 0; //!< (x,y) starting coordinate of lines [px]
-	unsigned m_coordEnd             = 0; //!< (x,y) ending coordinate of lines [px]
+	void updateLayout();                      //!< Apply nodes and requested size. Rescales only textures whose size changed.
+	void updateMetrics(unsigned boardSizePx); //!< Compute stone size and line positions.
+	void updateStoneTextures();               //!< Rescale the stones to the stone size.
+	void updateBackgroundTexture();           //!< Rescale the background to the board size.
 
-	QImage m_textureBlack;
-	QImage m_textureWhite;
-	QImage m_scaledBlack;
-	QImage m_scaledWhite;
-	bool m_ready = false; //!< Textures have been loaded.
+	void drawBackground(QPainter& painter) const;                                         //!< Draw background, lines and star points.
+	void drawStarPoints(QPainter& painter) const;                                         //!< Draw star points for standard board sizes.
+	void drawStones(QPainter& painter, const Board& board) const;                         //!< Draw all stones of a board.
+	void drawStone(QPainter& painter, unsigned x, unsigned y, Board::Stone player) const; //!< Draw a single stone.
+
+	bool pixelToCoord(int px, unsigned& coord) const; //!< Convert a pixel to a coordinate on one axis.
+
+private:
+	unsigned m_nodes                = 0;   //!< Board size in lines.
+	unsigned m_boardSizePxRequested = 0;   //!< Available board size [px].
+	unsigned m_boardSize            = 0;   //!< Drawn board size [px].
+	unsigned m_stoneSize            = 0;   //!< Stone diameter [px].
+	unsigned m_drawStepPx           = 0;   //!< Half a stone [px].
+	unsigned m_coordStart           = 0;   //!< First line position [px].
+	unsigned m_coordEnd             = 0;   //!< Last line position [px].
+	qreal m_devicePixelRatio        = 1.0; //!< Display scaling.
+
+	QImage m_textureBlack;      //!< Black stone source.
+	QImage m_textureWhite;      //!< White stone source.
+	QImage m_scaledBlack;       //!< Black stone at stone size.
+	QImage m_scaledWhite;       //!< White stone at stone size.
+	QImage m_textureBackground; //!< Square board image source. Null draws the plain colour.
+	QImage m_scaledBackground;  //!< Board image at board size.
+	bool m_ready = false;       //!< Textures loaded.
 };
 
 } // namespace tengen::gui

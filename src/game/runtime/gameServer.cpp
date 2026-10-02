@@ -2,6 +2,7 @@
 
 #include "core/game.hpp"
 #include "logging.hpp"
+#include "model/gameRules.hpp"
 
 #include <cassert>
 #include <format>
@@ -12,7 +13,9 @@ static constexpr char LOG_REC_PUT[]    = "[GameServer] Received Event 'Put'    f
 static constexpr char LOG_REC_PASS[]   = "[GameServer] Received Event 'Pass'   from Player {}.";
 static constexpr char LOG_REC_RESIGN[] = "[GameServer] Received Event 'Resign' from Player {}.";
 
-GameServer::GameServer(std::size_t boardSize) : m_game(boardSize) {
+GameServer::GameServer(std::size_t boardSize, const GameRules& rules, Player firstPlayer)
+    : m_game(boardSize, rules) {
+	m_server.setFirstSeat(firstPlayer == Player::Black ? network::Seat::Black : network::Seat::White);
 }
 GameServer::~GameServer() {
 	stop();
@@ -47,7 +50,7 @@ void GameServer::onClientConnected(network::SessionId sessionId, network::Seat s
 	}
 
 	const auto player = seat == network::Seat::Black ? Player::Black : Player::White;
-	if (m_game.isActive()) {
+	if (hasGameStarted()) {
 		return; // TODO: Reconnect?
 	}
 	if (m_players.contains(player)) {
@@ -57,7 +60,7 @@ void GameServer::onClientConnected(network::SessionId sessionId, network::Seat s
 
 	Logger().Log(Logging::LogLevel::Info, std::format("[GameServer] Client '{}' connected.", sessionId));
 
-	if (m_players.size() == 2 && !m_gameThread.joinable()) {
+	if (m_players.size() == 2 && !hasGameStarted()) {
 		m_gameThread = std::thread([this] { m_game.run(); });
 
 		// TODO: Komi and timer not yet implemented.
@@ -123,9 +126,14 @@ void GameServer::onGameDelta(const GameDelta& delta) {
 	m_server.broadcast(updateEvent);
 }
 
+bool GameServer::hasGameStarted() const {
+	// We launch the game thread when 2 players connected
+	return m_gameThread.joinable();
+}
+
 void GameServer::handleNetworkEvent(Player player, const network::ClientPutStone& event) {
-	if (!m_game.isActive()) {
-		Logger().Log(Logging::LogLevel::Warning, "[GameServer] Rejecting PutStone: game is not active.");
+	if (!hasGameStarted()) {
+		Logger().Log(Logging::LogLevel::Warning, "[GameServer] Rejecting PutStone: game has not started.");
 		return;
 	}
 
@@ -136,8 +144,8 @@ void GameServer::handleNetworkEvent(Player player, const network::ClientPutStone
 }
 
 void GameServer::handleNetworkEvent(Player player, const network::ClientPass&) {
-	if (!m_game.isActive()) {
-		Logger().Log(Logging::LogLevel::Warning, "[GameServer] Rejecting Pass: game is not active.");
+	if (!hasGameStarted()) {
+		Logger().Log(Logging::LogLevel::Warning, "[GameServer] Rejecting Pass: game has not started.");
 		return;
 	}
 
@@ -146,7 +154,7 @@ void GameServer::handleNetworkEvent(Player player, const network::ClientPass&) {
 }
 
 void GameServer::handleNetworkEvent(Player player, const network::ClientResign&) {
-	if (!m_game.isActive()) {
+	if (!hasGameStarted()) {
 		Logger().Log(Logging::LogLevel::Warning, "[GameServer] Rejecting Resign: game already inactive.");
 		return;
 	}

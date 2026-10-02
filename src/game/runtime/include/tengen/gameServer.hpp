@@ -2,6 +2,7 @@
 
 #include "core/IGameStateListener.hpp"
 #include "core/game.hpp"
+#include "model/gameRules.hpp"
 #include "model/player.hpp"
 #include "network/server.hpp"
 
@@ -15,7 +16,7 @@ namespace app {
 
 class GameServer : public network::IServerHandler, public IGameStateListener {
 public:
-	explicit GameServer(std::size_t boardSize = 9u);
+	GameServer(std::size_t boardSize, const GameRules& rules, Player firstPlayer); //!< The first client to connect plays firstPlayer.
 	~GameServer();
 
 	void start(); //!< Boot the network listener and the server event loop.
@@ -30,6 +31,8 @@ public:
 	void onGameDelta(const GameDelta& delta) override;
 
 private:
+	bool hasGameStarted() const; //!< True once both players are seated and the game loop is launched.
+
 	// Processing of the network events that are sent in the server event message payload.
 	void handleNetworkEvent(Player player, const network::ClientPutStone& event);
 	void handleNetworkEvent(Player player, const network::ClientPass& event);

@@ -1,28 +1,28 @@
 #pragma once
 
-#include "core/IZobristHash.hpp"
 #include "core/SafeQueue.hpp"
 #include "core/eventHub.hpp"
 #include "core/gameEvent.hpp"
-#include "core/position.hpp"
-
-#include <unordered_set>
+#include "core/gameState.hpp"
+#include "model/gameRules.hpp"
 
 namespace tengen {
 
 using EventQueue = SafeQueue<GameEvent>;
 
 //! Core game setup.
-//! This owns the rules loop and emits deltas; external code should only push events and listen.
+//! You first register as a game (signal/state) listener to get notified on game changes.
+//! Then, you push events. The game will forward these to the GameState class and signal you on updates.
 class Game {
 public:
 	//! Setup a game of certain board size without starting the game loop.
-	Game(std::size_t boardSize); // TODO: Will be extended to take a game configuration(timer type, board size, ruleset, etc).
+	Game(std::size_t boardSize, const GameRules& rules);
 
-	void run();                      //!< Run the main game loop/start handling the event loop (blocking).
+	void run();                      //!< Handle events until a ShutdownEvent (blocking). Keeps running after the game ended.
 	void pushEvent(GameEvent event); //!< Push an event to the event queue.
-	bool isActive() const;           //!< Return if the game is active or not.
 
+	// TODO: Remove. Callers know the size from construction, and reading it off the game thread races with run().
+	// TODO: We should signal on game start to make the event stream complete. Let the listeners know game start+rules+boardSize, etc.
 	std::size_t boardSize() const;
 
 public:
@@ -38,15 +38,11 @@ private:
 	void handleEvent(const ShutdownEvent& event);
 
 private:
-	bool m_gameActive;
-	unsigned m_consecutivePasses{0}; //!< Two consequtive passes ends game.
+	bool m_running{false}; //!< Event loop runs until a ShutdownEvent.
 
-	GamePosition m_position;
+	GameState m_state;       //!< Position and rules. All position changes go through here.
 	EventQueue m_eventQueue; //!< Queue of internal game events we have to handle.
 	EventHub m_eventHub;     //!< Hub to signal updates of the game state to external components.
-
-	std::unordered_set<uint64_t> m_seenHashes; //!< History of board states.
-	std::unique_ptr<IZobristHash> m_hasher;    //!< Store the last 2 moves. Allows to check repeating board state.
 };
 
 } // namespace tengen

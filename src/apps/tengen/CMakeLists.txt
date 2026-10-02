@@ -2,7 +2,7 @@ include_guard(GLOBAL)
 
 set(targetName tengen)
 
-find_package(Qt6 REQUIRED COMPONENTS Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Concurrent)
 
 add_executable(${targetName}
     "${CMAKE_CURRENT_LIST_DIR}/main.cpp"
@@ -10,6 +10,10 @@ add_executable(${targetName}
     "${CMAKE_CURRENT_LIST_DIR}/MainWindowPresenter.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/GamePresenter.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/BoardPresenter.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/BoardSizeWidget.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/PlayerColourWidget.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/LocalGameDialog.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/RulesConfigWidget.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/BotDialog.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/GnuGoConfigWidget.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/KataGoConfigWidget.cpp"
@@ -18,6 +22,7 @@ add_executable(${targetName}
     "${CMAKE_CURRENT_LIST_DIR}/HostDialog.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/HelpDialog.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/AboutDialog.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/BoardStyleDialog.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/Logging.cpp"
 )
 
@@ -27,6 +32,7 @@ target_link_libraries(${targetName}
         tengen::game::runtime
         tengen::game::gui
         Qt6::Widgets
+        Qt6::Concurrent
 )
 
 target_compile_definitions(${targetName}

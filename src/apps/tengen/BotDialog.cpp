@@ -1,9 +1,10 @@
 #include "BotDialog.hpp"
 
+#include "BoardSizeWidget.hpp"
 #include "GnuGoConfigWidget.hpp"
 #include "KataGoConfigWidget.hpp"
-#include "Logging.hpp"
-#include "model/player.hpp"
+#include "PlayerColourWidget.hpp"
+#include "RulesConfigWidget.hpp"
 
 #include <QComboBox>
 #include <QDialogButtonBox>
@@ -41,16 +42,9 @@ BotDialog::BotDialog(const engine::InstalledEngines& engines, QWidget* parent)
 		}
 	}
 
-	m_boardSize = new QComboBox(this);
-	m_boardSize->addItem("9x9", 9u);
-	m_boardSize->addItem("13x13", 13u);
-	m_boardSize->addItem("19x19", 19u);
-	m_boardSize->setCurrentIndex(0);
-
-	m_colour = new QComboBox(this);
-	m_colour->addItem("Black", static_cast<int>(Player::Black));
-	m_colour->addItem("White", static_cast<int>(Player::White));
-	m_colour->setCurrentIndex(0);
+	m_boardSize = new BoardSizeWidget(this);
+	m_colour    = new PlayerColourWidget(this);
+	m_rules     = new RulesConfigWidget(this);
 
 	// Every engine counts its strength its own way. Its config widget shows which, so the row only says what it sets.
 	auto* form = new QFormLayout();
@@ -58,6 +52,7 @@ BotDialog::BotDialog(const engine::InstalledEngines& engines, QWidget* parent)
 	form->addRow(tr("Strength:"), m_engineConfigs);
 	form->addRow(tr("Board size:"), m_boardSize);
 	form->addRow(tr("Your color:"), m_colour);
+	form->addRow(tr("Rules:"), m_rules); // Last, so the custom rules unfold below everything else.
 
 	// Without an engine there is nothing to play against.
 	const bool anyInstalled = engines.gnuGo || engines.kataGo;
@@ -71,19 +66,18 @@ BotDialog::BotDialog(const engine::InstalledEngines& engines, QWidget* parent)
 	connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
 	auto* layout = new QVBoxLayout(this);
+	layout->setSizeConstraint(QLayout::SetFixedSize); // Shrink back once the custom rules hide again.
 	layout->addLayout(form);
 	layout->addWidget(noEngine);
 	layout->addWidget(buttons);
 }
 
 unsigned BotDialog::boardSize() const {
-	const unsigned boardSize = m_boardSize->currentData().toUInt();
+	return m_boardSize->boardSize();
+}
 
-	if (boardSize != 9 && boardSize != 13 && boardSize != 19) {
-		Logger().Log(Logging::LogLevel::Error, "Invalid board size selected in Bot game. Choosing 9x9.");
-		return 9u;
-	}
-	return boardSize;
+GameRules BotDialog::rules() const {
+	return m_rules->rules();
 }
 
 engine::EngineConfig BotDialog::engineConfig() const {
@@ -96,13 +90,7 @@ engine::EngineConfig BotDialog::engineConfig() const {
 }
 
 bool BotDialog::humanPlaysBlack() const {
-	const int player = m_colour->currentData().toInt();
-
-	if (player != static_cast<int>(Player::White) && player != static_cast<int>(Player::Black)) {
-		Logger().Log(Logging::LogLevel::Error, "Invalid player selection in Bot game. Choosing Black.");
-		return true;
-	}
-	return static_cast<Player>(player) == Player::Black;
+	return m_colour->player() == Player::Black;
 }
 
 void BotDialog::addEngine(const QString& name, QWidget* configWidget, const bool installed) {

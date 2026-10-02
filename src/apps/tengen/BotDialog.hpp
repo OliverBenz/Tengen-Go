@@ -1,6 +1,7 @@
 #pragma once
 
 #include "engine/engineCatalog.hpp"
+#include "model/gameRules.hpp"
 
 #include <QDialog>
 
@@ -9,8 +10,11 @@ class QStackedWidget;
 
 namespace tengen::gui {
 
+class BoardSizeWidget;
 class GnuGoConfigWidget;
 class KataGoConfigWidget;
+class PlayerColourWidget;
+class RulesConfigWidget;
 
 class BotDialog : public QDialog {
 	Q_OBJECT
@@ -20,6 +24,7 @@ public:
 	explicit BotDialog(const engine::InstalledEngines& engines, QWidget* parent = nullptr);
 
 	unsigned boardSize() const;
+	GameRules rules() const;                   //!< The rules the game is played under.
 	engine::EngineConfig engineConfig() const; //!< The engine the user picked and how it should play.
 	bool humanPlaysBlack() const;
 
@@ -34,8 +39,9 @@ private:
 	GnuGoConfigWidget* m_gnuGo{nullptr};      //!< Configuration for the GnuGo engine.
 	KataGoConfigWidget* m_kataGo{nullptr};    //!< Configuration for the KataGo engine.
 
-	QComboBox* m_boardSize{nullptr}; //!< Slector for the board size.
-	QComboBox* m_colour{nullptr};    //!< Selector for which colour stones the player uses.
+	BoardSizeWidget* m_boardSize{nullptr}; //!< Selector for the board size.
+	PlayerColourWidget* m_colour{nullptr}; //!< Selector for which colour stones the player uses.
+	RulesConfigWidget* m_rules{nullptr};   //!< Selector for the rules.
 };
 
 } // namespace tengen::gui

@@ -1,8 +1,9 @@
 #pragma once
 
-#include "core/IZobristHash.hpp"
 #include "model/board.hpp"
 #include "model/player.hpp"
+
+#include <cstdint>
 
 namespace tengen {
 
@@ -10,14 +11,14 @@ namespace tengen {
 struct GamePosition {
 	Board board;                         //!< Current board.
 	Player currentPlayer{Player::Black}; //!< Current Player.
-	uint64_t hash{0};                    //!< Game state hash.
+	uint64_t hash{0};                    //!< Zobrist hash of the board alone. The empty board hashes to 0.
 	unsigned moveId{0};                  //!< Move number of game.
 
 public:
 	GamePosition(std::size_t boardSize);
 
-	void putStone(Coord c, IZobristHash& hasher); //!< Current player puts a stone (assumes legal move).
-	void pass(IZobristHash& hasher);              //!< Current player passes his turn.
+	void play(Board nextBoard, uint64_t nextHash); //!< Current player made a move that left this board.
+	void pass();                                   //!< Current player passes his turn.
 };
 
 } // namespace tengen

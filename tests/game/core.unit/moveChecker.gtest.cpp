@@ -222,7 +222,7 @@ TEST(MoveChecker, Suicide) {
 		board.place({1u, 2u}, Board::Stone::Black);
 
 		// Legal move
-		EXPECT_TRUE(isValidMove(board, Player::Black, {1u, 1u}));
+		EXPECT_TRUE(playStone(board, Player::Black, {1u, 1u}, false).has_value());
 		EXPECT_EQ(computeGroupLiberties(board, {1u, 1u}, Player::White), 1u);
 	}
 
@@ -235,7 +235,7 @@ TEST(MoveChecker, Suicide) {
 		board.place({2u, 1u}, Board::Stone::Black);
 
 		// Suicide -> invalid move
-		EXPECT_FALSE(isValidMove(board, Player::White, {1u, 1u}));
+		EXPECT_FALSE(playStone(board, Player::White, {1u, 1u}, false).has_value());
 		EXPECT_EQ(computeGroupLiberties(board, {1u, 1u}, Player::White), 0u);
 	}
 	{
@@ -261,7 +261,7 @@ TEST(MoveChecker, Suicide) {
 		board.place({4u, 1u}, Board::Stone::Black);
 
 		// Suicide -> invalid move
-		EXPECT_FALSE(isValidMove(board, Player::White, {3u, 1u}));
+		EXPECT_FALSE(playStone(board, Player::White, {3u, 1u}, false).has_value());
 		EXPECT_EQ(computeGroupLiberties(board, {3u, 1u}, Player::White), 0u);
 
 		// Now add white stones which would allow the same move to be a capture
@@ -271,7 +271,7 @@ TEST(MoveChecker, Suicide) {
 		board.place({5u, 1u}, Board::Stone::White);
 
 		// Now we capture -> Move valid
-		EXPECT_TRUE(isValidMove(board, Player::White, {3u, 1u}));
+		EXPECT_TRUE(playStone(board, Player::White, {3u, 1u}, false).has_value());
 		EXPECT_EQ(computeGroupLiberties(board, {3u, 1u}, Player::White), 0u);
 	}
 
@@ -290,7 +290,7 @@ TEST(MoveChecker, Suicide) {
 		board.place({3u, 1u}, Board::Stone::White);
 
 		// Captures -> valid move
-		EXPECT_TRUE(isValidMove(board, Player::White, {1u, 1u}));
+		EXPECT_TRUE(playStone(board, Player::White, {1u, 1u}, false).has_value());
 		EXPECT_EQ(computeGroupLiberties(board, {1u, 1u}, Player::White), 0u);
 	}
 }
@@ -313,55 +313,53 @@ TEST(MoveChecker, Kill) {
 
 		board.place({3u, 1u}, Board::Stone::White);
 
-		EXPECT_TRUE(isValidMove(board, Player::White, {1u, 1u}));
+		const auto placement = playStone(board, Player::White, {1u, 1u}, false);
+		ASSERT_TRUE(placement.has_value());
+		EXPECT_EQ(placement->captured.size(), 4u);
+		EXPECT_TRUE(placement->selfCaptured.empty());
+		EXPECT_EQ(placement->board.get({1u, 1u}), Board::Stone::White);
+		EXPECT_TRUE(placement->board.isEmpty({0u, 1u}));
+		EXPECT_TRUE(placement->board.isEmpty({1u, 0u}));
+		EXPECT_TRUE(placement->board.isEmpty({1u, 2u}));
+		EXPECT_TRUE(placement->board.isEmpty({2u, 1u}));
 	}
 }
 
-// TEST(MoveChecker, SuperkoRejectsRepeatedState) {
-// 	Position pos{9u};
-// 	ZobristHash<9u> hasher;
-// 	std::unordered_set<uint64_t> history;
-// 	history.insert(pos.hash); // Empty board, black to move.
+TEST(MoveChecker, RejectsOffBoardAndOccupied) {
+	Board board(9u);
+	board.place({4u, 4u}, Board::Stone::Black);
 
-// 	Position next{pos.board.size()};
-// 	ASSERT_TRUE(isNextPositionLegal(pos, Player::Black, {4u, 4u}, hasher, history, next));
-// 	history.insert(next.hash);
+	EXPECT_FALSE(playStone(board, Player::White, {4u, 4u}, false).has_value());
+	EXPECT_FALSE(playStone(board, Player::White, {9u, 0u}, false).has_value());
+	EXPECT_FALSE(playStone(board, Player::White, {0u, 9u}, false).has_value());
+}
 
-// 	Position rejected{pos.board.size()};
-// 	EXPECT_FALSE(isNextPositionLegal(pos, Player::Black, {4u, 4u}, hasher, history, rejected));
-// }
+TEST(MoveChecker, LegalSuicideRemovesOwnGroup) {
+	Board board(9u);
+	board.place({0u, 0u}, Board::Stone::White);
+	board.place({1u, 0u}, Board::Stone::Black);
+	board.place({1u, 1u}, Board::Stone::Black);
+	board.place({0u, 2u}, Board::Stone::Black);
 
-// TEST(MoveChecker, SuperkoAllowsNewHashes) {
-// 	Board board(9u);
-// 	board.place({0u, 1u}, Board::Stone::White);
-// 	board.place({1u, 0u}, Board::Stone::White);
-// 	board.place({1u, 2u}, Board::Stone::White);
+	EXPECT_FALSE(playStone(board, Player::White, {0u, 1u}, false).has_value());
 
-// 	board.place({2u, 1u}, Board::Stone::Black);
+	const auto placement = playStone(board, Player::White, {0u, 1u}, true);
+	ASSERT_TRUE(placement.has_value());
+	EXPECT_TRUE(placement->captured.empty());
+	EXPECT_EQ(placement->selfCaptured.size(), 2u);
+	EXPECT_TRUE(placement->board.isEmpty({0u, 0u}));
+	EXPECT_TRUE(placement->board.isEmpty({0u, 1u}));
+	EXPECT_EQ(placement->board.get({1u, 0u}), Board::Stone::Black);
+}
 
-// 	Position pos{9u};
-// 	pos.board = board;
-// 	pos.currentPlayer = Player::White;
+TEST(MoveChecker, LoneStoneSuicideIsNeverLegal) {
+	Board board(9u);
+	board.place({0u, 1u}, Board::Stone::Black);
+	board.place({1u, 0u}, Board::Stone::Black);
+	board.place({1u, 2u}, Board::Stone::Black);
+	board.place({2u, 1u}, Board::Stone::Black);
 
-// 	ZobristHash<9u> hasher;
-// 	uint64_t h = 0;
-// 	for (Id x = 0; x < board.size(); ++x)
-// 		for (Id y = 0; y < board.size(); ++y) {
-// 			const Coord c{x, y};
-// 			const auto v = board.getAt(c);
-// 			if (v != Board::Stone::Empty)
-// 				h ^= hasher.stone(c, v == Board::Stone::White ? Player::White : Player::Black);
-// 		}
-// 	h ^= hasher.togglePlayer(); // White to move
-// 	pos.hash = h;
-
-// 	std::unordered_set<uint64_t> history{pos.hash};
-
-// 	Position next{pos.board.size()};
-// 	EXPECT_TRUE(isNextPositionLegal(pos, Player::White, {2u, 0u}, hasher, history, next));
-// 	EXPECT_NE(next.hash, pos.hash);
-// 	history.insert(next.hash);
-// 	EXPECT_FALSE(history.contains(pos.hash)); // Ensure we did not accidentally mutate history inside the call.
-// }
+	EXPECT_FALSE(playStone(board, Player::White, {1u, 1u}, true).has_value());
+}
 
 } // namespace tengen::gtest

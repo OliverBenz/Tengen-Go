@@ -3,6 +3,7 @@
 #include "core/IGameStateListener.hpp"
 #include "core/game.hpp"
 #include "engine/gtpEngine.hpp"
+#include "model/gameRules.hpp"
 #include "tengen/IGameSession.hpp"
 #include "tengen/eventHub.hpp"
 #include "tengen/position.hpp"
@@ -31,7 +32,7 @@ public:
 
 	//! The session takes the engine over: it starts it for this game and shuts it down with it.
 	//! How the bot plays is the engine's own config, so the session never needs to know it.
-	BotSession(unsigned boardSize, std::unique_ptr<engine::GtpEngine> botEngine, bool playerPlaysAsBlack);
+	BotSession(unsigned boardSize, const GameRules& rules, std::unique_ptr<engine::GtpEngine> botEngine, bool playerPlaysAsBlack);
 	~BotSession() override;
 
 public: // IGameSession Interface

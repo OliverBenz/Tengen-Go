@@ -24,19 +24,28 @@ MainWindowPresenter::MainWindowPresenter(gui::MainWindow& mainWindow)
 	QObject::connect(&m_mainWindow, &gui::MainWindow::hostRequested, this, &MainWindowPresenter::onHostRequested);
 	QObject::connect(&m_mainWindow, &gui::MainWindow::shutdownRequested, this, &MainWindowPresenter::onShutdownRequested);
 
-	startOpenPlay();
+	startOpenPlay(9u, fromRuleSet(RuleSet::Japanese));
 }
 
 MainWindowPresenter::~MainWindowPresenter() = default;
 
-void MainWindowPresenter::startOpenPlay() {
-	m_gameSession   = std::make_unique<app::OpenSession>(9u);
+void MainWindowPresenter::startOpenPlay(const unsigned boardSize, const GameRules& rules) {
+	showLocalPlayers();
+	m_gameSession   = std::make_unique<app::OpenSession>(boardSize, rules);
 	m_gamePresenter = std::make_unique<GamePresenter>(*m_gameSession, m_mainWindow.gameWidget());
 }
 
-void MainWindowPresenter::onNewLocalGameRequested() {
+void MainWindowPresenter::showLocalPlayers() {
+	m_mainWindow.gameWidget().setPlayers(tr("White"), tr("Black"), Player::White);
+}
+
+void MainWindowPresenter::showPlayers(const Player ownColour, const QString& opponentName) {
+	m_mainWindow.gameWidget().setPlayers(tr("You"), opponentName, ownColour);
+}
+
+void MainWindowPresenter::onNewLocalGameRequested(const unsigned boardSize, const GameRules& rules) {
 	onShutdownRequested();
-	startOpenPlay();
+	startOpenPlay(boardSize, rules);
 }
 
 void MainWindowPresenter::onBotDialogRequested() {
@@ -50,15 +59,19 @@ void MainWindowPresenter::onBotDialogRequested() {
 	m_mainWindow.openBotDialog(engine::findEngines(rootPaths));
 }
 
-void MainWindowPresenter::onNewBotGameRequested(unsigned boardSize, const engine::EngineConfig& engineConfig, bool humanPlaysBlack) {
+void MainWindowPresenter::onNewBotGameRequested(unsigned boardSize, const GameRules& rules, const engine::EngineConfig& engineConfig, bool humanPlaysBlack) {
 	onShutdownRequested();
 
-	m_gameSession   = std::make_unique<app::BotSession>(boardSize, engine::makeEngine(engineConfig), humanPlaysBlack);
+	showPlayers(humanPlaysBlack ? Player::Black : Player::White, tr("Bot"));
+	m_gameSession   = std::make_unique<app::BotSession>(boardSize, rules, engine::makeEngine(engineConfig), humanPlaysBlack);
 	m_gamePresenter = std::make_unique<GamePresenter>(*m_gameSession, m_mainWindow.gameWidget());
 }
 
 void MainWindowPresenter::onConnectRequested(const QString& hostIp) {
 	onShutdownRequested();
+
+	// TODO: The server does not tell us our seat yet, so show the colours like a local game until it does.
+	showLocalPlayers();
 
 	auto session = std::make_unique<app::NetworkSession>();
 	session->connect(hostIp.toStdString());
@@ -70,11 +83,12 @@ void MainWindowPresenter::onConnectRequested(const QString& hostIp) {
 	m_gameSession = std::move(session);
 }
 
-void MainWindowPresenter::onHostRequested(const unsigned boardSize) {
+void MainWindowPresenter::onHostRequested(const unsigned boardSize, const GameRules& rules, const Player hostColour) {
 	onShutdownRequested();
+	showPlayers(hostColour, tr("Opponent"));
 
 	auto session = std::make_unique<app::NetworkSession>();
-	session->host(boardSize);
+	session->host(boardSize, rules, hostColour);
 
 	auto& game      = static_cast<app::IGameSession&>(*session);
 	auto& chat      = static_cast<app::IChatSession&>(*session);

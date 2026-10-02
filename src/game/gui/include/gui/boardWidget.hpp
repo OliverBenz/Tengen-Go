@@ -1,5 +1,6 @@
 #pragma once
 
+#include "gui/resources.hpp"
 #include "model/board.hpp"
 
 #include <QWidget>
@@ -25,12 +26,17 @@ class BoardWidget : public QWidget {
 	Q_OBJECT
 
 public:
+	static constexpr int BOARD_MARGIN = 14; //!< Space around the board for its shadow [px].
+
 	explicit BoardWidget(QWidget* parent = nullptr);
 	~BoardWidget();
 
 	const Board& board() const;
 	void setBoard(const Board& board);
 	void setCurrentPlayer(Player player);
+
+	boardStyle::Texture backgroundTexture() const;
+	void setBackgroundTexture(boardStyle::Texture texture); //!< Image to draw the board on.
 
 signals:
 	void boardEvent(const BoardWidgetEvent& event);
@@ -43,20 +49,19 @@ protected:
 	void keyReleaseEvent(QKeyEvent* event) override;
 
 private:
-	//! Resolve click position to board coordinate and emit an event if valid.
-	void handleClick(const QPoint& pos);
-	QRect stoneRect(Coord coord) const; //!< Get the rectangle around a stone at given coordinates.
+	void handleClick(const QPoint& pos); //!< Resolve click position to board coordinate and emit an event if valid.
+	QRect stoneRect(Coord coord) const;  //!< Get the rectangle around a stone at given coordinates.
 	void renderBoard();
+	void drawShadow(QPainter& painter, const QRect& boardRect) const; //!< Soft shadow below the board.
 
-	//! Get the board size in pixels.
-	unsigned boardPixelSize() const;
-	//! Offset to get to the center of the board for drawing.
-	QPoint boardOffset(unsigned boardSize) const;
+	unsigned boardPixelSize() const; //!< Space available for the board in pixels.
+	QPoint boardOffset() const;      //!< Offset of the drawn board's top left corner that centers it in the widget.
 
 private:
 	Board m_board;
 	Board::Stone m_currentPlayer{Board::Stone::Black};
 	std::unique_ptr<BoardRenderer> m_boardRenderer;
+	boardStyle::Texture m_backgroundTexture{boardStyle::Texture::Plain};
 
 	// Ghost stone: A translucent stone on mouse position to show where the placement is done.
 	Coord m_ghostStone{0u, 0u};

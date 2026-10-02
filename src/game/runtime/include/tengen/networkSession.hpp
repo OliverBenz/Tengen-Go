@@ -1,5 +1,6 @@
 #pragma once
 
+#include "model/gameRules.hpp"
 #include "network/client.hpp"
 #include "tengen/IAppSignal.hpp"
 #include "tengen/IChatSession.hpp"
@@ -43,7 +44,7 @@ public:
 
 	// Network interface
 	void connect(const std::string& hostIp);
-	void host(unsigned boardSize);
+	void host(unsigned boardSize, const GameRules& rules, Player hostColour); //!< The one who joins plays the other colour.
 	void disconnect();
 
 	// Chat

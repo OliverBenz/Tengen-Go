@@ -21,7 +21,7 @@ public:
 
 // TODO: Verify board state after every place
 TEST(Game, BoardUpdate) {
-	Game game(9u);
+	Game game(9u, fromRuleSet(RuleSet::Japanese));
 	std::thread gameThread([&] { game.run(); });
 
 	// Setup ?koseki?
@@ -57,7 +57,7 @@ TEST(Game, BoardUpdate) {
 //! his event through, so he can never place two stones in a row.
 TEST(Game, RejectsEventsOutOfTurn) {
 	DeltaRecorder recorder;
-	Game game(9u);
+	Game game(9u, fromRuleSet(RuleSet::Japanese));
 	game.subscribeState(&recorder);
 	std::thread gameThread([&] { game.run(); });
 
@@ -82,6 +82,28 @@ TEST(Game, RejectsEventsOutOfTurn) {
 	ASSERT_TRUE(recorder.deltas[1].coord.has_value());
 	EXPECT_EQ(recorder.deltas[1].coord->x, 4u);
 	EXPECT_EQ(recorder.deltas[1].coord->y, 4u);
+}
+
+//! The loop outlives the game: events after the end are refused, only a ShutdownEvent stops it.
+TEST(Game, RejectsEventsAfterGameEnded) {
+	DeltaRecorder recorder;
+	Game game(9u, fromRuleSet(RuleSet::Japanese));
+	game.subscribeState(&recorder);
+	std::thread gameThread([&] { game.run(); });
+
+	game.pushEvent(PassEvent{Player::Black});
+	game.pushEvent(PassEvent{Player::White});
+	game.pushEvent(PutStoneEvent{Player::Black, {3u, 3u}});
+	game.pushEvent(ResignEvent{});
+
+	game.pushEvent(ShutdownEvent{});
+	gameThread.join();
+	game.unsubscribeState(&recorder);
+
+	ASSERT_EQ(recorder.deltas.size(), 2u);
+	EXPECT_TRUE(recorder.deltas[0].gameActive);
+	EXPECT_FALSE(recorder.deltas[1].gameActive);
+	EXPECT_EQ(recorder.deltas[1].action, GameAction::Pass);
 }
 
 } // namespace tengen::gtest
