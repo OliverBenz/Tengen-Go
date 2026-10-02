@@ -2,7 +2,7 @@ include_guard(GLOBAL)
 
 set(targetName gameGui)
 
-find_package(Qt6 REQUIRED COMPONENTS Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Multimedia)
 
 # Get files to build
 set(headers
@@ -10,6 +10,7 @@ set(headers
 	"${CMAKE_CURRENT_LIST_DIR}/include/gui/boardWidget.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/gui/chatWidget.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/gui/gameWidget.hpp"
+	"${CMAKE_CURRENT_LIST_DIR}/include/gui/soundPlayer.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/boardRenderer.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/playerCard.hpp"
 )
@@ -19,6 +20,7 @@ set(sources
 	"${CMAKE_CURRENT_LIST_DIR}/boardWidget.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/chatWidget.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/gameWidget.cpp"
+	"${CMAKE_CURRENT_LIST_DIR}/soundPlayer.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/boardRenderer.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/playerCard.cpp"
 )
@@ -35,6 +37,7 @@ target_link_libraries(${targetName}
 	PUBLIC
 		tengen::game::model
 		Qt6::Widgets
+		Qt6::Multimedia
 )
 
 set_target_properties(${targetName}
