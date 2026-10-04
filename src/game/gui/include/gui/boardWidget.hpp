@@ -12,7 +12,9 @@ namespace tengen::gui {
 class BoardRenderer;
 
 struct BoardWidgetEvent {
-	enum class Type { Place, Pass, Resign };
+	enum class Type { Place,
+		              Pass,
+		              Resign };
 
 	Type type{Type::Place};
 	Coord coord{0u, 0u};
@@ -37,6 +39,9 @@ public:
 
 	boardStyle::Texture backgroundTexture() const;
 	void setBackgroundTexture(boardStyle::Texture texture); //!< Image to draw the board on.
+
+	bool showCoordinates() const;       //!< Are the coordinates enabled or not.
+	void setShowCoordinates(bool show); //!< Coordinates in standard format on the board's border.
 
 signals:
 	void boardEvent(const BoardWidgetEvent& event);

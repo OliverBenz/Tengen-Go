@@ -8,10 +8,13 @@
 #include <cassert>
 #include <cmath>
 #include <format>
+#include <string_view>
 
 namespace tengen::gui {
 
-static constexpr int LINE_WIDTH = 2; //!< Grid line width [px].
+static constexpr int LINE_WIDTH                  = 2;                      //!< Grid line width [px].
+static constexpr std::string_view COLUMN_LETTERS = "ABCDEFGHIJKLMNOPQRST"; //!< Standard column labels.
+static constexpr qreal LABEL_SIZE                = 0.4;                    //!< Label height relative to the stone size.
 
 BoardRenderer::BoardRenderer(const unsigned nodes)
     : m_nodes(nodes) {
@@ -59,6 +62,18 @@ void BoardRenderer::setBackgroundTexture(const boardStyle::Texture texture) {
 	updateBackgroundTexture();
 }
 
+bool BoardRenderer::showCoordinates() const {
+	return m_showCoordinates;
+}
+
+void BoardRenderer::setShowCoordinates(const bool show) {
+	if (show == m_showCoordinates) {
+		return;
+	}
+	m_showCoordinates = show;
+	updateLayout();
+}
+
 void BoardRenderer::updateLayout() {
 	if (m_boardSizePxRequested == 0 || m_nodes == 0) {
 		return;
@@ -78,11 +93,13 @@ void BoardRenderer::updateLayout() {
 }
 
 void BoardRenderer::updateMetrics(const unsigned boardSizePx) {
-	m_boardSize  = (boardSizePx / m_nodes) * m_nodes; // Ensure divisible by m_nodes
-	m_stoneSize  = m_boardSize / m_nodes;
-	m_drawStepPx = m_stoneSize / 2;
-	m_coordStart = m_drawStepPx;
-	m_coordEnd   = m_coordStart + (m_nodes - 1) * m_stoneSize; // Last line, exact even for odd stone sizes.
+	const unsigned cells = m_nodes + (m_showCoordinates ? 2u : 0u); // The border is one stone wide on each side.
+	m_boardSize          = (boardSizePx / cells) * cells;           // Ensure divisible by the cells.
+	m_stoneSize          = m_boardSize / cells;
+	m_drawStepPx         = m_stoneSize / 2;
+	m_border             = m_showCoordinates ? m_stoneSize : 0u;
+	m_coordStart         = m_border + m_drawStepPx;
+	m_coordEnd           = m_coordStart + (m_nodes - 1) * m_stoneSize; // Last line, exact even for odd stone sizes.
 }
 
 void BoardRenderer::updateStoneTextures() {
@@ -153,7 +170,38 @@ void BoardRenderer::drawBackground(QPainter& painter) const {
 		painter.drawLine(offset, coordStart, offset, coordEnd);
 	}
 	drawStarPoints(painter);
+	if (m_showCoordinates) {
+		drawCoordinates(painter);
+	}
 	painter.restore();
+}
+
+void BoardRenderer::drawCoordinates(QPainter& painter) const {
+	if (m_nodes > COLUMN_LETTERS.size()) {
+		return; // No standard letters beyond 19 columns.
+	}
+
+	// Setup font
+	QFont font = painter.font();
+	font.setBold(true);
+	font.setPixelSize(std::max(1, qRound(m_stoneSize * LABEL_SIZE)));
+	painter.setFont(font);
+	painter.setPen(Qt::black);
+
+	// Draw coordinates
+	const int size     = static_cast<int>(m_stoneSize);
+	const int border   = static_cast<int>(m_border);
+	const int farStart = static_cast<int>(m_boardSize) - border; // Start of the border on the bottom and right.
+	for (unsigned i = 0; i != m_nodes; ++i) {
+		const int centre = static_cast<int>(m_coordStart + i * m_stoneSize) - size / 2; // Start of the cell around line i.
+		const QString column{QChar::fromLatin1(COLUMN_LETTERS[i])};
+		const QString row = QString::number(m_nodes - i); // Rows count from the bottom, y = 0 is the top.
+
+		painter.drawText(QRect{centre, 0, size, border}, Qt::AlignCenter, column);
+		painter.drawText(QRect{centre, farStart, size, border}, Qt::AlignCenter, column);
+		painter.drawText(QRect{0, centre, border, size}, Qt::AlignCenter, row);
+		painter.drawText(QRect{farStart, centre, border, size}, Qt::AlignCenter, row);
+	}
 }
 
 void BoardRenderer::drawStarPoints(QPainter& painter) const {
