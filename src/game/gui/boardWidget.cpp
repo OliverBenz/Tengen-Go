@@ -68,6 +68,15 @@ void BoardWidget::setBackgroundTexture(const boardStyle::Texture texture) {
 	update();
 }
 
+bool BoardWidget::showCoordinates() const {
+	return m_boardRenderer->showCoordinates();
+}
+
+void BoardWidget::setShowCoordinates(const bool show) {
+	m_boardRenderer->setShowCoordinates(show);
+	update();
+}
+
 void BoardWidget::resizeEvent(QResizeEvent* event) {
 	QWidget::resizeEvent(event);
 

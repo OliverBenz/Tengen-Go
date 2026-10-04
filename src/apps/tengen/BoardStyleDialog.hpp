@@ -6,6 +6,7 @@
 #include <QFutureWatcher>
 #include <QImage>
 
+class QCheckBox;
 class QListWidget;
 
 namespace tengen::gui {
@@ -17,10 +18,11 @@ class BoardStyleDialog : public QDialog {
 	Q_OBJECT
 
 public:
-	explicit BoardStyleDialog(boardStyle::Texture currentTexture, QWidget* parent = nullptr);
+	BoardStyleDialog(boardStyle::Texture currentTexture, bool showCoordinates, QWidget* parent = nullptr);
 	~BoardStyleDialog() override;
 
 	boardStyle::Texture texture() const; //!< Selected texture.
+	bool showCoordinates() const;        //!< Whether the board labels its lines.
 
 protected:
 	bool eventFilter(QObject* watched, QEvent* event) override;
@@ -31,8 +33,9 @@ private:
 	void fitPreviewCells();                          //!< Stretch the preview cells over the whole list width.
 
 private:
-	QListWidget* m_textures = nullptr;
-	BoardWidget* m_board    = nullptr;
+	QListWidget* m_textures{nullptr};       //!< List of texture preview and names.
+	QCheckBox* m_coordinates{nullptr};      //!< Selection for whether to show coordinates or not.
+	BoardWidget* m_board{nullptr};          //!< The board preview.
 	QFutureWatcher<QImage> m_previewLoader; //!< Loads the texture previews in the background.
 };
 

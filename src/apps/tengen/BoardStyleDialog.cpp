@@ -2,6 +2,7 @@
 
 #include "gui/boardWidget.hpp"
 
+#include <QCheckBox>
 #include <QDialogButtonBox>
 #include <QEvent>
 #include <QHBoxLayout>
@@ -12,6 +13,7 @@
 namespace tengen::gui {
 
 static constexpr int PREVIEW_SIZE = 128; //!< Edge length of a texture thumbnail [px].
+static constexpr int LIST_PADDING = 4;   //!< Space above and below each preview inside its cell [px] (first+last element should not touch list border).
 
 //! Qt tints selected icons with the highlight colour, which would falsify the texture colours.
 static QIcon untintedIcon(const QPixmap& pixmap) {
@@ -24,18 +26,19 @@ static boardStyle::Texture textureOf(const QListWidgetItem& item) {
 	return static_cast<boardStyle::Texture>(item.data(Qt::UserRole).toInt());
 }
 
-BoardStyleDialog::BoardStyleDialog(const boardStyle::Texture currentTexture, QWidget* parent)
+BoardStyleDialog::BoardStyleDialog(const boardStyle::Texture currentTexture, const bool showCoordinates, QWidget* parent)
     : QDialog(parent) {
 	setWindowTitle(tr("Board Style"));
 	resize(900, 620);
 
 	m_board = new BoardWidget(this);
 	m_board->setBoard(Board(19u));
+	m_board->setShowCoordinates(showCoordinates);
 
 	m_textures = new QListWidget(this);
 	m_textures->setViewMode(QListView::IconMode);
 	m_textures->setIconSize({PREVIEW_SIZE, PREVIEW_SIZE});
-	m_textures->setGridSize({PREVIEW_SIZE + 40, PREVIEW_SIZE + 2 * fontMetrics().height() + 10}); // Same cell for all: room for two lines of name.
+	m_textures->setGridSize({PREVIEW_SIZE + 40, PREVIEW_SIZE + fontMetrics().height() + 10 + 2 * LIST_PADDING});
 	m_textures->setFlow(QListView::TopToBottom);
 	m_textures->setWrapping(false);
 	m_textures->setMovement(QListView::Static);
@@ -51,12 +54,17 @@ BoardStyleDialog::BoardStyleDialog(const boardStyle::Texture currentTexture, QWi
 	content->addWidget(m_textures);
 	content->addWidget(m_board, 1);
 
+	m_coordinates = new QCheckBox(tr("Show coordinates"), this);
+	m_coordinates->setChecked(showCoordinates);
+	connect(m_coordinates, &QCheckBox::toggled, m_board, &BoardWidget::setShowCoordinates);
+
 	auto* buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
 	connect(buttons, &QDialogButtonBox::accepted, this, &QDialog::accept);
 	connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
 	auto* mainLayout = new QVBoxLayout(this);
 	mainLayout->addLayout(content, 1);
+	mainLayout->addWidget(m_coordinates);
 	mainLayout->addWidget(buttons);
 }
 
@@ -69,6 +77,10 @@ boardStyle::Texture BoardStyleDialog::texture() const {
 	return item ? textureOf(*item) : boardStyle::Texture::Plain;
 }
 
+bool BoardStyleDialog::showCoordinates() const {
+	return m_coordinates->isChecked();
+}
+
 bool BoardStyleDialog::eventFilter(QObject* watched, QEvent* event) {
 	if (watched == m_textures->viewport() && event->type() == QEvent::Resize) {
 		fitPreviewCells();
@@ -78,11 +90,13 @@ bool BoardStyleDialog::eventFilter(QObject* watched, QEvent* event) {
 
 //! Flowing top to bottom, Qt centres an item in its cell vertically only and shrinks it to its content.
 //! Stretching cells and items to the full list width lets the delegate centre icon and name.
+//! Items are shorter than their cell by the padding, which Qt splits above and below the item.
 void BoardStyleDialog::fitPreviewCells() {
 	const QSize cell{m_textures->viewport()->width(), m_textures->gridSize().height()};
+	const QSize item{cell.width(), cell.height() - 2 * LIST_PADDING};
 	m_textures->setGridSize(cell);
 	for (int row = 0; row != m_textures->count(); ++row) {
-		m_textures->item(row)->setSizeHint(cell);
+		m_textures->item(row)->setSizeHint(item);
 	}
 }
 
