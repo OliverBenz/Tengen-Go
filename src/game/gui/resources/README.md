@@ -9,6 +9,7 @@ Images used by the board widget. They are loaded at runtime from this folder (`G
 | `anime_shadow.png` | Stone shadow (not drawn yet)                 |
 | `anime_*.svg`      | Vector sources of the stone PNGs             |
 | `board_textures/`  | Board backgrounds selectable in the Settings |
+| `audio/`           | Stone placement sounds                       |
 
 ## Stones
 
@@ -34,6 +35,16 @@ To change the stone resolution, re-render the SVGs (e.g. with Inkscape) instead 
 [ogs-black]: https://github.com/online-go/goban/blob/e61c56e246726481ab39bdddbfc886a4df06b786/assets/img/anime_black.svg
 [ogs-white]: https://github.com/online-go/goban/blob/e61c56e246726481ab39bdddbfc886a4df06b786/assets/img/anime_white.svg
 [ogs-shadow]: https://github.com/online-go/goban/blob/e61c56e246726481ab39bdddbfc886a4df06b786/assets/img/anime_shadow.svg
+
+## Audio
+
+The sounds in `audio/` were recorded by the author of this project and are released under [CC0][cc0], so anyone may use them for any purpose.
+
+| File                      | Used for                              | Source        | License    | Modified                          |
+| ------------------------- | ------------------------------------- | ------------- | ---------- | --------------------------------- |
+| `stone_1.wav`             | Stone placement sound                 | Own recording | [CC0](LICENSE-CC0-1.0.txt) | Yes: cut from the uncut recording |
+| `stone_2.wav`             | Stone placement sound                 | Own recording | [CC0](LICENSE-CC0-1.0.txt) | Yes: cut from the uncut recording |
+| `stone_sounds_uncut.aup3` | Audacity project with the uncut takes | Own recording | [CC0](LICENSE-CC0-1.0.txt) | No                                |
 
 ## Board textures
 
