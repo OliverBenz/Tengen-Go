@@ -1,6 +1,8 @@
 #include "engine/kataGo.hpp"
 
 #include <algorithm>
+#include <cassert>
+#include <format>
 #include <string>
 #include <utility>
 
@@ -17,11 +19,24 @@ static std::string humanProfile(const Skill rank) {
 	return profileStyle + toString(rank);
 }
 
+static const char* koName(const Ko ko) {
+	switch (ko) {
+	case Ko::Simple:
+		return "SIMPLE";
+	case Ko::Situational:
+		return "SITUATIONAL";
+	case Ko::Positional:
+		return "POSITIONAL";
+	}
+
+	assert(false);
+	return "SIMPLE";
+}
+
 KataGo::KataGo(KataGoConfig config)
     : m_config(std::move(config)) {
 }
 
-// TODO: Forward the ko, scoring and suicide rules. So far only the komi is used.
 void KataGo::start(const unsigned boardSize, const GameRules& rules, const tengen::Player botColour) {
 	const Skill rank = std::clamp(m_config.rank, KataGoConfig::weakestRank, KataGoConfig::strongestRank);
 
@@ -44,8 +59,22 @@ void KataGo::start(const unsigned boardSize, const GameRules& rules, const tenge
 	                "humanSLProfile=" + humanProfile(rank),
 	        },
 	        .requiredFiles = {executable, model, humanModel, gtpConfig},
-	        .logFile       = "katago.log"},
+	        .logFile       = "katago.log",
+	        .setupCommands = {setRulesCommand(rules)}}, // Overrides the rules in the config file.
 	       boardSize, rules, botColour);
+}
+
+std::string KataGo::setRulesCommand(const GameRules& rules) {
+	const bool area = rules.scoringMethod == Scoring::Area;
+
+	// KataGo's suicide rule only covers several stones. A single stone is always illegal, like in our core.
+	// No spaces, so the rules stay a single GTP argument.
+	return std::format(R"(kata-set-rules {{"ko":"{}","scoring":"{}","tax":"{}","suicide":{},"friendlyPassOk":{}}})",
+	                   koName(rules.koRule),
+	                   area ? "AREA" : "TERRITORY",
+	                   area ? "NONE" : "SEKI",
+	                   rules.suicideLegal ? "true" : "false",
+	                   area ? "true" : "false");
 }
 
 } // namespace tengen::engine

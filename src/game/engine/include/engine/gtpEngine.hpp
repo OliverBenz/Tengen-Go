@@ -51,6 +51,7 @@ protected:
 		std::vector<std::string> argv;          //!< The executable, then its arguments.
 		std::vector<std::string> requiredFiles; //!< The engine is not even started while one of these is missing.
 		std::string logFile;                    //!< Takes over the engine's stderr.
+		std::vector<std::string> setupCommands; //!< The engine's own GTP commands for the game, e.g. its rules. Sent after clear_board.
 	};
 
 	void launch(Launch command, unsigned boardSize, const GameRules& rules, tengen::Player botColour); //!< What every start() comes down to.

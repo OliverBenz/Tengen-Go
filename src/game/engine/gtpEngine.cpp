@@ -38,7 +38,7 @@ private:
 
 private:
 	bool launch(const Launch& command);
-	bool setupGame();
+	bool setupGame(const std::vector<std::string>& engineCommands);
 	bool sendCommand(const std::string& command, std::string& response); //!< Send one GTP command and wait for its response.
 
 private:
@@ -73,7 +73,7 @@ void GtpEngine::Implementation::start(Launch command, const unsigned boardSize, 
 	m_running      = true;
 	m_engineThread = std::thread([this] { engineLoop(); });
 	post([this, command = std::move(command)] {
-		const bool ready = launch(command) && setupGame();
+		const bool ready = launch(command) && setupGame(command.setupCommands);
 		if (!canNotify()) {
 			return;
 		}
@@ -194,12 +194,17 @@ bool GtpEngine::Implementation::launch(const Launch& command) {
 	return true;
 }
 
-bool GtpEngine::Implementation::setupGame() {
+bool GtpEngine::Implementation::setupGame(const std::vector<std::string>& engineCommands) {
 	std::string response;
 	bool success = true;
 	success &= sendCommand(gtp::boardSize(m_boardSize), response);
 	success &= sendCommand(gtp::clearBoard(), response);
-	success &= sendCommand(gtp::komi(m_rules.komi), response); // The only rule GTP itself knows. The engines take the rest their own way.
+	for (const std::string& command: engineCommands) {
+		success &= sendCommand(command, response);
+	}
+
+	// The only rule GTP itself knows. Last, as an engine may reset it along with its own rules.
+	success &= sendCommand(gtp::komi(m_rules.komi), response);
 	return success;
 }
 
