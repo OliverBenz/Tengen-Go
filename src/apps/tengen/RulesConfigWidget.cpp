@@ -1,5 +1,7 @@
 #include "RulesConfigWidget.hpp"
 
+#include "gui/resources.hpp"
+
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDoubleSpinBox>
@@ -18,20 +20,21 @@ constexpr double komiLimit  = 100.0; //!< Largest komi either way. Negative komi
 RulesConfigWidget::RulesConfigWidget(QWidget* parent)
     : QWidget(parent) {
 	m_ruleSet = new QComboBox(this);
-	m_ruleSet->addItem(tr("Japanese"), static_cast<int>(RuleSet::Japanese));
-	m_ruleSet->addItem(tr("Chinese"), static_cast<int>(RuleSet::Chinese));
-	m_ruleSet->addItem(tr("Korean"), static_cast<int>(RuleSet::Korean));
+	for (const auto ruleSet: {RuleSet::Japanese, RuleSet::Chinese, RuleSet::Korean}) {
+		m_ruleSet->addItem(gameRules::displayName(ruleSet), static_cast<int>(ruleSet));
+	}
 	m_ruleSet->addItem(tr("Custom"), customRuleSet);
 	m_ruleSet->setCurrentIndex(0);
 
 	m_scoring = new QComboBox(this);
-	m_scoring->addItem(tr("Territory"), static_cast<int>(Scoring::Territory));
-	m_scoring->addItem(tr("Area"), static_cast<int>(Scoring::Area));
+	for (const auto scoring: {Scoring::Territory, Scoring::Area}) {
+		m_scoring->addItem(gameRules::displayName(scoring), static_cast<int>(scoring));
+	}
 
 	m_ko = new QComboBox(this);
-	m_ko->addItem(tr("Simple"), static_cast<int>(Ko::Simple));
-	m_ko->addItem(tr("Situational"), static_cast<int>(Ko::Situational));
-	m_ko->addItem(tr("Positional"), static_cast<int>(Ko::Positional));
+	for (const auto ko: {Ko::Simple, Ko::Situational, Ko::Positional}) {
+		m_ko->addItem(gameRules::displayName(ko), static_cast<int>(ko));
+	}
 
 	m_komi = new QDoubleSpinBox(this);
 	m_komi->setRange(-komiLimit, komiLimit);

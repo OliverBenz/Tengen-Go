@@ -1,5 +1,6 @@
 #pragma once
 
+#include "model/gameRules.hpp"
 #include "model/player.hpp"
 
 #include <QColor>
@@ -7,7 +8,7 @@
 #include <QList>
 #include <QString>
 
-// Contains the resources for board styles and stone styles.
+// Contains the resources for board styles, stone styles, sounds and the names of the game rules.
 namespace tengen::gui {
 namespace boardStyle {
 
@@ -45,5 +46,14 @@ namespace sound {
 QString stonePlace();
 
 } // namespace sound
+
+
+namespace gameRules {
+
+QString displayName(RuleSet ruleSet); //!< Returns the user-facing string for the GUI.
+QString displayName(Scoring scoring); //!< Returns the user-facing string for the GUI.
+QString displayName(Ko ko);           //!< Returns the user-facing string for the GUI.
+
+} // namespace gameRules
 
 } // namespace tengen::gui
