@@ -29,7 +29,7 @@ So let's replace the opponent with a robotic arm and play other people online bu
 | Area             | Status                 | Notes                                                                                            |
 | ---------------- | ---------------------- | ------------------------------------------------------------------------------------------------ |
 | Game Logic       | Working                | Core data structures, rules, move validation, and deltas are implemented.                        |
-| Bot Games        | Working / In Progress  | Bot games against GNU Go and KataGo exist; komi is fixed and some edge cases are still open.     |
+| Bot Games        | Working / In Progress  | Bot games against GNU Go and KataGo follow the selected rules; some edge cases are still open.   |
 | Networking       | Working / In Progress  | TCP transport and game protocol exist; reconnect and some session features are still incomplete. |
 | GUI Application  | Working / In Progress  | Qt client and standalone server exist; the application is still under active development.        |
 | Board Detection  | Working / Experimental | Board, grid, and stone detection exist, but still rely on a controlled setup.                    |
