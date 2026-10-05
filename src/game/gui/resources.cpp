@@ -100,4 +100,48 @@ QString stonePlace() {
 
 } // namespace sound
 
+namespace gameRules {
+
+QString displayName(const RuleSet ruleSet) {
+	switch (ruleSet) {
+	case RuleSet::Japanese:
+		return QCoreApplication::translate("gameRules", "Japanese");
+	case RuleSet::Chinese:
+		return QCoreApplication::translate("gameRules", "Chinese");
+	case RuleSet::Korean:
+		return QCoreApplication::translate("gameRules", "Korean");
+	}
+
+	assert(false);
+	return {};
+}
+
+QString displayName(const Scoring scoring) {
+	switch (scoring) {
+	case Scoring::Territory:
+		return QCoreApplication::translate("gameRules", "Territory");
+	case Scoring::Area:
+		return QCoreApplication::translate("gameRules", "Area");
+	}
+
+	assert(false);
+	return {};
+}
+
+QString displayName(const Ko ko) {
+	switch (ko) {
+	case Ko::Simple:
+		return QCoreApplication::translate("gameRules", "Simple");
+	case Ko::Situational:
+		return QCoreApplication::translate("gameRules", "Situational");
+	case Ko::Positional:
+		return QCoreApplication::translate("gameRules", "Positional");
+	}
+
+	assert(false);
+	return {};
+}
+
+} // namespace gameRules
+
 } // namespace tengen::gui
