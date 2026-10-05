@@ -27,9 +27,11 @@ public:
 	void unsubscribe(IGameStateListener* listener);
 
 private:
-	friend class Game;                        // Only game class can signal.
-	void signal(GameSignal signal);           //!< Signal a game event.
-	void signalDelta(const GameDelta& delta); //!< Signal a game state delta.
+	friend class Game;                          // Only game class can signal.
+	void signal(GameSignal signal);             //!< Signal a game event.
+	void signalStart(const GameConfig& config); //!< Signal the game start.
+	void signalDelta(const GameDelta& delta);   //!< Signal a game state delta.
+	void signalEnd(const GameResult& result);   //!< Signal the game end.
 
 private:
 	std::mutex m_listenerMutex;

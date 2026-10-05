@@ -13,7 +13,7 @@ class Board {
 public:
 	enum class Stone { Empty, Black, White };
 
-	Board(std::size_t size);
+	explicit Board(std::size_t size);
 
 	bool place(Coord c, Stone value); //!< Try to place a stone at the given coordinate. False if not free.
 	bool remove(Coord c);             //!< Remove the stone at the given coordinate. False if already free.

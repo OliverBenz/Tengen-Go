@@ -1,21 +1,73 @@
 #include "core/gameState.hpp"
 
 #include <gtest/gtest.h>
+#include <stdexcept>
 
 namespace tengen::gtest {
 
+//! A 9x9 game under the given rules.
+static GameConfig config(const GameRules& rules = fromRuleSet(RuleSet::Japanese)) {
+	return GameConfig{.boardSize = 9u, .rules = rules};
+}
+
+TEST(GameState, RejectsUnsupportedBoardSize) {
+	const GameConfig sevenBySeven{.boardSize = 7u, .rules = fromRuleSet(RuleSet::Japanese)};
+	EXPECT_THROW(GameState{sevenBySeven}, std::invalid_argument);
+}
+
+TEST(GameState, KeepsConfig) {
+	GameRules rules = fromRuleSet(RuleSet::Chinese);
+	rules.komi      = 0.5f;
+	GameState state(GameConfig{.boardSize = 13u, .rules = rules});
+
+	EXPECT_EQ(state.config().boardSize, 13u);
+	EXPECT_EQ(state.config().rules.komi, 0.5f);
+	EXPECT_EQ(state.position().board.size(), 13u);
+}
+
+TEST(GameState, RejectsMovesBeforeStart) {
+	GameState state(config());
+	EXPECT_FALSE(state.isActive());
+
+	EXPECT_FALSE(state.place(Player::Black, {3u, 3u}).has_value());
+	EXPECT_FALSE(state.pass(Player::Black));
+	EXPECT_FALSE(state.resign(Player::Black));
+	EXPECT_EQ(state.position().moveId, 0u);
+	EXPECT_FALSE(state.result().has_value());
+
+	ASSERT_TRUE(state.start());
+	EXPECT_TRUE(state.isActive());
+	EXPECT_TRUE(state.place(Player::Black, {3u, 3u}).has_value());
+}
+
+TEST(GameState, StartsOnlyOnce) {
+	GameState state(config());
+
+	EXPECT_TRUE(state.start());
+	EXPECT_FALSE(state.start());
+	EXPECT_TRUE(state.isActive());
+}
+
 TEST(GameState, TwoConsecutivePassesEndGame) {
-	GameState state(9u, fromRuleSet(RuleSet::Japanese));
+	GameState state(config());
+	ASSERT_TRUE(state.start());
 
 	EXPECT_TRUE(state.pass(Player::Black));
 	EXPECT_TRUE(state.isActive());
+	EXPECT_FALSE(state.result().has_value());
 
 	EXPECT_TRUE(state.pass(Player::White));
 	EXPECT_FALSE(state.isActive());
+
+	// TODO: The board is not counted yet, so the result names no winner.
+	ASSERT_TRUE(state.result().has_value());
+	EXPECT_FALSE(state.result()->winner.has_value());
+	EXPECT_EQ(state.result()->reason, EndReason::Counting);
 }
 
 TEST(GameState, StoneResetsConsecutivePasses) {
-	GameState state(9u, fromRuleSet(RuleSet::Japanese));
+	GameState state(config());
+	ASSERT_TRUE(state.start());
 
 	EXPECT_TRUE(state.pass(Player::Black));
 	EXPECT_TRUE(state.place(Player::White, {3u, 3u}).has_value());
@@ -27,27 +79,48 @@ TEST(GameState, StoneResetsConsecutivePasses) {
 }
 
 TEST(GameState, ResignEndsGame) {
-	GameState state(9u, fromRuleSet(RuleSet::Japanese));
+	GameState state(config());
+	ASSERT_TRUE(state.start());
 
-	EXPECT_TRUE(state.resign());
+	EXPECT_TRUE(state.resign(Player::Black));
 	EXPECT_FALSE(state.isActive());
-	EXPECT_FALSE(state.resign());
+	EXPECT_FALSE(state.resign(Player::White));
+
+	ASSERT_TRUE(state.result().has_value());
+	EXPECT_EQ(state.result()->winner, Player::White);
+	EXPECT_EQ(state.result()->reason, EndReason::Resignation);
+}
+
+TEST(GameState, ResignOutOfTurn) {
+	GameState state(config());
+	ASSERT_TRUE(state.start());
+	ASSERT_TRUE(state.place(Player::Black, {3u, 3u}).has_value());
+
+	EXPECT_TRUE(state.resign(Player::Black));
+
+	ASSERT_TRUE(state.result().has_value());
+	EXPECT_EQ(state.result()->winner, Player::White);
+	EXPECT_EQ(state.result()->reason, EndReason::Resignation);
 }
 
 TEST(GameState, RejectsMovesAfterGameEnded) {
-	GameState state(9u, fromRuleSet(RuleSet::Japanese));
+	GameState state(config());
+	ASSERT_TRUE(state.start());
 	ASSERT_TRUE(state.pass(Player::Black));
 	ASSERT_TRUE(state.pass(Player::White));
 
 	const auto moveId = state.position().moveId;
 	EXPECT_FALSE(state.place(Player::Black, {3u, 3u}).has_value());
 	EXPECT_FALSE(state.pass(Player::Black));
-	EXPECT_FALSE(state.resign());
+	EXPECT_FALSE(state.resign(Player::Black));
+	EXPECT_FALSE(state.start());
 	EXPECT_EQ(state.position().moveId, moveId);
+	EXPECT_EQ(state.result()->reason, EndReason::Counting);
 }
 
 TEST(GameState, RejectsMovesOutOfTurn) {
-	GameState state(9u, fromRuleSet(RuleSet::Japanese));
+	GameState state(config());
+	ASSERT_TRUE(state.start());
 
 	EXPECT_FALSE(state.place(Player::White, {3u, 3u}).has_value());
 	EXPECT_FALSE(state.pass(Player::White));
@@ -74,7 +147,8 @@ TEST(GameState, KoRetakeAfterExchange) {
 		SCOPED_TRACE(static_cast<int>(ko));
 		GameRules rules = fromRuleSet(RuleSet::Japanese);
 		rules.koRule    = ko;
-		GameState state(9u, rules);
+		GameState state(config(rules));
+		ASSERT_TRUE(state.start());
 
 		const auto captures = blackTakesKo(state);
 		ASSERT_TRUE(captures.has_value());
@@ -99,7 +173,8 @@ static void prepareWhiteSuicide(GameState& state) {
 }
 
 TEST(GameState, SuicideIllegal) {
-	GameState state(9u, fromRuleSet(RuleSet::Japanese));
+	GameState state(config());
+	ASSERT_TRUE(state.start());
 	prepareWhiteSuicide(state);
 
 	const auto moveId = state.position().moveId;
@@ -111,7 +186,8 @@ TEST(GameState, SuicideIllegal) {
 TEST(GameState, SuicideLegal) {
 	GameRules rules    = fromRuleSet(RuleSet::Japanese);
 	rules.suicideLegal = true;
-	GameState state(9u, rules);
+	GameState state(config(rules));
+	ASSERT_TRUE(state.start());
 	prepareWhiteSuicide(state);
 
 	const auto removed = state.place(Player::White, {0u, 1u});

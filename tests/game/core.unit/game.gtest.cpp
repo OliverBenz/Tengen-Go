@@ -7,24 +7,54 @@
 namespace tengen::gtest {
 namespace {
 
-//! Collects what the Game actually accepted.
-class DeltaRecorder : public IGameStateListener {
+//! Collects what the Game signalled, and in which order.
+class StateRecorder : public IGameStateListener {
 public:
+	enum class Call { Start,
+	                  Delta,
+	                  End };
+
+	void onGameStart(const GameConfig& config) override {
+		calls.push_back(Call::Start);
+		configs.push_back(config);
+	}
 	void onGameDelta(const GameDelta& delta) override {
+		calls.push_back(Call::Delta);
 		deltas.push_back(delta);
 	}
+	void onGameEnd(const GameResult& result) override {
+		calls.push_back(Call::End);
+		results.push_back(result);
+	}
 
+	std::vector<Call> calls;
+	std::vector<GameConfig> configs;
 	std::vector<GameDelta> deltas;
+	std::vector<GameResult> results;
 };
+using Call = StateRecorder::Call;
+
+//! A 9x9 game under Japanese rules.
+GameConfig config() {
+	return GameConfig{.boardSize = 9u, .rules = fromRuleSet(RuleSet::Japanese)};
+}
+
+//! Runs the game on its own thread, handles every event pushed so far, then stops it.
+void runToEnd(Game& game) {
+	std::thread gameThread([&] { game.run(); });
+	game.pushEvent(ShutdownEvent{});
+	gameThread.join();
+}
 
 } // namespace
 
 // TODO: Verify board state after every place
 TEST(Game, BoardUpdate) {
-	Game game(9u, fromRuleSet(RuleSet::Japanese));
+	Game game(config());
 	std::thread gameThread([&] { game.run(); });
+	game.pushEvent(StartEvent{});
 
-	// Setup ?koseki?
+	// Setup
 	game.pushEvent(PutStoneEvent{Player::Black, {0u, 1u}});
 	game.pushEvent(PutStoneEvent{Player::White, {0u, 2u}});
 	game.pushEvent(PutStoneEvent{Player::Black, {1u, 0u}});
@@ -53,21 +83,62 @@ TEST(Game, BoardUpdate) {
 	gameThread.join();
 }
 
-//! A session against a bot leans on this: however fast the user clicks, only the player to move gets
-//! his event through, so he can never place two stones in a row.
-TEST(Game, RejectsEventsOutOfTurn) {
-	DeltaRecorder recorder;
-	Game game(9u, fromRuleSet(RuleSet::Japanese));
-	game.subscribeState(&recorder);
-	std::thread gameThread([&] { game.run(); });
+//! The start carries the config, so listeners learn how the game is played. A second start changes nothing.
+TEST(Game, SignalsStartWithConfig) {
+	GameRules rules = fromRuleSet(RuleSet::Chinese);
+	rules.komi      = 0.5f;
 
+	StateRecorder recorder;
+	Game game(GameConfig{.boardSize = 13u, .rules = rules});
+	game.subscribeState(&recorder);
+
+	game.pushEvent(StartEvent{});
+	game.pushEvent(StartEvent{});
+	runToEnd(game);
+	game.unsubscribeState(&recorder);
+
+	ASSERT_EQ(recorder.calls, std::vector<Call>{Call::Start});
+	ASSERT_EQ(recorder.configs.size(), 1u);
+
+	EXPECT_EQ(recorder.configs[0].boardSize, 13u);
+	EXPECT_EQ(recorder.configs[0].rules.scoringMethod, Scoring::Area);
+	EXPECT_EQ(recorder.configs[0].rules.komi, 0.5f);
+}
+
+//! The game can be set up early: nothing gets through until it is started.
+TEST(Game, RejectsEventsBeforeStart) {
+	StateRecorder recorder;
+	Game game(config());
+	game.subscribeState(&recorder);
+
+	game.pushEvent(PutStoneEvent{Player::Black, {3u, 3u}});
+	game.pushEvent(PassEvent{Player::Black});
+	game.pushEvent(ResignEvent{Player::Black});
+	game.pushEvent(StartEvent{});
+	game.pushEvent(PutStoneEvent{Player::Black, {4u, 4u}});
+	runToEnd(game);
+	game.unsubscribeState(&recorder);
+
+	ASSERT_EQ(recorder.calls, (std::vector<Call>{Call::Start, Call::Delta}));
+	ASSERT_EQ(recorder.deltas.size(), 1u);
+
+	EXPECT_EQ(recorder.deltas[0].moveId, 1u);
+	ASSERT_TRUE(recorder.deltas[0].coord.has_value());
+	EXPECT_EQ(recorder.deltas[0].coord->x, 4u);
+	EXPECT_EQ(recorder.deltas[0].coord->y, 4u);
+}
+
+TEST(Game, RejectsEventsOutOfTurn) {
+	StateRecorder recorder;
+	Game game(config());
+	game.subscribeState(&recorder);
+
+	game.pushEvent(StartEvent{});
 	game.pushEvent(PutStoneEvent{Player::Black, {3u, 3u}});
 	game.pushEvent(PutStoneEvent{Player::Black, {4u, 4u}}); // Second click: black is not to move anymore.
 	game.pushEvent(PassEvent{Player::Black});               // Neither is passing out of turn.
 	game.pushEvent(PutStoneEvent{Player::White, {4u, 4u}});
-
-	game.pushEvent(ShutdownEvent{});
-	gameThread.join();
+	runToEnd(game);
 	game.unsubscribeState(&recorder);
 
 	ASSERT_EQ(recorder.deltas.size(), 2u);
@@ -84,26 +155,48 @@ TEST(Game, RejectsEventsOutOfTurn) {
 	EXPECT_EQ(recorder.deltas[1].coord->y, 4u);
 }
 
-//! The loop outlives the game: events after the end are refused, only a ShutdownEvent stops it.
-TEST(Game, RejectsEventsAfterGameEnded) {
-	DeltaRecorder recorder;
-	Game game(9u, fromRuleSet(RuleSet::Japanese));
+TEST(Game, SignalsEndAfterTwoPasses) {
+	StateRecorder recorder;
+	Game game(config());
 	game.subscribeState(&recorder);
-	std::thread gameThread([&] { game.run(); });
 
+	game.pushEvent(StartEvent{});
 	game.pushEvent(PassEvent{Player::Black});
 	game.pushEvent(PassEvent{Player::White});
 	game.pushEvent(PutStoneEvent{Player::Black, {3u, 3u}});
-	game.pushEvent(ResignEvent{});
-
-	game.pushEvent(ShutdownEvent{});
-	gameThread.join();
+	game.pushEvent(ResignEvent{Player::Black});
+	runToEnd(game);
 	game.unsubscribeState(&recorder);
 
+	ASSERT_EQ(recorder.calls, (std::vector<Call>{Call::Start, Call::Delta, Call::Delta, Call::End}));
 	ASSERT_EQ(recorder.deltas.size(), 2u);
-	EXPECT_TRUE(recorder.deltas[0].gameActive);
-	EXPECT_FALSE(recorder.deltas[1].gameActive);
+	ASSERT_EQ(recorder.results.size(), 1u);
+
 	EXPECT_EQ(recorder.deltas[1].action, GameAction::Pass);
+	EXPECT_FALSE(recorder.results[0].winner.has_value());
+	EXPECT_EQ(recorder.results[0].reason, EndReason::Counting);
+}
+
+TEST(Game, SignalsEndAfterResignOutOfTurn) {
+	StateRecorder recorder;
+	Game game(config());
+	game.subscribeState(&recorder);
+
+	game.pushEvent(StartEvent{});
+	game.pushEvent(PutStoneEvent{Player::Black, {3u, 3u}});
+	game.pushEvent(ResignEvent{Player::Black}); // White is to move.
+	runToEnd(game);
+	game.unsubscribeState(&recorder);
+
+	ASSERT_EQ(recorder.calls, (std::vector<Call>{Call::Start, Call::Delta, Call::Delta, Call::End}));
+	ASSERT_EQ(recorder.deltas.size(), 2u);
+	ASSERT_EQ(recorder.results.size(), 1u);
+
+	EXPECT_EQ(recorder.deltas[1].action, GameAction::Resign);
+	EXPECT_EQ(recorder.deltas[1].player, Player::Black);
+	EXPECT_EQ(recorder.deltas[1].nextPlayer, Player::White);
+	EXPECT_EQ(recorder.results[0].winner, Player::White);
+	EXPECT_EQ(recorder.results[0].reason, EndReason::Resignation);
 }
 
 } // namespace tengen::gtest

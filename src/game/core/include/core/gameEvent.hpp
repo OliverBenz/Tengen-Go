@@ -10,6 +10,7 @@
 
 namespace tengen {
 
+struct StartEvent {};
 struct PutStoneEvent {
 	Player player;
 	Coord c;
@@ -17,9 +18,11 @@ struct PutStoneEvent {
 struct PassEvent {
 	Player player;
 };
-struct ResignEvent {};
+struct ResignEvent {
+	Player player;
+};
 struct ShutdownEvent {};
-using GameEvent = std::variant<PutStoneEvent, PassEvent, ResignEvent, ShutdownEvent>;
+using GameEvent = std::variant<StartEvent, PutStoneEvent, PassEvent, ResignEvent, ShutdownEvent>;
 
 
 //! Types of signals.
@@ -42,7 +45,6 @@ struct GameDelta {
 	std::optional<Coord> coord;  //!< For place action: Coordinate of place.
 	std::vector<Coord> captures; //!< Stones removed from the board. On suicide also the player's own.
 	Player nextPlayer;           //!< Next player to make a move. In case we add handicap, penalties, etc.
-	bool gameActive;             //!< Game active after the move.
 };
 
 } // namespace tengen
