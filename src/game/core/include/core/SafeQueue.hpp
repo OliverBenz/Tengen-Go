@@ -28,14 +28,14 @@ public:
 
 protected:
 	std::deque<Entry> m_queue;           //!< Stores the entries.
-	std::mutex m_mutex;                  //!< Manage access to the queue.
+	mutable std::mutex m_mutex;          //!< Manage access to the queue.
 	std::condition_variable m_condition; //!< Notify that element can be popped.
 	std::atomic<bool> m_blockThreads;    //!< Should the Pop function block the threads or not.
 };
 
 
 template <class Entry>
-SafeQueue<Entry>::SafeQueue() : m_blockThreads(true){};
+SafeQueue<Entry>::SafeQueue() : m_blockThreads(true) {};
 
 template <class Entry>
 void SafeQueue<Entry>::Push(const Entry& value) {

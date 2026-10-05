@@ -2,7 +2,7 @@
 
 namespace tengen {
 
-Game::Game(const std::size_t boardSize, const GameRules& rules) : m_state{boardSize, rules} {
+Game::Game(const GameConfig& config) : m_state{config} {
 }
 
 void Game::pushEvent(GameEvent event) {
@@ -19,8 +19,13 @@ void Game::run() {
 	}
 }
 
-std::size_t Game::boardSize() const {
-	return m_state.position().board.size();
+void Game::handleEvent(const StartEvent&) {
+	if (!m_state.start()) {
+		return;
+	}
+
+	m_eventHub.signal(GS_StateChange);
+	m_eventHub.signalStart(m_state.config());
 }
 
 void Game::handleEvent(const PutStoneEvent& event) {
@@ -38,7 +43,6 @@ void Game::handleEvent(const PutStoneEvent& event) {
 	        .coord      = event.c,
 	        .captures   = *captures,
 	        .nextPlayer = m_state.position().currentPlayer,
-	        .gameActive = m_state.isActive(),
 	});
 }
 
@@ -54,34 +58,34 @@ void Game::handleEvent(const PassEvent& event) {
 	        .coord      = std::nullopt,
 	        .captures   = {},
 	        .nextPlayer = m_state.position().currentPlayer,
-	        .gameActive = m_state.isActive(),
 	};
 
 	// Second consecutive passes can end the game.
 	if (m_state.isActive()) {
 		m_eventHub.signal(GS_PlayerChange);
+		m_eventHub.signalDelta(delta);
 	} else {
 		m_eventHub.signal(GS_StateChange);
+		m_eventHub.signalDelta(delta);
+		m_eventHub.signalEnd(*m_state.result());
 	}
-	m_eventHub.signalDelta(delta);
 }
 
-void Game::handleEvent(const ResignEvent&) {
-	if (!m_state.resign()) {
+void Game::handleEvent(const ResignEvent& event) {
+	if (!m_state.resign(event.player)) {
 		return;
 	}
 
-	const auto& position = m_state.position();
 	m_eventHub.signal(GS_StateChange);
 	m_eventHub.signalDelta(GameDelta{
-	        .moveId     = position.moveId + 1,
+	        .moveId     = m_state.position().moveId + 1,
 	        .action     = GameAction::Resign,
-	        .player     = position.currentPlayer,
+	        .player     = event.player,
 	        .coord      = std::nullopt,
 	        .captures   = {},
-	        .nextPlayer = opponent(position.currentPlayer),
-	        .gameActive = m_state.isActive(),
+	        .nextPlayer = opponent(event.player),
 	});
+	m_eventHub.signalEnd(*m_state.result());
 }
 
 void Game::handleEvent(const ShutdownEvent&) {

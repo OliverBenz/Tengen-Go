@@ -2,11 +2,13 @@
 #include "core/moveChecker.hpp"
 #include "zobristHash.hpp"
 
-#include <cassert>
+#include <format>
+#include <stdexcept>
 #include <utility>
 
 namespace tengen {
 
+//! \throws std::invalid_argument if there is no hash for the board size.
 static std::unique_ptr<IZobristHash> makeHasher(const std::size_t boardSize) {
 	switch (boardSize) {
 	case 9u:
@@ -16,8 +18,7 @@ static std::unique_ptr<IZobristHash> makeHasher(const std::size_t boardSize) {
 	case 19u:
 		return std::make_unique<ZobristHash<19u>>();
 	default:
-		assert(false);
-		return nullptr;
+		throw std::invalid_argument(std::format("Unsupported board size {}. Supported are 9, 13 and 19.", boardSize));
 	}
 }
 
@@ -35,17 +36,21 @@ static uint64_t hashAfter(const Placement& placement, const uint64_t hash, IZobr
 	return next;
 }
 
-GameState::GameState(const std::size_t boardSize, const GameRules& rules)
-    : m_rules{rules}, m_position{boardSize}, m_hasher{makeHasher(boardSize)}, m_history{rules.koRule} {
+GameState::GameState(const GameConfig& config)
+    : m_config{config}, m_position{config.boardSize}, m_hasher{makeHasher(config.boardSize)}, m_history{config.rules.koRule} {
 	m_history.record(m_position.hash, m_position.currentPlayer);
 }
 
+bool GameState::start() {
+	return !std::exchange(m_started, true);
+}
+
 std::optional<std::vector<Coord>> GameState::place(const Player player, const Coord c) {
-	if (!m_active || player != m_position.currentPlayer) {
+	if (!isActive() || player != m_position.currentPlayer) {
 		return std::nullopt;
 	}
 
-	auto placement = playStone(m_position.board, player, c, m_rules.suicideLegal);
+	auto placement = playStone(m_position.board, player, c, m_config.rules.suicideLegal);
 	if (!placement) {
 		return std::nullopt;
 	}
@@ -65,7 +70,7 @@ std::optional<std::vector<Coord>> GameState::place(const Player player, const Co
 }
 
 bool GameState::pass(const Player player) {
-	if (!m_active || player != m_position.currentPlayer) {
+	if (!isActive() || player != m_position.currentPlayer) {
 		return false;
 	}
 
@@ -74,17 +79,30 @@ bool GameState::pass(const Player player) {
 
 	++m_consecutivePasses;
 	if (m_consecutivePasses == 2) {
-		m_active = false;
+		// TODO: Count the board. Until then the result names no winner.
+		m_result = GameResult{.winner = std::nullopt, .reason = EndReason::Counting};
 	}
 	return true;
 }
 
-bool GameState::resign() {
-	return std::exchange(m_active, false);
+bool GameState::resign(const Player player) {
+	if (!isActive()) {
+		return false;
+	}
+	m_result = GameResult{.winner = opponent(player), .reason = EndReason::Resignation};
+	return true;
 }
 
 bool GameState::isActive() const {
-	return m_active;
+	return m_started && !m_result;
+}
+
+const std::optional<GameResult>& GameState::result() const {
+	return m_result;
+}
+
+const GameConfig& GameState::config() const {
+	return m_config;
 }
 
 const GamePosition& GameState::position() const {

@@ -43,11 +43,27 @@ void EventHub::signal(GameSignal signal) {
 	}
 }
 
+void EventHub::signalStart(const GameConfig& config) {
+	std::lock_guard<std::mutex> lock(m_listenerMutex);
+
+	for (const auto& entry: m_stateListeners) {
+		entry.listener->onGameStart(config);
+	}
+}
+
 void EventHub::signalDelta(const GameDelta& delta) {
 	std::lock_guard<std::mutex> lock(m_listenerMutex);
 
 	for (const auto& entry: m_stateListeners) {
 		entry.listener->onGameDelta(delta);
+	}
+}
+
+void EventHub::signalEnd(const GameResult& result) {
+	std::lock_guard<std::mutex> lock(m_listenerMutex);
+
+	for (const auto& entry: m_stateListeners) {
+		entry.listener->onGameEnd(result);
 	}
 }
 
