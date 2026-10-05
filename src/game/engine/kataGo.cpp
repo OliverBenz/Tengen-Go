@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <format>
 #include <string>
 #include <utility>
@@ -38,6 +39,8 @@ KataGo::KataGo(KataGoConfig config)
 }
 
 void KataGo::start(const unsigned boardSize, const GameRules& rules, const tengen::Player botColour) {
+	assert(acceptsKomi(rules.komi));
+
 	const Skill rank = std::clamp(m_config.rank, KataGoConfig::weakestRank, KataGoConfig::strongestRank);
 
 	const std::string executable = m_config.files.executable.string();
@@ -62,6 +65,11 @@ void KataGo::start(const unsigned boardSize, const GameRules& rules, const tenge
 	        .logFile       = "katago.log",
 	        .setupCommands = {setRulesCommand(rules)}}, // Overrides the rules in the config file.
 	       boardSize, rules, botColour);
+}
+
+bool KataGo::acceptsKomi(const float komi) {
+	const float halfPoints = komi * 2.0f;
+	return std::isfinite(komi) && halfPoints == std::round(halfPoints);
 }
 
 std::string KataGo::setRulesCommand(const GameRules& rules) {
