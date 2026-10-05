@@ -5,6 +5,7 @@
 #include <QDoubleSpinBox>
 #include <QFormLayout>
 #include <QVBoxLayout>
+#include <cmath>
 
 namespace tengen::gui {
 namespace {
@@ -36,6 +37,9 @@ RulesConfigWidget::RulesConfigWidget(QWidget* parent)
 	m_komi->setRange(-komiLimit, komiLimit);
 	m_komi->setDecimals(1);
 	m_komi->setSingleStep(0.5);
+
+	// Round komi to half points after editing.
+	connect(m_komi, &QDoubleSpinBox::editingFinished, this, [this] { m_komi->setValue(std::round(m_komi->value() * 2.0) / 2.0); });
 
 	m_suicide = new QCheckBox(tr("Allowed"), this);
 
