@@ -48,13 +48,14 @@ void runToEnd(Game& game) {
 
 } // namespace
 
-// TODO: Verify board state after every place
+//! A ko fought through the Game: the deltas carry every capture, and the ko rule holds back the immediate retake.
 TEST(Game, BoardUpdate) {
+	StateRecorder recorder;
 	Game game(config());
-	std::thread gameThread([&] { game.run(); });
+	game.subscribeState(&recorder);
 	game.pushEvent(StartEvent{});
 
-	// Setup
+	// Setup: black (1,2) is left with its last liberty at (1,1).
 	game.pushEvent(PutStoneEvent{Player::Black, {0u, 1u}});
 	game.pushEvent(PutStoneEvent{Player::White, {0u, 2u}});
 	game.pushEvent(PutStoneEvent{Player::Black, {1u, 0u}});
@@ -63,24 +64,47 @@ TEST(Game, BoardUpdate) {
 	game.pushEvent(PutStoneEvent{Player::White, {2u, 2u}});
 	game.pushEvent(PutStoneEvent{Player::Black, {1u, 2u}});
 
-	// White takes
-	game.pushEvent(PutStoneEvent{Player::White, {1u, 1u}});
+	game.pushEvent(PutStoneEvent{Player::White, {1u, 1u}}); // White takes
+	game.pushEvent(PutStoneEvent{Player::Black, {1u, 2u}}); // Black cannot take (repeating board state)
+	game.pushEvent(PutStoneEvent{Player::Black, {5u, 5u}}); // Black plays somewhere else
+	game.pushEvent(PutStoneEvent{Player::White, {5u, 6u}}); // White plays somewhere else
+	game.pushEvent(PutStoneEvent{Player::Black, {1u, 2u}}); // Black takes back
 
-	// Black cannot take (repeating board state)
-	game.pushEvent(PutStoneEvent{Player::Black, {1u, 2u}});
+	runToEnd(game);
+	game.unsubscribeState(&recorder);
 
-	// Black plays somewhere else
-	game.pushEvent(PutStoneEvent{Player::White, {5u, 5u}});
+	// Every move but the refused retake got through.
+	ASSERT_EQ(recorder.deltas.size(), 11u);
 
-	// White plays somewhere else
-	game.pushEvent(PutStoneEvent{Player::Black, {5u, 6u}});
+	// The setup captures nothing.
+	for (std::size_t i = 0u; i < 7u; ++i) {
+		EXPECT_TRUE(recorder.deltas[i].captures.empty());
+	}
 
-	// Black takes back
-	game.pushEvent(PutStoneEvent{Player::White, {1u, 2u}});
+	// White takes the ko.
+	const auto& take = recorder.deltas[7];
+	EXPECT_EQ(take.player, Player::White);
+	ASSERT_EQ(take.captures.size(), 1u);
+	EXPECT_EQ(take.captures[0].x, 1u);
+	EXPECT_EQ(take.captures[0].y, 2u);
 
+	// The refused retake left black to move, so black's move elsewhere is the next delta.
+	const auto& elsewhere = recorder.deltas[8];
+	EXPECT_EQ(elsewhere.moveId, 9u);
+	EXPECT_EQ(elsewhere.player, Player::Black);
+	ASSERT_TRUE(elsewhere.coord.has_value());
+	EXPECT_EQ(elsewhere.coord->x, 5u);
+	EXPECT_EQ(elsewhere.coord->y, 5u);
 
-	game.pushEvent(ShutdownEvent{});
-	gameThread.join();
+	// After the exchange black may take back.
+	const auto& retake = recorder.deltas[10];
+	EXPECT_EQ(retake.player, Player::Black);
+	ASSERT_TRUE(retake.coord.has_value());
+	EXPECT_EQ(retake.coord->x, 1u);
+	EXPECT_EQ(retake.coord->y, 2u);
+	ASSERT_EQ(retake.captures.size(), 1u);
+	EXPECT_EQ(retake.captures[0].x, 1u);
+	EXPECT_EQ(retake.captures[0].y, 1u);
 }
 
 //! The start carries the config, so listeners learn how the game is played. A second start changes nothing.
