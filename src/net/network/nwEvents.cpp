@@ -1,11 +1,71 @@
 #include "network/nwEvents.hpp"
 
+#include <array>
 #include <cassert>
 #include <nlohmann/json.hpp>
 
 namespace tengen::network {
 
 using nlohmann::json;
+
+//! Wire name of one enum value. Enums go over the wire by name - not by value.
+template <typename E>
+struct WireName {
+	E value;
+	const char* name;
+};
+
+// Never rename an entry: the names are the protocol.
+constexpr std::array PLAYER_NAMES{
+        WireName<Player>{Player::Black, "black"},
+        WireName<Player>{Player::White, "white"},
+};
+constexpr std::array ACTION_NAMES{
+        WireName<GameAction>{GameAction::Place, "place"},
+        WireName<GameAction>{GameAction::Pass, "pass"},
+        WireName<GameAction>{GameAction::Resign, "resign"},
+};
+constexpr std::array SCORING_NAMES{
+        WireName<Scoring>{Scoring::Territory, "territory"},
+        WireName<Scoring>{Scoring::Area, "area"},
+};
+constexpr std::array KO_NAMES{
+        WireName<Ko>{Ko::Simple, "simple"},
+        WireName<Ko>{Ko::Situational, "situational"},
+        WireName<Ko>{Ko::Positional, "positional"},
+};
+constexpr std::array END_REASON_NAMES{
+        WireName<EndReason>{EndReason::Resignation, "resignation"},
+        WireName<EndReason>{EndReason::Counting, "counting"},
+        WireName<EndReason>{EndReason::Timeout, "timeout"},
+        WireName<EndReason>{EndReason::Forfeit, "forfeit"},
+};
+
+template <typename E, std::size_t N>
+static const char* toName(const std::array<WireName<E>, N>& names, const E value) {
+	for (const auto& entry: names) {
+		if (entry.value == value) {
+			return entry.name;
+		}
+	}
+	assert(false && "Enum value missing from its wire names.");
+	return "";
+}
+
+//! The enum value with this wire name. Nullopt for anything that is not one of the names.
+template <typename E, std::size_t N>
+static std::optional<E> fromName(const std::array<WireName<E>, N>& names, const json& j) {
+	if (!j.is_string()) {
+		return std::nullopt;
+	}
+	const auto& name = j.get_ref<const std::string&>();
+	for (const auto& entry: names) {
+		if (name == entry.name) {
+			return entry.value;
+		}
+	}
+	return std::nullopt;
+}
 
 static std::string toMessage(const ClientPutStone& e) {
 	json j;
@@ -71,34 +131,41 @@ static std::string toMessage(const ServerSessionAssign& e) {
 	j["sessionId"] = e.sessionId;
 	return j.dump();
 }
-static std::string toMessage(const ServerGameConfig& e) {
+static std::string toMessage(const ServerGameStart& e) {
+	const auto& rules = e.config.rules;
+
 	json j;
-	j["type"]      = "config";
-	j["boardSize"] = e.boardSize;
-	j["komi"]      = e.komi;
-	j["time"]      = e.timeSeconds;
+	j["type"]      = "start";
+	j["boardSize"] = e.config.boardSize;
+	j["rules"]     = {
+            {"scoring", toName(SCORING_NAMES, rules.scoringMethod)},
+            {"ko", toName(KO_NAMES, rules.koRule)},
+            {"komi", rules.komi},
+            {"suicide", rules.suicideLegal},
+    };
 	return j.dump();
 }
-static std::string toMessage(const ServerDelta& e) {
+static std::string toMessage(const ServerGameDelta& e) {
+	const auto& delta = e.delta;
+
 	json j;
 	j["type"]   = "delta";
-	j["turn"]   = e.turn;
-	j["seat"]   = static_cast<unsigned>(e.seat);
-	j["action"] = static_cast<unsigned>(e.action);
-	j["next"]   = static_cast<unsigned>(e.next);
-	j["status"] = static_cast<unsigned>(e.status);
+	j["moveId"] = delta.moveId;
+	j["action"] = toName(ACTION_NAMES, delta.action);
+	j["player"] = toName(PLAYER_NAMES, delta.player);
+	j["next"]   = toName(PLAYER_NAMES, delta.nextPlayer);
 
 	// For Place moves we require a coord; otherwise the message is invalid.
-	if (e.action == ServerAction::Place) {
-		if (!e.coord.has_value()) {
-			assert(false && "ServerDelta::Place requires coord");
+	if (delta.action == GameAction::Place) {
+		if (!delta.coord.has_value()) {
+			assert(false && "ServerGameDelta::Place requires coord");
 			return {};
 		}
-		j["x"] = e.coord->x;
-		j["y"] = e.coord->y;
-		if (!e.captures.empty()) {
+		j["x"] = delta.coord->x;
+		j["y"] = delta.coord->y;
+		if (!delta.captures.empty()) {
 			auto caps = json::array();
-			for (const auto& cap: e.captures) {
+			for (const auto& cap: delta.captures) {
 				caps.push_back({cap.x, cap.y});
 			}
 			j["captures"] = std::move(caps);
@@ -107,11 +174,20 @@ static std::string toMessage(const ServerDelta& e) {
 
 	return j.dump();
 }
+static std::string toMessage(const ServerGameEnd& e) {
+	json j;
+	j["type"]   = "end";
+	j["reason"] = toName(END_REASON_NAMES, e.result.reason);
+	if (e.result.winner) {
+		j["winner"] = toName(PLAYER_NAMES, *e.result.winner);
+	}
+	return j.dump();
+}
 
 static std::string toMessage(const ServerChat& e) {
 	json j;
 	j["type"]      = "chat";
-	j["player"]    = static_cast<unsigned>(e.player);
+	j["player"]    = toName(PLAYER_NAMES, e.player);
 	j["messageId"] = e.messageId;
 	j["message"]   = e.message;
 	return j.dump();
@@ -120,48 +196,49 @@ std::string toMessage(ServerEvent event) {
 	return std::visit([&](auto&& ev) { return toMessage(ev); }, event);
 }
 
-static std::optional<ServerEvent> fromServerDeltaMessage(const json& j) {
-	// clang-format off
-	if (!j.contains("turn")   || !j["turn"].is_number_unsigned()   ||
-		!j.contains("seat")   || !j["seat"].is_number_unsigned()   ||
-		!j.contains("action") || !j["action"].is_number_unsigned() ||
-		!j.contains("next")   || !j["next"].is_number_unsigned()   ||
-		!j.contains("status") || !j["status"].is_number_unsigned())
-	{
+static std::optional<ServerEvent> fromServerStartMessage(const json& j) {
+	if (!j.contains("boardSize") || !j["boardSize"].is_number_unsigned() || !j.contains("rules") || !j["rules"].is_object()) {
 		return {};
 	}
-	// clang-format on
 
-	ServerDelta delta{
-	        .turn     = 0u,
-	        .seat     = Seat::None,
-	        .action   = ServerAction::Place,
-	        .coord    = std::nullopt,
-	        .captures = {},
-	        .next     = Seat::None,
-	        .status   = GameStatus::Active,
+	const auto& rules = j["rules"];
+	if (!rules.contains("scoring") || !rules.contains("ko") || !rules.contains("komi") || !rules["komi"].is_number() || !rules.contains("suicide") || !rules["suicide"].is_boolean()) {
+		return {};
+	}
+	const auto scoring = fromName(SCORING_NAMES, rules["scoring"]);
+	const auto ko      = fromName(KO_NAMES, rules["ko"]);
+	if (!scoring || !ko) {
+		return {};
+	}
+
+	return ServerGameStart{GameConfig{
+	        .boardSize = j["boardSize"].get<std::size_t>(),
+	        .rules     = {.scoringMethod = *scoring, .koRule = *ko, .komi = rules["komi"].get<float>(), .suicideLegal = rules["suicide"].get<bool>()},
+	}};
+}
+
+static std::optional<ServerEvent> fromServerDeltaMessage(const json& j) {
+	if (!j.contains("moveId") || !j["moveId"].is_number_unsigned() || !j.contains("action") || !j.contains("player") || !j.contains("next")) {
+		return {};
+	}
+
+	const auto action = fromName(ACTION_NAMES, j["action"]);
+	const auto player = fromName(PLAYER_NAMES, j["player"]);
+	const auto next   = fromName(PLAYER_NAMES, j["next"]);
+	if (!action || !player || !next) {
+		return {};
+	}
+
+	GameDelta delta{
+	        .moveId     = j["moveId"].get<unsigned>(),
+	        .action     = *action,
+	        .player     = *player,
+	        .coord      = std::nullopt,
+	        .captures   = {},
+	        .nextPlayer = *next,
 	};
 
-	const auto actionValue = j["action"].get<unsigned>();
-	const auto statusValue = j["status"].get<unsigned>();
-	if (!isValid(static_cast<ServerAction>(actionValue)) || !isValid(static_cast<GameStatus>(statusValue))) {
-		return {};
-	}
-
-	delta.turn           = j["turn"].get<unsigned>();
-	const auto seatValue = j["seat"].get<unsigned>();
-	const auto nextValue = j["next"].get<unsigned>();
-	delta.seat           = static_cast<Seat>(seatValue);
-	delta.action         = static_cast<ServerAction>(actionValue);
-	delta.next           = static_cast<Seat>(nextValue);
-	delta.status         = static_cast<GameStatus>(statusValue);
-
-	// Only real player seats are allowed for deltas.
-	if (!isPlayer(delta.seat) || !isPlayer(delta.next)) {
-		return {};
-	}
-
-	if (delta.action == ServerAction::Place) {
+	if (delta.action == GameAction::Place) {
 		if (!j.contains("x") || !j.contains("y") || !j["x"].is_number_unsigned() || !j["y"].is_number_unsigned()) {
 			return {};
 		}
@@ -183,7 +260,27 @@ static std::optional<ServerEvent> fromServerDeltaMessage(const json& j) {
 		}
 	}
 
-	return delta;
+	return ServerGameDelta{delta};
+}
+
+static std::optional<ServerEvent> fromServerEndMessage(const json& j) {
+	if (!j.contains("reason")) {
+		return {};
+	}
+	const auto reason = fromName(END_REASON_NAMES, j["reason"]);
+	if (!reason) {
+		return {};
+	}
+
+	GameResult result{.winner = std::nullopt, .reason = *reason};
+	if (j.contains("winner")) {
+		const auto winner = fromName(PLAYER_NAMES, j["winner"]);
+		if (!winner) {
+			return {};
+		}
+		result.winner = *winner;
+	}
+	return ServerGameEnd{result};
 }
 
 std::optional<ServerEvent> fromServerMessage(const std::string& message) {
@@ -198,29 +295,27 @@ std::optional<ServerEvent> fromServerMessage(const std::string& message) {
 		}
 		return ServerSessionAssign{.sessionId = j["sessionId"].get<SessionId>()};
 	}
-	if (type == "config") {
-		if (!j.contains("boardSize") || !j["boardSize"].is_number_unsigned() || !j.contains("komi") || !j["komi"].is_number() || !j.contains("time") ||
-		    !j["time"].is_number_unsigned()) {
-			return {};
-		}
-		return ServerGameConfig{.boardSize = j["boardSize"].get<unsigned>(), .komi = j["komi"].get<double>(), .timeSeconds = j["time"].get<unsigned>()};
+	if (type == "start") {
+		return fromServerStartMessage(j);
 	}
 	if (type == "delta") {
 		return fromServerDeltaMessage(j);
 	}
+	if (type == "end") {
+		return fromServerEndMessage(j);
+	}
 	if (type == "chat") {
-		if (!j.contains("player") || !j["player"].is_number_unsigned() || !j.contains("messageId") || !j["messageId"].is_number_unsigned() ||
-		    !j.contains("message") || !j["message"].is_string()) {
+		if (!j.contains("player") || !j.contains("messageId") || !j["messageId"].is_number_unsigned() || !j.contains("message") || !j["message"].is_string()) {
 			return {};
 		}
-		if (j["player"].get<unsigned>() != static_cast<unsigned>(Player::Black) && j["player"].get<unsigned>() != static_cast<unsigned>(Player::White)) {
+		const auto player = fromName(PLAYER_NAMES, j["player"]);
+		if (!player) {
 			return {};
 		}
 
-		const auto player        = static_cast<Player>(j["player"].get<unsigned>());
 		const auto chatMessageId = j["messageId"].get<unsigned>();
 		const auto chatMessage   = j["message"].get<std::string>();
-		return ServerChat{player, chatMessageId, std::move(chatMessage)};
+		return ServerChat{*player, chatMessageId, std::move(chatMessage)};
 	}
 	return {};
 }
