@@ -1,7 +1,7 @@
 #include "tengen/networkSession.hpp"
 
-#include "core/gameEvent.hpp"
 #include "logging.hpp"
+#include "model/gameDelta.hpp"
 #include "network/types.hpp"
 #include "tengen/gameServer.hpp"
 

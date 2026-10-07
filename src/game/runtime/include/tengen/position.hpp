@@ -1,7 +1,7 @@
 #pragma once
 
-#include "core/gameEvent.hpp"
 #include "model/board.hpp"
+#include "model/gameDelta.hpp"
 #include "model/gameStatus.hpp"
 #include "model/player.hpp"
 
