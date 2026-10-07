@@ -28,40 +28,35 @@ void MockClient::tryPlace(unsigned x, unsigned y) {
 	m_network.send(network::ClientPutStone{.c = {x, y}});
 }
 
-static std::string toString(const network::Seat seat) {
-	assert(isPlayer(seat));
-	return seat == network::Seat::Black ? "Black" : "White";
+void MockClient::onGameStart(const GameConfig& config) {
+	std::cout << std::format("[Client] Received game start: board={}, komi={}\n", config.boardSize, config.rules.komi);
 }
 
-
-void MockClient::onGameUpdate(const network::ServerDelta& event) {
-	const auto seat = toString(event.seat);
-	switch (event.action) {
-	case network::ServerAction::Place:
-		if (event.coord.has_value()) {
-			std::cout << std::format("[Client] Received board update from '{}' at ({}, {}).\n", seat, event.coord->x, event.coord->y);
+void MockClient::onGameDelta(const GameDelta& delta) {
+	const auto player = toString(delta.player);
+	switch (delta.action) {
+	case GameAction::Place:
+		if (delta.coord.has_value()) {
+			std::cout << std::format("[Client] Received board update from '{}' at ({}, {}).\n", player, delta.coord->x, delta.coord->y);
 		} else {
-			std::cout << std::format("[Client] Received board update from '{}'.\n", seat);
+			std::cout << std::format("[Client] Received board update from '{}'.\n", player);
 		}
 		break;
-	case network::ServerAction::Pass:
-		std::cout << std::format("[Client] Received pass from '{}'.\n", seat);
+	case GameAction::Pass:
+		std::cout << std::format("[Client] Received pass from '{}'.\n", player);
 		break;
-	case network::ServerAction::Resign:
-		std::cout << std::format("[Client] Received resign from '{}'\n", seat);
-		break;
-	case network::ServerAction::Count:
-		assert(false && "ServerAction::Count is not a valid action");
+	case GameAction::Resign:
+		std::cout << std::format("[Client] Received resign from '{}'\n", player);
 		break;
 	}
 }
 
-void MockClient::onGameConfig(const network::ServerGameConfig& event) {
-	std::cout << std::format("[Client] Received config: board={}, komi={}, time={}\n", event.boardSize, event.komi, event.timeSeconds);
+void MockClient::onGameEnd(const GameResult& result) {
+	std::cout << std::format("[Client] Received game end. Winner: {}\n", result.winner ? toString(*result.winner) : "none");
 }
 
-void MockClient::onChatMessage(const network::ServerChat& event) {
-	std::cout << std::format("[Client] Received message from '{}':{}\n", toString(event.player), event.message);
+void MockClient::onChatMessage(const Player player, unsigned, const std::string& message) {
+	std::cout << std::format("[Client] Received message from '{}':{}\n", toString(player), message);
 }
 
 void MockClient::onDisconnected() {

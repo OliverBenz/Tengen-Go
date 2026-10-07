@@ -7,32 +7,6 @@ namespace tengen::network {
 
 using nlohmann::json;
 
-constexpr bool isValid(ServerAction a) noexcept {
-	switch (a) {
-	case ServerAction::Place:
-	case ServerAction::Pass:
-	case ServerAction::Resign:
-		return true;
-	case ServerAction::Count:
-		return false;
-	}
-	static_assert(static_cast<int>(ServerAction::Count) == 3, "Update isValid(ServerAction) when adding enum values");
-	return false;
-}
-constexpr bool isValid(GameStatus a) noexcept {
-	switch (a) {
-	case GameStatus::Active:
-	case GameStatus::BlackWin:
-	case GameStatus::WhiteWin:
-	case GameStatus::Draw:
-		return true;
-	case GameStatus::Count:
-		return false;
-	}
-	static_assert(static_cast<int>(GameStatus::Count) == 4, "Update isValid(GameStatus) when adding enum values");
-	return false;
-}
-
 static std::string toMessage(const ClientPutStone& e) {
 	json j;
 	j["type"] = "put";

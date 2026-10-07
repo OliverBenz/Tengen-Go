@@ -1,13 +1,15 @@
 #pragma once
 
 #include "model/coordinate.hpp"
+#include "model/gameConfig.hpp"
+#include "model/gameDelta.hpp"
+#include "model/gameResult.hpp"
 #include "model/player.hpp"
 #include "network/types.hpp"
 
 #include <optional>
 #include <string>
 #include <variant>
-#include <vector>
 
 namespace tengen::network {
 
@@ -26,23 +28,20 @@ struct ServerSessionAssign {
 	SessionId sessionId; //!< Session Id assigned to player.
 };
 
-// Game configuration sent by server to clients.
-struct ServerGameConfig {
-	unsigned boardSize;
-	double komi;
-	unsigned timeSeconds;
+//! The game started.
+//! TODO: This currently just wraps data. Extend to contain timestamps and other networking relevant info.
+struct ServerGameStart {
+	GameConfig config;
 };
 
-// TODO: Replace seat with player
-//! Board update event with relevant data so the client can apply the delta.
-struct ServerDelta {
-	unsigned turn;               //!< Move number of game.
-	Seat seat;                   //!< Player who made move.
-	ServerAction action;         //!< Type of move made by player.
-	std::optional<Coord> coord;  //!< Coord of place. Set for place action.
-	std::vector<Coord> captures; //!< List of captured stones.
-	Seat next;                   //!< Next player to make a move.
-	GameStatus status;           //!< Game status.
+//! One accepted move, so the client can apply it to its position.
+struct ServerGameDelta {
+	GameDelta delta;
+};
+
+//! The game ended. Comes right after the delta of the last move.
+struct ServerGameEnd {
+	GameResult result;
 };
 
 struct ServerChat {
@@ -53,7 +52,7 @@ struct ServerChat {
 
 
 using ClientEvent = std::variant<ClientPutStone, ClientPass, ClientResign, ClientChat>;
-using ServerEvent = std::variant<ServerSessionAssign, ServerGameConfig, ServerDelta, ServerChat>;
+using ServerEvent = std::variant<ServerSessionAssign, ServerGameStart, ServerGameDelta, ServerGameEnd, ServerChat>;
 
 // Serialize typed events to JSON messages.
 std::string toMessage(ClientEvent event);
