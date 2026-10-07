@@ -2,7 +2,7 @@
 
 #include "core/IGameStateListener.hpp"
 #include "core/game.hpp"
-#include "model/gameRules.hpp"
+#include "model/gameConfig.hpp"
 #include "tengen/IGameSession.hpp"
 #include "tengen/eventHub.hpp"
 #include "tengen/position.hpp"
@@ -15,7 +15,8 @@ namespace tengen::app {
 //! Free play locally you control both players.
 class OpenSession : public IGameSession, public IGameStateListener {
 public:
-	OpenSession(std::size_t boardSize, const GameRules& rules);
+	//! \throws std::invalid_argument if the board size is not supported.
+	explicit OpenSession(const GameConfig& config);
 	~OpenSession() override;
 
 public: // IGameSession Interface
@@ -33,7 +34,9 @@ public: // IAppSignalSource Interface
 	void unsubscribe(app::IAppSignalListener* listener) override;
 
 public: // IGameStateListener Interface
+	void onGameStart(const GameConfig& config) override;
 	void onGameDelta(const GameDelta& delta) override;
+	void onGameEnd(const GameResult& result) override;
 
 private:
 	Game m_game;           //!< Game instance. Run locally on open sessions.

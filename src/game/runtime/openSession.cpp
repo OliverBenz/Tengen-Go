@@ -1,15 +1,19 @@
 #include "tengen/openSession.hpp"
 
 #include "core/gameEvent.hpp"
-#include "model/gameRules.hpp"
 
 namespace tengen::app {
 
-OpenSession::OpenSession(const std::size_t boardSize, const GameRules& rules)
-    : m_game(boardSize, rules) {
-	m_position.init(boardSize);
+OpenSession::OpenSession(const GameConfig& config) : m_game(config) {
+	// The board takes no moves until the Game signals the start.
+	m_position.reset(config.boardSize);
+	m_position.setStatus(GameStatus::Ready);
+
 	m_game.subscribeState(this);
 	m_gameThread = std::thread([this] { m_game.run(); });
+
+	// Open play has nobody to wait for, so the game starts right away.
+	m_game.pushEvent(StartEvent{});
 }
 
 OpenSession::~OpenSession() {
@@ -36,7 +40,7 @@ void OpenSession::tryPass() {
 	m_game.pushEvent(PassEvent{currentPlayer()});
 }
 void OpenSession::tryResign() {
-	m_game.pushEvent(ResignEvent{});
+	m_game.pushEvent(ResignEvent{currentPlayer()});
 }
 void OpenSession::shutdown() {
 	m_game.pushEvent(ShutdownEvent{});
@@ -54,15 +58,21 @@ void OpenSession::unsubscribe(IAppSignalListener* listener) {
 	m_eventHub.unsubscribe(listener);
 }
 
-void OpenSession::onGameDelta(const GameDelta& delta) {
-	GameStatus status         = GameStatus::Active;
-	GameStatus previousStatus = GameStatus::Active;
-	bool applied              = false;
+void OpenSession::onGameStart(const GameConfig& config) {
 	{
 		std::lock_guard<std::mutex> lock(m_stateMutex);
-		previousStatus = m_position.getStatus();
-		applied        = m_position.apply(delta);
-		status         = m_position.getStatus();
+		m_position.init(config.boardSize);
+	}
+	m_eventHub.signal(AS_BoardChange);
+	m_eventHub.signal(AS_PlayerChange);
+	m_eventHub.signal(AS_StateChange);
+}
+
+void OpenSession::onGameDelta(const GameDelta& delta) {
+	bool applied = false;
+	{
+		std::lock_guard<std::mutex> lock(m_stateMutex);
+		applied = m_position.apply(delta);
 	}
 
 	if (!applied) {
@@ -80,9 +90,14 @@ void OpenSession::onGameDelta(const GameDelta& delta) {
 	case GameAction::Resign:
 		break;
 	}
-	if (previousStatus != status) {
-		m_eventHub.signal(AS_StateChange);
+}
+
+void OpenSession::onGameEnd(const GameResult&) {
+	{
+		std::lock_guard<std::mutex> lock(m_stateMutex);
+		m_position.setStatus(GameStatus::Done);
 	}
+	m_eventHub.signal(AS_StateChange);
 }
 
 } // namespace tengen::app
