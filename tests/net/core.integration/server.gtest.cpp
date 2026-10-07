@@ -14,18 +14,21 @@ namespace tengen::gtest {
 
 class TestClientHandler final : public network::IClientHandler {
 public:
-	void onGameUpdate(const network::ServerDelta& event) override {
+	void onGameStart(const GameConfig&) override {
+	}
+
+	void onGameDelta(const GameDelta& delta) override {
 		{
 			std::lock_guard<std::mutex> lock(m_mutex);
-			m_lastDelta = event;
+			m_lastDelta = delta;
 		}
 		m_cv.notify_all();
 	}
 
-	void onGameConfig(const network::ServerGameConfig&) override {
+	void onGameEnd(const GameResult&) override {
 	}
 
-	void onChatMessage(const network::ServerChat&) override {
+	void onChatMessage(Player, unsigned, const std::string&) override {
 	}
 
 	void onDisconnected() override {
@@ -34,7 +37,7 @@ public:
 		m_cv.notify_all();
 	}
 
-	bool waitForDelta(std::chrono::milliseconds timeout, network::ServerDelta& out) {
+	bool waitForDelta(std::chrono::milliseconds timeout, GameDelta& out) {
 		std::unique_lock<std::mutex> lock(m_mutex);
 		if (!m_cv.wait_for(lock, timeout, [&] { return m_lastDelta.has_value() || m_disconnected; })) {
 			return false;
@@ -49,7 +52,7 @@ public:
 private:
 	std::mutex m_mutex;
 	std::condition_variable m_cv;
-	std::optional<network::ServerDelta> m_lastDelta;
+	std::optional<GameDelta> m_lastDelta;
 	bool m_disconnected{false};
 };
 
@@ -58,43 +61,30 @@ public:
 	explicit TestServerHandler(network::Server& server) : m_server(server) {
 	}
 
-	void onClientConnected(network::SessionId, network::Seat) override {
+	void onPlayerJoined(Player) override {
+	}
+	void onPlayerLeft(Player) override {
 	}
 
-	void onClientDisconnected(network::SessionId) override {
+	void onPlace(const Player player, const Coord c) override {
+		m_server.broadcast(network::ServerGameDelta{GameDelta{
+		        .moveId     = ++m_turn,
+		        .action     = GameAction::Place,
+		        .player     = player,
+		        .coord      = c,
+		        .captures   = {},
+		        .nextPlayer = opponent(player),
+		}});
 	}
 
-	void onNetworkEvent(network::SessionId sessionId, const network::ClientEvent& event) override {
-		std::visit([&](const auto& e) { handleEvent(sessionId, e); }, event);
+	void onPass(Player) override {
+	}
+	void onResign(Player) override {
+	}
+	void onChat(Player, const std::string&) override {
 	}
 
 private:
-	void handleEvent(network::SessionId sessionId, const network::ClientPutStone& event) {
-		const auto seat = m_server.getSeat(sessionId);
-		if (!network::isPlayer(seat)) {
-			return;
-		}
-
-		const auto moveId = ++m_turn;
-		const auto next   = seat == network::Seat::Black ? network::Seat::White : network::Seat::Black;
-
-		network::ServerDelta delta{
-		        .turn     = moveId,
-		        .seat     = seat,
-		        .action   = network::ServerAction::Place,
-		        .coord    = event.c,
-		        .captures = {},
-		        .next     = next,
-		        .status   = network::GameStatus::Active,
-		};
-
-		m_server.broadcast(delta);
-	}
-
-	template <typename T>
-	void handleEvent(network::SessionId, const T&) {
-	}
-
 	network::Server& m_server;
 	std::atomic<unsigned> m_turn{0};
 };
@@ -124,18 +114,17 @@ TEST(Networking, ServerDeltaFromPutStone) {
 	ASSERT_TRUE(client1.send(network::ClientPutStone{1u, 2u}));
 
 	// Player 2 recives the delta
-	network::ServerDelta delta{};
+	GameDelta delta{};
 	ASSERT_TRUE(handler2.waitForDelta(std::chrono::milliseconds(300), delta));
 
-	EXPECT_EQ(delta.turn, 1u);
-	EXPECT_EQ(delta.seat, network::Seat::Black);
-	EXPECT_EQ(delta.action, network::ServerAction::Place);
+	EXPECT_EQ(delta.moveId, 1u);
+	EXPECT_EQ(delta.player, Player::Black);
+	EXPECT_EQ(delta.action, GameAction::Place);
 	ASSERT_TRUE(delta.coord.has_value());
 	EXPECT_EQ(delta.coord->x, 1u);
 	EXPECT_EQ(delta.coord->y, 2u);
 	EXPECT_EQ(delta.captures.size(), 0u);
-	EXPECT_EQ(delta.next, network::Seat::White);
-	EXPECT_EQ(delta.status, network::GameStatus::Active);
+	EXPECT_EQ(delta.nextPlayer, Player::White);
 
 	client1.disconnect();
 	client2.disconnect();

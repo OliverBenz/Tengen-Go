@@ -44,6 +44,12 @@ private:
 	void processClientDisconnect(const ServerQueueEvent& event); //!< Destroys session key.
 	void processShutdown(const ServerQueueEvent& event);         //!< Shutdown server.
 
+	// Hand a player's message to the handler.
+	void handleNetworkEvent(Player player, const ClientPutStone& event);
+	void handleNetworkEvent(Player player, const ClientPass& event);
+	void handleNetworkEvent(Player player, const ClientResign& event);
+	void handleNetworkEvent(Player player, const ClientChat& event);
+
 private:
 	std::atomic<bool> m_isRunning{false};
 	std::thread m_serverThread;
@@ -196,8 +202,10 @@ void Server::Implementation::processClientConnect(const ServerQueueEvent& event)
 	m_sessionManager.setSeat(sessionId, seat);
 	send(sessionId, ServerSessionAssign{.sessionId = sessionId});
 
-	if (m_handler) {
-		m_handler->onClientConnected(sessionId, seat);
+	// Observers are no player; the handler only hears about players.
+	const auto player = toPlayer(seat);
+	if (m_handler && player) {
+		m_handler->onPlayerJoined(*player);
 	}
 }
 
@@ -207,9 +215,9 @@ void Server::Implementation::processClientMessage(const ServerQueueEvent& event)
 		return;
 	}
 
-	const auto seat = m_sessionManager.getSeat(sessionId);
-	if (!isPlayer(seat)) {
-		return; // Non players don't get to do stuff.
+	const auto player = toPlayer(m_sessionManager.getSeat(sessionId));
+	if (!player) {
+		return; // Non players don't get to do shit.
 	}
 
 	// Server event message contains a network event. Parse and handle.
@@ -220,8 +228,24 @@ void Server::Implementation::processClientMessage(const ServerQueueEvent& event)
 
 	// Forward client intent to the game/app layer.
 	if (m_handler) {
-		m_handler->onNetworkEvent(sessionId, *networkEvent);
+		std::visit([&](const auto& e) { handleNetworkEvent(*player, e); }, *networkEvent);
 	}
+}
+
+void Server::Implementation::handleNetworkEvent(const Player player, const ClientPutStone& event) {
+	m_handler->onPlace(player, event.c);
+}
+
+void Server::Implementation::handleNetworkEvent(const Player player, const ClientPass&) {
+	m_handler->onPass(player);
+}
+
+void Server::Implementation::handleNetworkEvent(const Player player, const ClientResign&) {
+	m_handler->onResign(player);
+}
+
+void Server::Implementation::handleNetworkEvent(const Player player, const ClientChat& event) {
+	m_handler->onChat(player, event.message);
 }
 
 void Server::Implementation::processClientDisconnect(const ServerQueueEvent& event) {
@@ -231,11 +255,11 @@ void Server::Implementation::processClientDisconnect(const ServerQueueEvent& eve
 	}
 
 	// Remove session
-	const auto seat = m_sessionManager.getSeat(sessionId);
+	const auto player = toPlayer(m_sessionManager.getSeat(sessionId));
 	m_sessionManager.setDisconnected(sessionId);
 
-	if (m_handler && isPlayer(seat)) {
-		m_handler->onClientDisconnected(sessionId); // Server might want to pause timer.
+	if (m_handler && player) {
+		m_handler->onPlayerLeft(*player); // Server might want to pause timer.
 	}
 }
 

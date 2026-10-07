@@ -11,74 +11,57 @@ MockServer::MockServer() {
 MockServer::~MockServer() {
 	m_network.stop();
 }
-void MockServer::onClientConnected(network::SessionId sessionId, network::Seat seat) {
-	std::cout << std::format("[Server] Client {} connected to seat: {}\n", sessionId, static_cast<int>(seat));
-	m_network.send(sessionId, network::ServerGameConfig{.boardSize = 9u, .komi = 6.5, .timeSeconds = 0u});
-}
 
-void MockServer::onClientDisconnected(network::SessionId sessionId) {
-	std::cout << std::format("[Server] {} disconnected.\n", sessionId);
-}
+void MockServer::onPlayerJoined(const Player player) {
+	std::cout << std::format("[Server] {} joined.\n", toString(player));
 
-void MockServer::onNetworkEvent(network::SessionId sessionId, const network::ClientEvent& event) {
-	std::visit([&](const auto& e) { handleNetworkEvent(sessionId, e); }, event);
-}
-
-void MockServer::handleNetworkEvent(network::SessionId sessionId, const network::ClientPutStone& event) {
-	const auto seat = m_network.getSeat(sessionId);
-	m_network.broadcast(network::ServerDelta{
-	        .turn     = ++m_turn,
-	        .seat     = seat,
-	        .action   = network::ServerAction::Place,
-	        .coord    = event.c,
-	        .captures = {},
-	        .next     = nextSeat(seat),
-	        .status   = network::GameStatus::Active,
-	});
-}
-
-void MockServer::handleNetworkEvent(network::SessionId sessionId, const network::ClientPass&) {
-	const auto seat = m_network.getSeat(sessionId);
-	m_network.broadcast(network::ServerDelta{
-	        .turn     = ++m_turn,
-	        .seat     = seat,
-	        .action   = network::ServerAction::Pass,
-	        .coord    = std::nullopt,
-	        .captures = {},
-	        .next     = nextSeat(seat),
-	        .status   = network::GameStatus::Active,
-	});
-}
-
-void MockServer::handleNetworkEvent(network::SessionId sessionId, const network::ClientResign&) {
-	const auto seat = m_network.getSeat(sessionId);
-	m_network.broadcast(network::ServerDelta{
-	        .turn     = ++m_turn,
-	        .seat     = seat,
-	        .action   = network::ServerAction::Resign,
-	        .coord    = std::nullopt,
-	        .captures = {},
-	        .next     = nextSeat(seat),
-	        .status   = seat == network::Seat::Black ? network::GameStatus::WhiteWin : network::GameStatus::BlackWin,
-	});
-}
-
-void MockServer::handleNetworkEvent(network::SessionId sessionId, const network::ClientChat& event) {
-	static unsigned messageId = 0u;
-
-	const auto seat = m_network.getSeat(sessionId);
-	m_network.broadcast(network::ServerChat{seat == network::Seat::Black ? Player::Black : Player::White, messageId++, event.message});
-}
-
-network::Seat MockServer::nextSeat(network::Seat seat) const {
-	if (seat == network::Seat::Black) {
-		return network::Seat::White;
+	// Like the real server, the game starts once both seats are taken.
+	if (++m_seated == 2u) {
+		m_network.broadcast(network::ServerGameStart{GameConfig{.boardSize = 9u, .rules = fromRuleSet(RuleSet::Japanese)}});
 	}
-	if (seat == network::Seat::White) {
-		return network::Seat::Black;
-	}
-	return network::Seat::Observer;
 }
 
+void MockServer::onPlayerLeft(const Player player) {
+	std::cout << std::format("[Server] {} left.\n", toString(player));
+	--m_seated;
+}
+
+void MockServer::onPlace(const Player player, const Coord c) {
+	m_network.broadcast(network::ServerGameDelta{GameDelta{
+	        .moveId     = ++m_turn,
+	        .action     = GameAction::Place,
+	        .player     = player,
+	        .coord      = c,
+	        .captures   = {},
+	        .nextPlayer = opponent(player),
+	}});
+}
+
+void MockServer::onPass(const Player player) {
+	m_network.broadcast(network::ServerGameDelta{GameDelta{
+	        .moveId     = ++m_turn,
+	        .action     = GameAction::Pass,
+	        .player     = player,
+	        .coord      = std::nullopt,
+	        .captures   = {},
+	        .nextPlayer = opponent(player),
+	}});
+}
+
+void MockServer::onResign(const Player player) {
+	m_network.broadcast(network::ServerGameDelta{GameDelta{
+	        .moveId     = ++m_turn,
+	        .action     = GameAction::Resign,
+	        .player     = player,
+	        .coord      = std::nullopt,
+	        .captures   = {},
+	        .nextPlayer = opponent(player),
+	}});
+	m_network.broadcast(network::ServerGameEnd{GameResult{.winner = opponent(player), .reason = EndReason::Resignation}});
+}
+
+void MockServer::onChat(const Player player, const std::string& message) {
+	m_network.broadcast(network::ServerChat{player, m_messageId++, message});
+}
 
 } // namespace tengen::gtest

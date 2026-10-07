@@ -28,9 +28,11 @@ private:
 	void readLoop();
 
 private:
+	// Unwrap the messages, so the handler only sees model data.
 	void handleNetworkEvent(const ServerSessionAssign& event);
-	void handleNetworkEvent(const ServerGameConfig& event);
-	void handleNetworkEvent(const ServerDelta& event);
+	void handleNetworkEvent(const ServerGameStart& event);
+	void handleNetworkEvent(const ServerGameDelta& event);
+	void handleNetworkEvent(const ServerGameEnd& event);
 	void handleNetworkEvent(const ServerChat& event);
 
 private:
@@ -128,21 +130,27 @@ void Client::Implementation::handleNetworkEvent(const ServerSessionAssign& event
 	m_sessionId = event.sessionId;
 }
 
-void Client::Implementation::handleNetworkEvent(const ServerGameConfig& event) {
+void Client::Implementation::handleNetworkEvent(const ServerGameStart& event) {
 	if (m_handler) {
-		m_handler->onGameConfig(event);
+		m_handler->onGameStart(event.config);
 	}
 }
 
-void Client::Implementation::handleNetworkEvent(const ServerDelta& event) {
+void Client::Implementation::handleNetworkEvent(const ServerGameDelta& event) {
 	if (m_handler) {
-		m_handler->onGameUpdate(event);
+		m_handler->onGameDelta(event.delta);
+	}
+}
+
+void Client::Implementation::handleNetworkEvent(const ServerGameEnd& event) {
+	if (m_handler) {
+		m_handler->onGameEnd(event.result);
 	}
 }
 
 void Client::Implementation::handleNetworkEvent(const ServerChat& event) {
 	if (m_handler) {
-		m_handler->onChatMessage(event);
+		m_handler->onChatMessage(event.player, event.messageId, event.message);
 	}
 }
 

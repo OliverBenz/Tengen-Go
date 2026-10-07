@@ -11,23 +11,18 @@ public:
 	MockServer();
 	~MockServer();
 
-	void onClientConnected(network::SessionId sessionId, network::Seat seat) override;
-	void onClientDisconnected(network::SessionId sessionId) override;
-	void onNetworkEvent(network::SessionId sessionId, const network::ClientEvent& event) override;
-
-	// Handlers for onNetworkEvent
-private:
-	void handleNetworkEvent(network::SessionId sessionId, const network::ClientPutStone& event);
-	void handleNetworkEvent(network::SessionId sessionId, const network::ClientPass&);
-	void handleNetworkEvent(network::SessionId sessionId, const network::ClientResign&);
-	void handleNetworkEvent(network::SessionId sessionId, const network::ClientChat& event);
-
-private:
-	network::Seat nextSeat(network::Seat seat) const;
+	void onPlayerJoined(Player player) override;
+	void onPlayerLeft(Player player) override;
+	void onPlace(Player player, Coord c) override;
+	void onPass(Player player) override;
+	void onResign(Player player) override;
+	void onChat(Player player, const std::string& message) override;
 
 private:
 	network::Server m_network;
+	unsigned m_seated{0u}; //!< Players currently seated.
 	unsigned m_turn{0u};
+	unsigned m_messageId{0u};
 };
 
 } // namespace tengen::gtest

@@ -9,15 +9,16 @@
 
 namespace tengen::network {
 
-//! Callback interface invoked on the client's read thread.
+//! Callback interface invoked on the client's read thread. Gets the game as model data.
 //! \note Keep handlers lightweight.
 class IClientHandler {
 public:
-	virtual ~IClientHandler()                                = default;
-	virtual void onGameConfig(const ServerGameConfig& event) = 0;
-	virtual void onGameUpdate(const ServerDelta& event)      = 0;
-	virtual void onChatMessage(const ServerChat& event)      = 0;
-	virtual void onDisconnected()                            = 0;
+	virtual ~IClientHandler()                                                                 = default;
+	virtual void onGameStart(const GameConfig& config)                                        = 0; //!< The game started.
+	virtual void onGameDelta(const GameDelta& delta)                                          = 0; //!< One accepted move.
+	virtual void onGameEnd(const GameResult& result)                                          = 0; //!< The game ended. Right after the last delta.
+	virtual void onChatMessage(Player player, unsigned messageId, const std::string& message) = 0; //!< A chat message is received.
+	virtual void onDisconnected()                                                             = 0; //!< You disconnected from the server.
 };
 
 class Client {

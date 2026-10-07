@@ -9,13 +9,17 @@
 namespace tengen::network {
 
 //! Callback interface invoked on the server's processing thread.
+//! The Server resolves sessions and seats itself: only seated players reach the handler, named by their colour.
 //! \note Keep handlers lightweight.
 class IServerHandler {
 public:
-	virtual ~IServerHandler()                                                  = default;
-	virtual void onClientConnected(SessionId sessionId, Seat seat)             = 0;
-	virtual void onClientDisconnected(SessionId sessionId)                     = 0;
-	virtual void onNetworkEvent(SessionId sessionId, const ClientEvent& event) = 0;
+	virtual ~IServerHandler()                                      = default;
+	virtual void onPlayerJoined(Player player)                     = 0; //!< A client took the seat of this player.
+	virtual void onPlayerLeft(Player player)                       = 0; //!< The client of this player disconnected.
+	virtual void onPlace(Player player, Coord c)                   = 0; //!< The player wants to place a stone at c.
+	virtual void onPass(Player player)                             = 0; //!< The player wants to pass.
+	virtual void onResign(Player player)                           = 0; //!< The player wants to resign.
+	virtual void onChat(Player player, const std::string& message) = 0; //!< The player sent a chat message.
 };
 
 class Server {
