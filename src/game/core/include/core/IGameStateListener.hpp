@@ -1,7 +1,7 @@
 #pragma once
 
-#include "core/gameEvent.hpp"
 #include "model/gameConfig.hpp"
+#include "model/gameDelta.hpp"
 #include "model/gameResult.hpp"
 
 namespace tengen {

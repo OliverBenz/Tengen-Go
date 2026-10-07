@@ -4,9 +4,7 @@
 #include "model/player.hpp"
 
 #include <cstdint>
-#include <optional>
 #include <variant>
-#include <vector>
 
 namespace tengen {
 
@@ -31,20 +29,6 @@ enum GameSignal : std::uint64_t {
 	GS_BoardChange  = 1 << 0, //!< Board was modified.
 	GS_PlayerChange = 1 << 1, //!< Active player changed.
 	GS_StateChange  = 1 << 2, //!< Game state changed. Started or finished.
-};
-
-
-//! Type of move.
-enum class GameAction { Place, Pass, Resign };
-
-//! Symbolises the game state change after one move.
-struct GameDelta {
-	unsigned moveId;             //!< Move number.
-	GameAction action;           //!< Move type.
-	Player player;               //!< Player to make move.
-	std::optional<Coord> coord;  //!< For place action: Coordinate of place.
-	std::vector<Coord> captures; //!< Stones removed from the board. On suicide also the player's own.
-	Player nextPlayer;           //!< Next player to make a move. In case we add handicap, penalties, etc.
 };
 
 } // namespace tengen

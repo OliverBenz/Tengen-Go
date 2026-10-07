@@ -12,7 +12,15 @@ static GameConfig config(const GameRules& rules = fromRuleSet(RuleSet::Japanese)
 
 TEST(GameState, RejectsUnsupportedBoardSize) {
 	const GameConfig sevenBySeven{.boardSize = 7u, .rules = fromRuleSet(RuleSet::Japanese)};
+	EXPECT_FALSE(isSupportedBoardSize(sevenBySeven.boardSize));
 	EXPECT_THROW(GameState{sevenBySeven}, std::invalid_argument);
+}
+
+TEST(GameState, PlaysEverySupportedBoardSize) {
+	for (const auto size: SUPPORTED_BOARD_SIZES) {
+		EXPECT_TRUE(isSupportedBoardSize(size));
+		EXPECT_NO_THROW(GameState(GameConfig{.boardSize = size, .rules = fromRuleSet(RuleSet::Japanese)})) << "Board size " << size;
+	}
 }
 
 TEST(GameState, KeepsConfig) {

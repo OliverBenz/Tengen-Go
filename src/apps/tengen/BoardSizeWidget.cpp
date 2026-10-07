@@ -1,5 +1,7 @@
 #include "BoardSizeWidget.hpp"
 
+#include "model/gameConfig.hpp"
+
 #include <QButtonGroup>
 #include <QHBoxLayout>
 #include <QPushButton>
@@ -8,8 +10,6 @@ namespace tengen::gui {
 
 BoardSizeWidget::BoardSizeWidget(QWidget* parent)
     : QWidget(parent) {
-	static constexpr std::array SIZES{9u, 13u, 19u};
-
 	m_sizes = new QButtonGroup(this);
 	m_sizes->setExclusive(true);
 
@@ -17,7 +17,7 @@ BoardSizeWidget::BoardSizeWidget(QWidget* parent)
 	auto* layout = new QHBoxLayout(this);
 	layout->setContentsMargins(0, 0, 0, 0);
 
-	for (const unsigned size: SIZES) {
+	for (const auto size: SUPPORTED_BOARD_SIZES) {
 		auto* button = new QPushButton(QString("%1x%1").arg(size), this);
 		button->setCheckable(true);
 		m_sizes->addButton(button, static_cast<int>(size));
@@ -25,7 +25,7 @@ BoardSizeWidget::BoardSizeWidget(QWidget* parent)
 	}
 	layout->addStretch();
 
-	m_sizes->button(SIZES.front())->setChecked(true);
+	m_sizes->button(static_cast<int>(SUPPORTED_BOARD_SIZES.front()))->setChecked(true);
 }
 
 unsigned BoardSizeWidget::boardSize() const {

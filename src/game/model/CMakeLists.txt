@@ -10,6 +10,7 @@ set(headers
     "${CMAKE_CURRENT_LIST_DIR}/include/model/gameStatus.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/include/model/gameRules.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/include/model/gameConfig.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/include/model/gameDelta.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/include/model/gameResult.hpp"
 )
 set(sources
