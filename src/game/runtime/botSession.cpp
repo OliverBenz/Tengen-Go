@@ -10,8 +10,7 @@ namespace tengen::app {
 BotSession::BotSession(const GameConfig& config, std::unique_ptr<engine::GtpEngine> botEngine, const bool playerPlaysAsBlack)
     : m_game(config), m_engine(std::move(botEngine)), m_botColour(playerPlaysAsBlack ? Player::White : Player::Black) {
 	assert(m_engine);
-	m_position.reset(config.boardSize);
-	m_position.setStatus(GameStatus::Ready); // The bot is not up yet, so the board takes no moves.
+	m_gameInfo.reset(config, GameStatus::Ready); // The bot is not up yet, so the board takes no moves.
 	m_game.subscribeState(this);
 	m_gameThread = std::thread([this] { m_game.run(); });
 
@@ -26,17 +25,17 @@ BotSession::~BotSession() {
 
 GameStatus BotSession::status() const {
 	std::lock_guard<std::mutex> lock(m_stateMutex);
-	return m_position.getStatus();
+	return m_gameInfo.getStatus();
 }
 
 Board BotSession::board() const {
 	std::lock_guard<std::mutex> lock(m_stateMutex);
-	return m_position.getBoard();
+	return m_gameInfo.getBoard();
 }
 
 Player BotSession::currentPlayer() const {
 	std::lock_guard<std::mutex> lock(m_stateMutex);
-	return m_position.getPlayer();
+	return m_gameInfo.getPlayer();
 }
 
 void BotSession::tryPlace(const unsigned x, const unsigned y) {
@@ -85,12 +84,18 @@ void BotSession::unsubscribe(IAppSignalListener* listener) {
 }
 
 void BotSession::onGameStart(const GameConfig& config) {
+	bool started      = false;
 	Player nextPlayer = Player::Black;
 	{
 		std::lock_guard<std::mutex> lock(m_stateMutex);
-		m_position.init(config.boardSize);
-		nextPlayer = m_position.getPlayer();
+		started    = m_gameInfo.update(config);
+		nextPlayer = m_gameInfo.getPlayer();
 	}
+
+	if (!started) {
+		return;
+	}
+
 	m_eventHub.signal(AS_BoardChange);
 	m_eventHub.signal(AS_PlayerChange);
 	m_eventHub.signal(AS_StateChange);
@@ -107,9 +112,9 @@ void BotSession::onGameDelta(const GameDelta& delta) {
 	bool applied = false;
 	{
 		std::lock_guard<std::mutex> lock(m_stateMutex);
-		applied = m_position.apply(delta);
+		applied = m_gameInfo.update(delta);
 
-		// Hand the turn over while the position is still held.
+		// Hand the turn over while the game info is still held.
 		if (applied) {
 			if (delta.action == GameAction::Resign) {
 				m_status = Status::Finished;
@@ -176,12 +181,19 @@ void BotSession::relayPlayerMove(const GameDelta& delta) {
 	}
 }
 
-void BotSession::onGameEnd(const GameResult&) {
+void BotSession::onGameEnd(const GameResult& result) {
 	m_status = Status::Finished;
+
+	bool ended = false;
 	{
 		std::lock_guard<std::mutex> lock(m_stateMutex);
-		m_position.setStatus(GameStatus::Done);
+		ended = m_gameInfo.update(result);
 	}
+
+	if (!ended) {
+		return;
+	}
+
 	m_eventHub.signal(AS_StateChange);
 }
 
@@ -227,7 +239,13 @@ void BotSession::endSession(const std::string& reason) {
 	m_status = Status::Finished;
 	{
 		std::lock_guard<std::mutex> lock(m_stateMutex);
-		m_position.setStatus(GameStatus::Done);
+
+		// A running game is lost by the bot, like a player that disconnects. One that never started has no result.
+		if (m_gameInfo.getStatus() == GameStatus::Active) {
+			m_gameInfo.update(GameResult{opponent(m_botColour), EndReason::Forfeit});
+		} else if (m_gameInfo.getStatus() != GameStatus::Done) {
+			m_gameInfo.reset(m_gameInfo.getConfig(), GameStatus::Done);
+		}
 	}
 	m_eventHub.signal(AS_StateChange);
 }

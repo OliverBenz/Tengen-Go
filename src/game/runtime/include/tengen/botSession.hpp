@@ -6,7 +6,7 @@
 #include "model/gameConfig.hpp"
 #include "tengen/IGameSession.hpp"
 #include "tengen/eventHub.hpp"
-#include "tengen/position.hpp"
+#include "tengen/sessionGameInfo.hpp"
 
 #include <atomic>
 #include <memory>
@@ -17,9 +17,7 @@
 namespace tengen::app {
 
 //! Play locally against a bot engine.
-//! The engine answers on a thread of its own and signals us through the listener interface. Its moves are
-//! pushed into the Game like any other move. The Game stays the source of truth; the Position only
-//! follows once the Game accepted it.
+//! The engine answers on a thread of its own and signals us through the listener interface.
 class BotSession : public IGameSession, public IGameStateListener, public engine::IEngineListener {
 public:
 	enum class Status {
@@ -66,9 +64,9 @@ private:
 
 private:
 	// Game Specifics
-	Game m_game;           //!< Game instance. Run locally on bot games.
-	Position m_position{}; //!< Tracks the board state as signalled by the Game.
-	EventHub m_eventHub;   //!< Event notifier.
+	Game m_game;                  //!< Game instance. Run locally on bot games.
+	SessionGameInfo m_gameInfo{}; //!< Tracks the game as signalled by the Game.
+	EventHub m_eventHub;          //!< Event notifier.
 
 	// Bot specifics
 	std::atomic<Status> m_status{Status::Idle};  //!< Also written from the engine thread.

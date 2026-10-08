@@ -12,6 +12,9 @@
 
 namespace tengen::app {
 
+//! Shown until the host's config arrives with the game start.
+static const GameConfig PLACEHOLDER_CONFIG{9u, fromRuleSet(RuleSet::Japanese)};
+
 NetworkSession::NetworkSession() {
 	m_network.registerHandler(this);
 }
@@ -31,8 +34,7 @@ void NetworkSession::unsubscribe(IAppSignalListener* listener) {
 void NetworkSession::connect(const std::string& hostIp) {
 	{
 		std::lock_guard<std::mutex> lock(m_stateMutex);
-		m_position.reset(9u);
-		m_position.setStatus(GameStatus::Ready);
+		m_gameInfo.reset(PLACEHOLDER_CONFIG, GameStatus::Ready);
 		m_expectedMessageId = 1u;
 		m_chatHistory.clear();
 		m_pendingChat.clear();
@@ -59,8 +61,7 @@ bool NetworkSession::host(const GameConfig& config, const Player hostColour) {
 	// Initialize the session
 	{
 		std::lock_guard<std::mutex> lock(m_stateMutex);
-		m_position.reset(config.boardSize);
-		m_position.setStatus(GameStatus::Ready);
+		m_gameInfo.reset(config, GameStatus::Ready);
 		m_expectedMessageId = 1u;
 		m_chatHistory.clear();
 		m_pendingChat.clear();
@@ -86,7 +87,7 @@ void NetworkSession::disconnect() {
 
 	{
 		std::lock_guard<std::mutex> lock(m_stateMutex);
-		m_position.reset(9u);
+		m_gameInfo.reset(PLACEHOLDER_CONFIG, GameStatus::Idle);
 		m_expectedMessageId = 1u;
 		m_chatHistory.clear();
 		m_pendingChat.clear();
@@ -106,7 +107,7 @@ void NetworkSession::shutdown() {
 
 	{
 		std::lock_guard<std::mutex> lock(m_stateMutex);
-		m_position.reset(9u);
+		m_gameInfo.reset(PLACEHOLDER_CONFIG, GameStatus::Idle);
 		m_expectedMessageId = 1u;
 		m_chatHistory.clear();
 		m_pendingChat.clear();
@@ -129,15 +130,15 @@ void NetworkSession::chat(const std::string& message) {
 
 GameStatus NetworkSession::status() const {
 	std::lock_guard<std::mutex> lock(m_stateMutex);
-	return m_position.getStatus();
+	return m_gameInfo.getStatus();
 }
 Board NetworkSession::board() const {
 	std::lock_guard<std::mutex> lock(m_stateMutex);
-	return m_position.getBoard();
+	return m_gameInfo.getBoard();
 }
 Player NetworkSession::currentPlayer() const {
 	std::lock_guard<std::mutex> lock(m_stateMutex);
-	return m_position.getPlayer();
+	return m_gameInfo.getPlayer();
 }
 std::vector<ChatEntry> NetworkSession::getChatSince(const unsigned messageId) const {
 	std::lock_guard<std::mutex> lock(m_stateMutex);
@@ -150,12 +151,12 @@ std::vector<ChatEntry> NetworkSession::getChatSince(const unsigned messageId) co
 }
 
 void NetworkSession::onGameStart(const GameConfig& config) {
-	bool initialized = false;
+	bool started = false;
 	{
 		std::lock_guard<std::mutex> lock(m_stateMutex);
-		initialized = m_position.init(config.boardSize);
+		started = m_gameInfo.update(config);
 	}
-	if (!initialized) {
+	if (!started) {
 		return;
 	}
 	m_eventHub.signal(AS_BoardChange);
@@ -166,7 +167,7 @@ void NetworkSession::onGameDelta(const GameDelta& delta) {
 	bool applied = false;
 	{
 		std::lock_guard<std::mutex> lock(m_stateMutex);
-		applied = m_position.apply(delta);
+		applied = m_gameInfo.update(delta);
 	}
 
 	if (!applied) {
@@ -185,10 +186,14 @@ void NetworkSession::onGameDelta(const GameDelta& delta) {
 		break;
 	}
 }
-void NetworkSession::onGameEnd(const GameResult&) {
+void NetworkSession::onGameEnd(const GameResult& result) {
+	bool ended = false;
 	{
 		std::lock_guard<std::mutex> lock(m_stateMutex);
-		m_position.setStatus(GameStatus::Done);
+		ended = m_gameInfo.update(result);
+	}
+	if (!ended) {
+		return;
 	}
 	m_eventHub.signal(AS_StateChange);
 }
@@ -226,7 +231,7 @@ void NetworkSession::onChatMessage(const Player player, const unsigned messageId
 void NetworkSession::onDisconnected() {
 	{
 		std::lock_guard<std::mutex> lock(m_stateMutex);
-		m_position.reset(9u);
+		m_gameInfo.reset(PLACEHOLDER_CONFIG, GameStatus::Idle);
 		m_expectedMessageId = 1u;
 		m_chatHistory.clear();
 		m_pendingChat.clear();
