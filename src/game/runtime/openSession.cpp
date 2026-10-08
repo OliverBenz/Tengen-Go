@@ -88,6 +88,7 @@ void OpenSession::onGameDelta(const GameDelta& delta) {
 	case GameAction::Place:
 		m_eventHub.signal(AS_BoardChange);
 		m_eventHub.signal(AS_PlayerChange);
+		m_eventHub.signal(AS_StonePlaced);
 		break;
 	case GameAction::Pass:
 		m_eventHub.signal(AS_PlayerChange);
