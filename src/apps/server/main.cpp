@@ -1,10 +1,12 @@
+#include "model/gameConfig.hpp"
 #include "model/gameRules.hpp"
 #include "tengen/gameServer.hpp"
 
 #include <iostream>
 
 int main(int, char**) {
-	tengen::app::GameServer server(9u, tengen::fromRuleSet(tengen::RuleSet::Japanese), tengen::Player::Black);
+	const tengen::GameConfig config{.boardSize = 9u, .rules = tengen::fromRuleSet(tengen::RuleSet::Japanese)};
+	tengen::app::GameServer server(config, tengen::Player::Black);
 	server.start();
 
 	// NOTE: Can extend to allow more commands
