@@ -31,7 +31,6 @@ bool Position::apply(const GameDelta& delta) {
 	}
 
 	m_moveId = delta.moveId;
-	m_status = delta.gameActive ? GameStatus::Active : GameStatus::Done;
 	m_player = delta.nextPlayer;
 
 	if (delta.action == GameAction::Place) {

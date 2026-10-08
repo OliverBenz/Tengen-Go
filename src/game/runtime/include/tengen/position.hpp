@@ -15,8 +15,8 @@ public:
 
 	// TODO: This init will become GameConfig onece we handle Rulesets, clock type, etc.
 	bool init(const std::size_t boardSize); //!< Initialize the given position. Returns true if it changed state.
-	bool apply(const GameDelta& delta);     //!< Apply a delta to the current position if ok.
-	void setStatus(GameStatus status);      //!< Update the status.
+	bool apply(const GameDelta& delta);     //!< Apply a delta to the current position if ok. Leaves the status alone.
+	void setStatus(GameStatus status);      //!< Update the status. The session sets Done once the game ended.
 
 	const Board& getBoard() const;
 	GameStatus getStatus() const;
