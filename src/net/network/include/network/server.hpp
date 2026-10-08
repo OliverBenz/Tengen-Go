@@ -42,8 +42,6 @@ public:
 	bool send(SessionId sessionId, const ServerEvent& event); //!< Send event to client with given sessionId. Returns false on failure.
 	bool broadcast(const ServerEvent& event);                 //!< Send event to all connected clients. Returns true if any send succeeded.
 
-	Seat getSeat(SessionId sessionId) const; //!< Seat lookup for a session. Returns Seat::None if unknown.
-
 private:
 	class Implementation;
 	std::unique_ptr<Implementation> m_pimpl; //!< Pimpl to hide networking protocol stuff.
