@@ -2,6 +2,7 @@
 
 #include "GamePresenter.hpp"
 #include "engine/engineCatalog.hpp"
+#include "model/gameConfig.hpp"
 #include "tengen/botSession.hpp"
 #include "tengen/networkSession.hpp"
 #include "tengen/openSession.hpp"
@@ -31,7 +32,7 @@ MainWindowPresenter::~MainWindowPresenter() = default;
 
 void MainWindowPresenter::startOpenPlay(const unsigned boardSize, const GameRules& rules) {
 	showLocalPlayers();
-	m_gameSession   = std::make_unique<app::OpenSession>(boardSize, rules);
+	m_gameSession   = std::make_unique<app::OpenSession>(GameConfig{.boardSize = boardSize, .rules = rules});
 	m_gamePresenter = std::make_unique<GamePresenter>(*m_gameSession, m_mainWindow.gameWidget());
 }
 
@@ -63,7 +64,7 @@ void MainWindowPresenter::onNewBotGameRequested(unsigned boardSize, const GameRu
 	onShutdownRequested();
 
 	showPlayers(humanPlaysBlack ? Player::Black : Player::White, tr("Bot"));
-	m_gameSession   = std::make_unique<app::BotSession>(boardSize, rules, engine::makeEngine(engineConfig), humanPlaysBlack);
+	m_gameSession   = std::make_unique<app::BotSession>(GameConfig{.boardSize = boardSize, .rules = rules}, engine::makeEngine(engineConfig), humanPlaysBlack);
 	m_gamePresenter = std::make_unique<GamePresenter>(*m_gameSession, m_mainWindow.gameWidget());
 }
 
@@ -88,7 +89,10 @@ void MainWindowPresenter::onHostRequested(const unsigned boardSize, const GameRu
 	showPlayers(hostColour, tr("Opponent"));
 
 	auto session = std::make_unique<app::NetworkSession>();
-	session->host(boardSize, rules, hostColour);
+	if (!session->host(GameConfig{.boardSize = boardSize, .rules = rules}, hostColour)) {
+		// TODO: Signal to the user that host failed.
+		return;
+	}
 
 	auto& game      = static_cast<app::IGameSession&>(*session);
 	auto& chat      = static_cast<app::IChatSession&>(*session);
