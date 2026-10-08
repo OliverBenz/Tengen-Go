@@ -23,8 +23,6 @@ public:
 	bool send(SessionId sessionId, const ServerEvent& event); //!< Send event to client with given sessionId.
 	bool broadcast(const ServerEvent& event);                 //!< Send event to all connected clients.
 
-	Seat getSeat(SessionId sessionId) const; //!< Get the seat connection with a sessionId.
-
 private:
 	void serverLoop();                                //!< Server thread: drain queue and act.
 	void processEvent(const ServerQueueEvent& event); //!< Server loop calls this. Reads event type and distributes.
@@ -141,10 +139,6 @@ bool Server::Implementation::broadcast(const ServerEvent& event) {
 	});
 
 	return anySent;
-}
-
-Seat Server::Implementation::getSeat(SessionId sessionId) const {
-	return m_sessionManager.getSeat(sessionId);
 }
 
 void Server::Implementation::onClientConnected(core::ConnectionId connectionId) {
@@ -312,10 +306,6 @@ bool Server::send(SessionId sessionId, const ServerEvent& event) {
 
 bool Server::broadcast(const ServerEvent& event) {
 	return m_pimpl->broadcast(event);
-}
-
-Seat Server::getSeat(SessionId sessionId) const {
-	return m_pimpl->getSeat(sessionId);
 }
 
 } // namespace tengen::network
