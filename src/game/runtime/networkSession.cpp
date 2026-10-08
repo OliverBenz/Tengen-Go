@@ -1,40 +1,16 @@
 #include "tengen/networkSession.hpp"
 
 #include "logging.hpp"
+#include "model/gameConfig.hpp"
 #include "model/gameDelta.hpp"
-#include "network/types.hpp"
+#include "model/gameResult.hpp"
 #include "tengen/gameServer.hpp"
 
 #include <algorithm>
-#include <cassert>
+#include <format>
+#include <stdexcept>
 
 namespace tengen::app {
-
-// TODO: Don't like this copying. Find better way.
-GameDelta toGameDelta(const network::ServerDelta& event) {
-	GameAction action = GameAction::Place;
-	switch (event.action) {
-	case network::ServerAction::Place:
-		action = GameAction::Place;
-		break;
-	case network::ServerAction::Pass:
-		action = GameAction::Pass;
-		break;
-	case network::ServerAction::Resign:
-		action = GameAction::Resign;
-		break;
-	default:
-		assert(false);
-	}
-
-	return {.moveId     = event.turn,
-	        .action     = action,
-	        .player     = event.seat == network::Seat::Black ? Player::Black : Player::White,
-	        .coord      = event.coord,
-	        .captures   = event.captures,
-	        .nextPlayer = event.next == network::Seat::Black ? Player::Black : Player::White,
-	        .gameActive = event.status == network::GameStatus::Active};
-}
 
 NetworkSession::NetworkSession() {
 	m_network.registerHandler(this);
@@ -69,12 +45,21 @@ void NetworkSession::connect(const std::string& hostIp) {
 	m_eventHub.signal(AS_StateChange);
 }
 
-void NetworkSession::host(unsigned boardSize, const GameRules& rules, Player hostColour) {
+bool NetworkSession::host(const GameConfig& config, const Player hostColour) {
 	disconnect();
 
+	// Creating server may throw on invalid game config.
+	try {
+		m_localServer = std::make_unique<GameServer>(config, hostColour);
+	} catch (const std::invalid_argument& e) {
+		Logger().Log(Logging::LogLevel::Error, std::format("[NetworkSession] Cannot host the game: {}", e.what()));
+		return false;
+	}
+
+	// Initialize the session
 	{
 		std::lock_guard<std::mutex> lock(m_stateMutex);
-		m_position.reset(boardSize);
+		m_position.reset(config.boardSize);
 		m_position.setStatus(GameStatus::Ready);
 		m_expectedMessageId = 1u;
 		m_chatHistory.clear();
@@ -82,13 +67,14 @@ void NetworkSession::host(unsigned boardSize, const GameRules& rules, Player hos
 	}
 
 	// We connect first, so we take the seat the server hands to its first player.
-	m_localServer = std::make_unique<GameServer>(boardSize, rules, hostColour);
 	m_localServer->start();
 	m_network.connect("127.0.0.1");
 
 	m_eventHub.signal(AS_BoardChange);
 	m_eventHub.signal(AS_PlayerChange);
 	m_eventHub.signal(AS_StateChange);
+
+	return true;
 }
 
 void NetworkSession::disconnect() {
@@ -163,52 +149,11 @@ std::vector<ChatEntry> NetworkSession::getChatSince(const unsigned messageId) co
 	return {it, m_chatHistory.end()};
 }
 
-void NetworkSession::onGameUpdate(const network::ServerDelta& event) {
-	// Player values valid
-	if (!network::isPlayer(event.seat) || !network::isPlayer(event.next)) {
-		Logger().Log(Logging::LogLevel::Error, "Received game update from non player seat.");
-		return;
-	}
-
-	// Update Position
-	GameStatus status         = GameStatus::Active;
-	GameStatus previousStatus = GameStatus::Active;
-	bool applied              = false;
-	{
-		std::lock_guard<std::mutex> lock(m_stateMutex);
-		previousStatus = m_position.getStatus();
-		applied        = m_position.apply(toGameDelta(event));
-		status         = m_position.getStatus(); // For signalling later
-	}
-
-	if (!applied) {
-		return;
-	}
-
-	// Signalling depending on action
-	switch (event.action) {
-	case network::ServerAction::Place:
-		m_eventHub.signal(AS_BoardChange);
-		m_eventHub.signal(AS_PlayerChange);
-		break;
-	case network::ServerAction::Pass:
-		m_eventHub.signal(AS_PlayerChange);
-		break;
-	case network::ServerAction::Resign:
-		break;
-	case network::ServerAction::Count:
-		assert(false); //!< This should already be prohibited by libGameNet.
-		break;
-	};
-	if (previousStatus != status) {
-		m_eventHub.signal(AS_StateChange);
-	}
-}
-void NetworkSession::onGameConfig(const network::ServerGameConfig& event) {
+void NetworkSession::onGameStart(const GameConfig& config) {
 	bool initialized = false;
 	{
 		std::lock_guard<std::mutex> lock(m_stateMutex);
-		initialized = m_position.init(event.boardSize);
+		initialized = m_position.init(config.boardSize);
 	}
 	if (!initialized) {
 		return;
@@ -217,19 +162,49 @@ void NetworkSession::onGameConfig(const network::ServerGameConfig& event) {
 	m_eventHub.signal(AS_PlayerChange);
 	m_eventHub.signal(AS_StateChange);
 }
-void NetworkSession::onChatMessage(const network::ServerChat& event) {
+void NetworkSession::onGameDelta(const GameDelta& delta) {
+	bool applied = false;
+	{
+		std::lock_guard<std::mutex> lock(m_stateMutex);
+		applied = m_position.apply(delta);
+	}
+
+	if (!applied) {
+		return;
+	}
+
+	switch (delta.action) {
+	case GameAction::Place:
+		m_eventHub.signal(AS_BoardChange);
+		m_eventHub.signal(AS_PlayerChange);
+		break;
+	case GameAction::Pass:
+		m_eventHub.signal(AS_PlayerChange);
+		break;
+	case GameAction::Resign:
+		break;
+	}
+}
+void NetworkSession::onGameEnd(const GameResult&) {
+	{
+		std::lock_guard<std::mutex> lock(m_stateMutex);
+		m_position.setStatus(GameStatus::Done);
+	}
+	m_eventHub.signal(AS_StateChange);
+}
+void NetworkSession::onChatMessage(const Player player, const unsigned messageId, const std::string& message) {
 	bool appended = false;
 	{
 		std::lock_guard<std::mutex> lock(m_stateMutex);
 
-		if (event.messageId < m_expectedMessageId) {
+		if (messageId < m_expectedMessageId) {
 			// Ignore already seen messages.
-		} else if (event.messageId == m_expectedMessageId) {
-			m_chatHistory.emplace_back(ChatEntry{event.player, event.messageId, event.message});
+		} else if (messageId == m_expectedMessageId) {
+			m_chatHistory.emplace_back(ChatEntry{player, messageId, message});
 			++m_expectedMessageId;
 			appended = true;
 		} else {
-			m_pendingChat.emplace(event.messageId, ChatEntry{event.player, event.messageId, event.message});
+			m_pendingChat.emplace(messageId, ChatEntry{player, messageId, message});
 		}
 
 		// Try insterting pending chat messages to history.

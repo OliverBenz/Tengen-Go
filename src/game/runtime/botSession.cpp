@@ -2,24 +2,22 @@
 
 #include "core/gameEvent.hpp"
 #include "logging.hpp"
-#include "model/gameRules.hpp"
 
 #include <cassert>
 
 namespace tengen::app {
 
-BotSession::BotSession(const unsigned boardSize, const GameRules& rules, std::unique_ptr<engine::GtpEngine> botEngine, const bool playerPlaysAsBlack)
-    : m_game(boardSize, rules), m_engine(std::move(botEngine)), m_botColour(playerPlaysAsBlack ? Player::White : Player::Black) {
+BotSession::BotSession(const GameConfig& config, std::unique_ptr<engine::GtpEngine> botEngine, const bool playerPlaysAsBlack)
+    : m_game(config), m_engine(std::move(botEngine)), m_botColour(playerPlaysAsBlack ? Player::White : Player::Black) {
 	assert(m_engine);
-	m_position.init(boardSize);
+	m_position.reset(config.boardSize);
 	m_position.setStatus(GameStatus::Ready); // The bot is not up yet, so the board takes no moves.
 	m_game.subscribeState(this);
 	m_gameThread = std::thread([this] { m_game.run(); });
 
 	// Bringing the engine up costs seconds, so it answers on its own thread like any other request.
-	// The session stays idle until it is up: the status only opens the board once it answers.
 	m_engine->registerListener(this);
-	m_engine->start(boardSize, rules, m_botColour);
+	m_engine->start(static_cast<unsigned>(config.boardSize), config.rules, m_botColour);
 }
 
 BotSession::~BotSession() {
@@ -63,14 +61,12 @@ void BotSession::tryResign() {
 		return; // Nothing to resign from yet, or anymore.
 	}
 
-	// TODO: ResignEvent names no player, so resigning while the bot thinks resigns in its name.
-	m_game.pushEvent(ResignEvent{});
+	m_game.pushEvent(ResignEvent{opponent(m_botColour)});
 }
 
 void BotSession::shutdown() {
-	// Stopping the engine first releases a request that is still blocking on the pipe and retires the
-	// engine thread with it. Once stop() returns, no answer can reach us anymore, so the Game below is
-	// ours alone to take down.
+	// Stopping the engine first releases a request that is still blocking on the pipe and retires the engine thread with it.
+	// Once stop() returns, no answer can reach us anymore, so the Game below is ours alone to take down.
 	m_engine->stop();
 
 	m_game.pushEvent(ShutdownEvent{});
@@ -88,20 +84,34 @@ void BotSession::unsubscribe(IAppSignalListener* listener) {
 	m_eventHub.unsubscribe(listener);
 }
 
-void BotSession::onGameDelta(const GameDelta& delta) {
-	GameStatus status         = GameStatus::Active;
-	GameStatus previousStatus = GameStatus::Active;
-	bool applied              = false;
+void BotSession::onGameStart(const GameConfig& config) {
+	Player nextPlayer = Player::Black;
 	{
 		std::lock_guard<std::mutex> lock(m_stateMutex);
-		previousStatus = m_position.getStatus();
-		applied        = m_position.apply(delta);
-		status         = m_position.getStatus();
+		m_position.init(config.boardSize);
+		nextPlayer = m_position.getPlayer();
+	}
+	m_eventHub.signal(AS_BoardChange);
+	m_eventHub.signal(AS_PlayerChange);
+	m_eventHub.signal(AS_StateChange);
 
-		// Hand the turn over while the position is still held. Everything below may block, and for
-		// as long as it does tryPlace() must not see a turn the Game has already moved past.
+	// The bot opens the game when it plays black.
+	if (m_botColour == nextPlayer) {
+		requestBotMove();
+	} else {
+		m_status = Status::PlayerMove;
+	}
+}
+
+void BotSession::onGameDelta(const GameDelta& delta) {
+	bool applied = false;
+	{
+		std::lock_guard<std::mutex> lock(m_stateMutex);
+		applied = m_position.apply(delta);
+
+		// Hand the turn over while the position is still held.
 		if (applied) {
-			if (status != GameStatus::Active) {
+			if (delta.action == GameAction::Resign) {
 				m_status = Status::Finished;
 			} else {
 				m_status = delta.nextPlayer == m_botColour ? Status::BotMove : Status::PlayerMove;
@@ -124,9 +134,6 @@ void BotSession::onGameDelta(const GameDelta& delta) {
 	case GameAction::Resign:
 		break;
 	}
-	if (previousStatus != status) {
-		m_eventHub.signal(AS_StateChange);
-	}
 
 	// The Game accepted the move, so it is part of the truth now: mirror it into the engine.
 	// The bot's own moves are skipped; the engine already played them when it generated them.
@@ -142,8 +149,8 @@ void BotSession::onGameDelta(const GameDelta& delta) {
 void BotSession::relayPlayerMove(const GameDelta& delta) {
 	// 'play' does not run a search, so the round trip is short enough to keep on the game thread.
 	// Doing it here also keeps the engine's board in the order the Game accepted the moves in.
-	// Only the player's own moves get here, so the engine is never thinking while we send.
 	bool relayed = true;
+
 	switch (delta.action) {
 	case GameAction::Place:
 		assert(delta.coord);
@@ -169,30 +176,29 @@ void BotSession::relayPlayerMove(const GameDelta& delta) {
 	}
 }
 
+void BotSession::onGameEnd(const GameResult&) {
+	m_status = Status::Finished;
+	{
+		std::lock_guard<std::mutex> lock(m_stateMutex);
+		m_position.setStatus(GameStatus::Done);
+	}
+	m_eventHub.signal(AS_StateChange);
+}
+
 void BotSession::requestBotMove() {
 	m_status = Status::Thinking;
 	m_engine->genmove();
 }
 
 void BotSession::onEngineReady() {
-	Player nextPlayer = Player::Black;
-	{
-		std::lock_guard<std::mutex> lock(m_stateMutex);
-		m_position.setStatus(GameStatus::Active);
-		nextPlayer = m_position.getPlayer();
-	}
-	m_eventHub.signal(AS_StateChange);
-
-	// The bot opens the game when it plays black.
-	if (m_botColour == nextPlayer) {
-		requestBotMove();
-	} else {
-		m_status = Status::PlayerMove;
-	}
+	m_game.pushEvent(StartEvent{});
 }
 
 void BotSession::onMoveGenerated(const engine::BotMove& move) {
-	// The Game validates the move like any other. It signals us back through onGameDelta() when it accepts.
+	if (m_status == Status::Finished) {
+		return;
+	}
+
 	// TODO: The Game drops rejected moves silently, so a move our ruleset disagrees with leaves the bot idle.
 	switch (move.action) {
 	case engine::MoveAction::Place:
@@ -202,7 +208,7 @@ void BotSession::onMoveGenerated(const engine::BotMove& move) {
 		m_game.pushEvent(PassEvent{m_botColour});
 		break;
 	case engine::MoveAction::Resign:
-		m_game.pushEvent(ResignEvent{});
+		m_game.pushEvent(ResignEvent{m_botColour});
 		break;
 	}
 }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "model/gameRules.hpp"
+#include "model/gameConfig.hpp"
 #include "network/client.hpp"
 #include "tengen/IAppSignal.hpp"
 #include "tengen/IChatSession.hpp"
@@ -44,7 +44,9 @@ public:
 
 	// Network interface
 	void connect(const std::string& hostIp);
-	void host(unsigned boardSize, const GameRules& rules, Player hostColour); //!< The one who joins plays the other colour.
+	//! Host a game and join it as hostColour. The one who joins plays the other colour.
+	//! \returns False if the game cannot be hosted (unsupported board size). The session is left disconnected.
+	bool host(const GameConfig& config, Player hostColour);
 	void disconnect();
 
 	// Chat
@@ -52,9 +54,10 @@ public:
 	std::vector<ChatEntry> getChatSince(unsigned messageId) const override;
 
 public: // Client listener handlers
-	void onGameUpdate(const network::ServerDelta& event) override;
-	void onGameConfig(const network::ServerGameConfig& event) override;
-	void onChatMessage(const network::ServerChat& event) override;
+	void onGameStart(const GameConfig& config) override;
+	void onGameDelta(const GameDelta& delta) override;
+	void onGameEnd(const GameResult& result) override;
+	void onChatMessage(Player player, unsigned messageId, const std::string& message) override;
 	void onDisconnected() override;
 
 private:
