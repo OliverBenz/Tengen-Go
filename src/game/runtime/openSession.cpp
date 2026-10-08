@@ -6,8 +6,7 @@ namespace tengen::app {
 
 OpenSession::OpenSession(const GameConfig& config) : m_game(config) {
 	// The board takes no moves until the Game signals the start.
-	m_position.reset(config.boardSize);
-	m_position.setStatus(GameStatus::Ready);
+	m_gameInfo.reset(config, GameStatus::Ready);
 
 	m_game.subscribeState(this);
 	m_gameThread = std::thread([this] { m_game.run(); });
@@ -22,15 +21,15 @@ OpenSession::~OpenSession() {
 
 GameStatus OpenSession::status() const {
 	std::lock_guard<std::mutex> lock(m_stateMutex);
-	return m_position.getStatus();
+	return m_gameInfo.getStatus();
 }
 Board OpenSession::board() const {
 	std::lock_guard<std::mutex> lock(m_stateMutex);
-	return m_position.getBoard();
+	return m_gameInfo.getBoard();
 }
 Player OpenSession::currentPlayer() const {
 	std::lock_guard<std::mutex> lock(m_stateMutex);
-	return m_position.getPlayer();
+	return m_gameInfo.getPlayer();
 }
 
 void OpenSession::tryPlace(const unsigned x, const unsigned y) {
@@ -59,10 +58,16 @@ void OpenSession::unsubscribe(IAppSignalListener* listener) {
 }
 
 void OpenSession::onGameStart(const GameConfig& config) {
+	bool started = false;
 	{
 		std::lock_guard<std::mutex> lock(m_stateMutex);
-		m_position.init(config.boardSize);
+		started = m_gameInfo.update(config);
 	}
+
+	if (!started) {
+		return;
+	}
+
 	m_eventHub.signal(AS_BoardChange);
 	m_eventHub.signal(AS_PlayerChange);
 	m_eventHub.signal(AS_StateChange);
@@ -72,7 +77,7 @@ void OpenSession::onGameDelta(const GameDelta& delta) {
 	bool applied = false;
 	{
 		std::lock_guard<std::mutex> lock(m_stateMutex);
-		applied = m_position.apply(delta);
+		applied = m_gameInfo.update(delta);
 	}
 
 	if (!applied) {
@@ -92,11 +97,17 @@ void OpenSession::onGameDelta(const GameDelta& delta) {
 	}
 }
 
-void OpenSession::onGameEnd(const GameResult&) {
+void OpenSession::onGameEnd(const GameResult& result) {
+	bool ended = false;
 	{
 		std::lock_guard<std::mutex> lock(m_stateMutex);
-		m_position.setStatus(GameStatus::Done);
+		ended = m_gameInfo.update(result);
 	}
+
+	if (!ended) {
+		return;
+	}
+
 	m_eventHub.signal(AS_StateChange);
 }
 

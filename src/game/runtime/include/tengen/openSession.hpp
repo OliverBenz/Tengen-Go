@@ -5,7 +5,7 @@
 #include "model/gameConfig.hpp"
 #include "tengen/IGameSession.hpp"
 #include "tengen/eventHub.hpp"
-#include "tengen/position.hpp"
+#include "tengen/sessionGameInfo.hpp"
 
 #include <mutex>
 #include <thread>
@@ -39,9 +39,9 @@ public: // IGameStateListener Interface
 	void onGameEnd(const GameResult& result) override;
 
 private:
-	Game m_game;           //!< Game instance. Run locally on open sessions.
-	Position m_position{}; //!< Tracks the board state as signalled by the Game.
-	EventHub m_eventHub;   //!< Event notifier.
+	Game m_game;                  //!< Game instance. Run locally on open sessions.
+	SessionGameInfo m_gameInfo{}; //!< Tracks the game as signalled by the Game.
+	EventHub m_eventHub;          //!< Event notifier.
 
 	std::thread m_gameThread;        //!< Runs the game loop.
 	mutable std::mutex m_stateMutex; //!< Concurrency handling.

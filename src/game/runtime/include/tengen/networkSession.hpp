@@ -6,7 +6,7 @@
 #include "tengen/IChatSession.hpp"
 #include "tengen/IGameSession.hpp"
 #include "tengen/eventHub.hpp"
-#include "tengen/position.hpp"
+#include "tengen/sessionGameInfo.hpp"
 
 #include <memory>
 #include <mutex>
@@ -25,14 +25,15 @@ public:
 	NetworkSession();
 	~NetworkSession();
 
+	void connect(const std::string& hostIp);
+	bool host(const GameConfig& config, Player hostColour); //!< Host a game and join it as hostColour. Returns false on invalid game configs.
+	void disconnect();
+
+public: // IAppSignalSource Interface
 	void subscribe(IAppSignalListener* listener, uint64_t signalMask) override;
 	void unsubscribe(IAppSignalListener* listener) override;
 
-	// TODO: Maybe the UI elements should have a const reference to 'Position'. (Position is data layer; NetworkSession is application layer)
-	//       Then position only has public getters and NetworkSession is a friend so it can update.
-	//       Then we could remove these getters.
-	//       NetworkSession updates Position. Position emits signals. Listeners query position for new data.
-	// Getters
+public: // IGameSession Interface
 	GameStatus status() const override;
 	Board board() const override;
 	Player currentPlayer() const override;
@@ -42,18 +43,11 @@ public:
 	void tryPass() override;
 	void shutdown() override;
 
-	// Network interface
-	void connect(const std::string& hostIp);
-	//! Host a game and join it as hostColour. The one who joins plays the other colour.
-	//! \returns False if the game cannot be hosted (unsupported board size). The session is left disconnected.
-	bool host(const GameConfig& config, Player hostColour);
-	void disconnect();
-
-	// Chat
+public: // IChatSession Interface
 	void chat(const std::string& message) override;
 	std::vector<ChatEntry> getChatSince(unsigned messageId) const override;
 
-public: // Client listener handlers
+public: // network::IClientHandler Interface
 	void onGameStart(const GameConfig& config) override;
 	void onGameDelta(const GameDelta& delta) override;
 	void onGameEnd(const GameResult& result) override;
@@ -63,7 +57,7 @@ public: // Client listener handlers
 private:
 	network::Client m_network;
 	EventHub m_eventHub;
-	Position m_position{};
+	SessionGameInfo m_gameInfo{};
 
 	unsigned m_expectedMessageId{1u};                        //!< Next expected chat message id.
 	std::vector<ChatEntry> m_chatHistory{};                  //!< Chat history.
