@@ -19,8 +19,7 @@
 
 namespace tengen::gui {
 
-BotDialog::BotDialog(const engine::InstalledEngines& engines, QWidget* parent)
-    : QDialog(parent) {
+BotDialog::BotDialog(const engine::InstalledEngines& engines, QWidget* parent) : QDialog(parent) {
 	setWindowTitle("New Bot Game");
 
 	// Every engine shows, installed or not. One that is not installed cannot be picked, so the default
@@ -72,12 +71,8 @@ BotDialog::BotDialog(const engine::InstalledEngines& engines, QWidget* parent)
 	layout->addWidget(buttons);
 }
 
-unsigned BotDialog::boardSize() const {
-	return m_boardSize->boardSize();
-}
-
-GameRules BotDialog::rules() const {
-	return m_rules->rules();
+GameConfig BotDialog::config() const {
+	return GameConfig{.boardSize = m_boardSize->boardSize(), .rules = m_rules->rules()};
 }
 
 engine::EngineConfig BotDialog::engineConfig() const {

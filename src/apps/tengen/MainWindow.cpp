@@ -88,7 +88,7 @@ void MainWindow::openLocalGameDialog() {
 	LocalGameDialog dialog(this);
 
 	if (dialog.exec() == QDialog::Accepted) {
-		emit gameLocalRequested(dialog.boardSize(), dialog.rules());
+		emit gameLocalRequested(dialog.config());
 	}
 }
 
@@ -104,7 +104,7 @@ void MainWindow::openBotDialog(const engine::InstalledEngines& engines) {
 	BotDialog dialog(engines, this);
 
 	if (dialog.exec() == QDialog::Accepted) {
-		emit gameBotRequested(dialog.boardSize(), dialog.rules(), dialog.engineConfig(), dialog.humanPlaysBlack());
+		emit gameBotRequested(dialog.config(), dialog.engineConfig(), dialog.humanPlaysBlack());
 	}
 }
 
@@ -112,7 +112,7 @@ void MainWindow::openHostDialog() {
 	HostDialog dialog(this);
 
 	if (dialog.exec() == QDialog::Accepted) {
-		emit hostRequested(dialog.boardSize(), dialog.rules(), dialog.hostColour());
+		emit hostRequested(dialog.config(), dialog.hostColour());
 	}
 }
 

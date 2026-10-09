@@ -1,6 +1,6 @@
 #pragma once
 
-#include "model/gameRules.hpp"
+#include "model/gameConfig.hpp"
 
 #include <QDialog>
 
@@ -15,8 +15,7 @@ class LocalGameDialog : public QDialog {
 public:
 	explicit LocalGameDialog(QWidget* parent = nullptr);
 
-	unsigned boardSize() const;
-	GameRules rules() const; //!< The rules the game is played under.
+	GameConfig config() const; //!< How the game is to be played.
 
 private:
 	BoardSizeWidget* m_boardSize{nullptr}; //!< Selector for the board size.

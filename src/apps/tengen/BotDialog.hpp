@@ -1,7 +1,7 @@
 #pragma once
 
 #include "engine/engineCatalog.hpp"
-#include "model/gameRules.hpp"
+#include "model/gameConfig.hpp"
 
 #include <QDialog>
 
@@ -23,8 +23,7 @@ public:
 	//! Offers every engine. The ones not installed show greyed out and cannot be picked.
 	explicit BotDialog(const engine::InstalledEngines& engines, QWidget* parent = nullptr);
 
-	unsigned boardSize() const;
-	GameRules rules() const;                   //!< The rules the game is played under.
+	GameConfig config() const;                 //!< How the game is to be played.
 	engine::EngineConfig engineConfig() const; //!< The engine the user picked and how it should play.
 	bool humanPlaysBlack() const;
 

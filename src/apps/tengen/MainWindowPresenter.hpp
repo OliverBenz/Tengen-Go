@@ -3,7 +3,7 @@
 #include "GamePresenter.hpp"
 #include "MainWindow.hpp"
 #include "engine/engineCatalog.hpp"
-#include "model/gameRules.hpp"
+#include "model/gameConfig.hpp"
 #include "tengen/IGameSession.hpp"
 
 #include <QObject>
@@ -19,15 +19,15 @@ public:
 	~MainWindowPresenter() override;
 
 private slots:
-	void onNewLocalGameRequested(unsigned boardSize, const GameRules& rules);
+	void onNewLocalGameRequested(const GameConfig& config);
 	void onBotDialogRequested();
-	void onNewBotGameRequested(unsigned boardSize, const GameRules& rules, const engine::EngineConfig& engineConfig, bool humanPlaysBlack);
+	void onNewBotGameRequested(const GameConfig& config, const engine::EngineConfig& engineConfig, bool humanPlaysBlack);
 	void onConnectRequested(const QString& hostIp);
-	void onHostRequested(unsigned boardSize, const GameRules& rules, Player hostColour);
+	void onHostRequested(const GameConfig& config, Player hostColour);
 	void onShutdownRequested();
 
 private:
-	void startOpenPlay(unsigned boardSize, const GameRules& rules);
+	void startOpenPlay(const GameConfig& config);
 
 	void showLocalPlayers();                                         //!< Local game: both sides are named by their colour.
 	void showPlayers(Player ownColour, const QString& opponentName); //!< Set the player strings in the status box based given your stone colour and the opponent name. You get the name "You".

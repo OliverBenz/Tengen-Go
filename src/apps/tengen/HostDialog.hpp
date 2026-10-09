@@ -1,6 +1,6 @@
 #pragma once
 
-#include "model/gameRules.hpp"
+#include "model/gameConfig.hpp"
 #include "model/player.hpp"
 
 #include <QDialog>
@@ -17,9 +17,8 @@ class HostDialog : public QDialog {
 public:
 	explicit HostDialog(QWidget* parent = nullptr);
 
-	unsigned boardSize() const;
+	GameConfig config() const; //!< How the game is to be played.
 	Player hostColour() const; //!< The colour the host plays.
-	GameRules rules() const;   //!< The rules the game is played under.
 
 private:
 	BoardSizeWidget* m_boardSize{nullptr}; //!< Selector for the board size.
