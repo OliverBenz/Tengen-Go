@@ -26,12 +26,13 @@ public:
 	void openBotDialog(const engine::InstalledEngines& engines);
 
 signals:
-	void gameLocalRequested(const GameConfig& config);
-	void botDialogRequested();
-	void gameBotRequested(const GameConfig& config, const engine::EngineConfig& engineConfig, bool humanPlaysBlack);
-	void connectRequested(const QString& hostIp);
-	void hostRequested(const GameConfig& config, Player hostColour);
-	void shutdownRequested();
+	void botDialogRequested();                    //!< The presenter will look for engines before opening the dialog.
+	void connectRequested(const QString& hostIp); //!< Join the game hosted at this address.
+	void shutdownRequested();                     //!< The window closes. End the current game.
+
+	void gameLocalRequested(const GameConfig& config);                                                               //!< Start a local game for two players on this machine.
+	void gameBotRequested(const GameConfig& config, const engine::EngineConfig& engineConfig, bool humanPlaysBlack); //!< Start a game against this engine.
+	void gameHostRequested(const GameConfig& config, Player hostColour);                                             //!< Host a network game and play it as hostColour.
 
 private:
 	//! Initial setup constructing the layout of the window.

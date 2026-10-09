@@ -15,8 +15,7 @@
 
 namespace tengen::gui {
 
-MainWindow::MainWindow(QWidget* parent)
-    : QMainWindow(parent) {
+MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
 	// Setup Window
 	setWindowTitle("Tengen Go");
 	setWindowFlags(windowFlags() | Qt::Tool | Qt::WindowStaysOnTopHint);
@@ -112,7 +111,7 @@ void MainWindow::openHostDialog() {
 	HostDialog dialog(this);
 
 	if (dialog.exec() == QDialog::Accepted) {
-		emit hostRequested(dialog.config(), dialog.hostColour());
+		emit gameHostRequested(dialog.config(), dialog.hostColour());
 	}
 }
 
