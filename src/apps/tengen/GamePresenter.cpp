@@ -32,8 +32,8 @@ GamePresenter::GamePresenter(app::IGameSession& game, gui::GameWidget& gameWidge
 	m_boardPresenter = std::make_unique<BoardPresenter>(m_game, m_gameWidget.boardWidget());
 	m_gameWidget.setChatEnabled(false);
 
+	m_game.subscribe(this, app::AS_PlayerChange | app::AS_StateChange); // Subscribe before the first read
 	showStatus();
-	m_game.subscribe(this, app::AS_PlayerChange | app::AS_StateChange);
 }
 
 GamePresenter::~GamePresenter() {
