@@ -17,10 +17,13 @@ public:
 	ChatPresenter(app::IChatSession& chat, gui::ChatWidget& chatWidget);
 	~ChatPresenter() override;
 
-	void onAppEvent(app::AppSignal signal) override; //!< Called by the game thread. Ensure not blocking.
+	void onAppEvent(app::AppSignal signal) override; //!< Signalled by session thread. Offload work to GUI thread.
 
 private slots:
 	void onChatRequested(const std::string& message);
+
+private:
+	void showNewMessages(); //!< Append the messages since the last one shown. GUI thread only.
 
 private:
 	app::IChatSession& m_chat;

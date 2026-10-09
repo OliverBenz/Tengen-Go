@@ -15,10 +15,15 @@ public:
 	BoardPresenter(app::IGameSession& game, gui::BoardWidget& boardWidget);
 	~BoardPresenter() override;
 
-	void onAppEvent(app::AppSignal signal) override; //!< Called by the game thread. Ensure not blocking.
+	void onAppEvent(app::AppSignal signal) override; //!< Signalled by session thread. Offload work to GUI thread.
 
 private slots:
 	void onBoardEvent(const gui::BoardWidgetEvent& event);
+
+private:
+	void showBoard();           //!< Draw the session's board.
+	void showCurrentPlayer();   //!< Show whose stone the next click places.
+	void playStonePlaceSound(); //!< Play a sound when a stone is placed.
 
 private:
 	app::IGameSession& m_game;

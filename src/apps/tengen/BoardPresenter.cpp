@@ -10,9 +10,11 @@ namespace tengen {
 
 BoardPresenter::BoardPresenter(app::IGameSession& game, gui::BoardWidget& boardWidget) : m_game(game), m_boardWidget(boardWidget) {
 	QObject::connect(&m_boardWidget, &gui::BoardWidget::boardEvent, this, &BoardPresenter::onBoardEvent);
-	m_boardWidget.setBoard(m_game.board());
-	m_boardWidget.setCurrentPlayer(m_game.currentPlayer());
+
+	// Subscribe before the first read: a change in between would otherwise go unseen.
 	m_game.subscribe(this, app::AS_BoardChange | app::AS_PlayerChange | app::AS_StonePlaced);
+	showBoard();
+	showCurrentPlayer();
 }
 
 BoardPresenter::~BoardPresenter() {
@@ -20,24 +22,31 @@ BoardPresenter::~BoardPresenter() {
 }
 
 void BoardPresenter::onAppEvent(const app::AppSignal signal) {
-	auto* widget = &m_boardWidget;
 	switch (signal) {
-	case app::AS_BoardChange: {
-		const Board board = m_game.board();
-		QMetaObject::invokeMethod(widget, [widget, board]() { widget->setBoard(board); }, Qt::QueuedConnection);
+	case app::AS_BoardChange:
+		QMetaObject::invokeMethod(this, [this]() { showBoard(); }, Qt::QueuedConnection);
 		return;
-	}
+	case app::AS_PlayerChange:
+		QMetaObject::invokeMethod(this, [this]() { showCurrentPlayer(); }, Qt::QueuedConnection);
+		return;
 	case app::AS_StonePlaced:
-		QMetaObject::invokeMethod(this, [this]() { m_soundPlayer.playStonePlace(); }, Qt::QueuedConnection);
+		QMetaObject::invokeMethod(this, [this]() { playStonePlaceSound(); }, Qt::QueuedConnection);
 		return;
-	case app::AS_PlayerChange: {
-		const auto player = m_game.currentPlayer();
-		QMetaObject::invokeMethod(widget, [widget, player]() { widget->setCurrentPlayer(player); }, Qt::QueuedConnection);
-		return;
-	}
 	default:
 		return;
 	}
+}
+
+void BoardPresenter::showBoard() {
+	m_boardWidget.setBoard(m_game.board());
+}
+
+void BoardPresenter::showCurrentPlayer() {
+	m_boardWidget.setCurrentPlayer(m_game.currentPlayer());
+}
+
+void BoardPresenter::playStonePlaceSound() {
+	m_soundPlayer.playStonePlace();
 }
 
 void BoardPresenter::onBoardEvent(const gui::BoardWidgetEvent& event) {
