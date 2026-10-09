@@ -32,16 +32,12 @@ HostDialog::HostDialog(QWidget* parent) : QDialog(parent) {
 	mainLayout->addWidget(buttons);
 }
 
-unsigned HostDialog::boardSize() const {
-	return m_boardSize->boardSize();
+GameConfig HostDialog::config() const {
+	return GameConfig{.boardSize = m_boardSize->boardSize(), .rules = m_rules->rules()};
 }
 
 Player HostDialog::hostColour() const {
 	return m_colour->player();
-}
-
-GameRules HostDialog::rules() const {
-	return m_rules->rules();
 }
 
 } // namespace tengen::gui
