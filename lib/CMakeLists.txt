@@ -2,6 +2,9 @@
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # Add libraries
+message(STATUS "Setting up external: QT6 & OpenCV5")
+include("${CMAKE_CURRENT_SOURCE_DIR}/dependencies.cmake")
+
 message(STATUS "Setting up remote: gtest")
 include("${CMAKE_CURRENT_SOURCE_DIR}/gtest.cmake")
 
