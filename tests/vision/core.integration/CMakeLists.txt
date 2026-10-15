@@ -32,6 +32,7 @@ target_compile_definitions(${targetName}
 # Setup project settings
 set_target_configuration(${targetName} Config::Default)
 set_output_directory(${targetName})
+tengen_copy_runtime_dlls(${targetName})
 
 # Add tests
 include(GoogleTest)
