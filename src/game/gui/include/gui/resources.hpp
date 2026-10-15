@@ -44,6 +44,7 @@ enum class Sound {
 	Two,
 };
 
+QList<Sound> sounds();            //!< All stone sounds in display order.
 Sound defaultSound();             //!< Sound a new board starts with.
 QString soundFile(Sound sound);   //!< Path to the given stone placement sound effect.
 QString displayName(Sound sound); //!< Name to show the user.

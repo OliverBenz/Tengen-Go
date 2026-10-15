@@ -7,6 +7,7 @@
 #include <QImage>
 
 class QCheckBox;
+class QComboBox;
 class QListWidget;
 
 namespace tengen::gui {
@@ -35,6 +36,7 @@ private:
 private:
 	QListWidget* m_textures{nullptr};       //!< List of texture preview and names.
 	QCheckBox* m_coordinates{nullptr};      //!< Selection for whether to show coordinates or not.
+	QComboBox* m_sounds{nullptr};           //!< Selection of the stone placement sound.
 	BoardWidget* m_board{nullptr};          //!< The board preview.
 	QFutureWatcher<QImage> m_previewLoader; //!< Loads the texture previews in the background.
 };

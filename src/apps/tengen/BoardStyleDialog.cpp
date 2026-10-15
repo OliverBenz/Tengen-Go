@@ -3,8 +3,10 @@
 #include "gui/boardWidget.hpp"
 
 #include <QCheckBox>
+#include <QComboBox>
 #include <QDialogButtonBox>
 #include <QEvent>
+#include <QFormLayout>
 #include <QHBoxLayout>
 #include <QListWidget>
 #include <QVBoxLayout>
@@ -54,9 +56,20 @@ BoardStyleDialog::BoardStyleDialog(const boardStyle::Texture currentTexture, con
 	content->addWidget(m_textures);
 	content->addWidget(m_board, 1);
 
-	m_coordinates = new QCheckBox(tr("Show coordinates"), this);
+	m_coordinates = new QCheckBox(this);
 	m_coordinates->setChecked(showCoordinates);
 	connect(m_coordinates, &QCheckBox::toggled, m_board, &BoardWidget::setShowCoordinates);
+
+	m_sounds = new QComboBox(this);
+	for (const stoneStyle::Sound sound: stoneStyle::sounds()) {
+		m_sounds->addItem(stoneStyle::displayName(sound), static_cast<int>(sound));
+	}
+	m_sounds->setCurrentIndex(m_sounds->findData(static_cast<int>(stoneStyle::defaultSound())));
+
+	auto* options = new QFormLayout();
+	options->setFieldGrowthPolicy(QFormLayout::FieldsStayAtSizeHint); // Keep the dropdown from stretching over the window.
+	options->addRow(tr("Show coordinates:"), m_coordinates);
+	options->addRow(tr("Stone sound:"), m_sounds);
 
 	auto* buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
 	connect(buttons, &QDialogButtonBox::accepted, this, &QDialog::accept);
@@ -64,7 +77,7 @@ BoardStyleDialog::BoardStyleDialog(const boardStyle::Texture currentTexture, con
 
 	auto* mainLayout = new QVBoxLayout(this);
 	mainLayout->addLayout(content, 1);
-	mainLayout->addWidget(m_coordinates);
+	mainLayout->addLayout(options);
 	mainLayout->addWidget(buttons);
 }
 

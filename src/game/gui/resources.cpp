@@ -112,6 +112,14 @@ QImage loadTexture(const Player player) {
 	return toFastFormat(readImage(player == Player::Black ? QStringLiteral("anime_black.png") : QStringLiteral("anime_white.png")));
 }
 
+QList<Sound> sounds() {
+	QList<Sound> result;
+	for (const auto& entry: SOUNDS) {
+		result.append(entry.sound);
+	}
+	return result;
+}
+
 Sound defaultSound() {
 	return Sound::One;
 }
