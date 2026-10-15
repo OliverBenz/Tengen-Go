@@ -85,20 +85,47 @@ QImage loadTexture(const Texture texture) {
 } // namespace boardStyle
 
 namespace stoneStyle {
+namespace {
+
+//! A stone placement sound and the file behind it.
+struct SoundFile {
+	Sound sound;
+	const char* name; //!< Display name, translated on use.
+	const char* file; //!< File in the audio folder.
+};
+
+//! Display order of the style settings.
+constexpr std::array SOUNDS{
+        SoundFile{Sound::One, QT_TRANSLATE_NOOP("stoneStyle", "Place 1"), "stone_1.wav"},
+        SoundFile{Sound::Two, QT_TRANSLATE_NOOP("stoneStyle", "Place 2"), "stone_2.wav"},
+};
+
+const SoundFile& soundEntry(const Sound sound) {
+	const auto entry = std::ranges::find(SOUNDS, sound, &SoundFile::sound);
+	assert(entry != SOUNDS.end() && "Every Sound needs an entry in SOUNDS.");
+	return *entry;
+}
+
+} // namespace
 
 QImage loadTexture(const Player player) {
 	return toFastFormat(readImage(player == Player::Black ? QStringLiteral("anime_black.png") : QStringLiteral("anime_white.png")));
 }
 
-} // namespace stoneStyle
-
-namespace sound {
-
-QString stonePlace() {
-	return resourcePath(QStringLiteral("audio/stone_1.wav"));
+Sound defaultSound() {
+	return Sound::One;
 }
 
-} // namespace sound
+QString soundFile(const Sound sound) {
+	return resourcePath(QStringLiteral("audio/") + QString::fromLatin1(soundEntry(sound).file));
+}
+
+QString displayName(const Sound sound) {
+	return QCoreApplication::translate("stoneStyle", soundEntry(sound).name);
+}
+
+} // namespace stoneStyle
+
 
 namespace gameRules {
 
