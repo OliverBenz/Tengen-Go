@@ -20,9 +20,6 @@
 				"type": "equals",
 				"lhs": "${hostSystemName}",
 				"rhs": "Windows"
-			},
-			"cacheVariables": {
-				"OpenCV_DIR": "C:/opencv/build"
 			}
 		},
 		{
