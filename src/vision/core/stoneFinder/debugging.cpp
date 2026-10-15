@@ -47,7 +47,15 @@ namespace tengen::vision::core {
 namespace Debugging {
 
 bool isRuntimeDebugEnabled() {
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4996) // std::getenv is fine here: read once, not shared across threads.
+#endif
 	const char* debugEnv = std::getenv("GO_STONE_DEBUG");
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+
 	if (debugEnv == nullptr) {
 		return false;
 	}
