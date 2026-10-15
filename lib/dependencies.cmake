@@ -54,3 +54,28 @@ tengen_opencv_prefix(opencvPrefix "${TENGEN_DEPS_DIR}" "${TENGEN_OPENCV_VERSION}
 # Included from lib/CMakeLists.txt: PARENT_SCOPE makes the paths visible to the whole project, not only lib/.
 list(APPEND CMAKE_PREFIX_PATH ${qtPrefix} "${opencvPrefix}") # qtPrefix unquoted: adds nothing if Qt is not installed.
 set(CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH}" PARENT_SCOPE)
+
+
+# ----- Runtime -----
+# Windows finds DLLs next to the executable or through PATH, so copy them there after each build.
+# Linux needs neither: executables find the libraries through the RPATH CMake sets.
+# Call before gtest_discover_tests(), which runs the test executable right after the build.
+
+# Copy the Qt DLLs and plugins (platform, styles, multimedia backend) next to a Qt executable.
+function(tengen_deploy_qt targetName)
+	if(WIN32)
+		add_custom_command(TARGET ${targetName} POST_BUILD
+			COMMAND Qt6::windeployqt --no-translations --no-compiler-runtime --verbose 0 "$<TARGET_FILE:${targetName}>"
+		)
+	endif()
+endfunction()
+
+# Copy the DLLs of all linked imported libraries (e.g. OpenCV) next to an executable.
+function(tengen_copy_runtime_dlls targetName)
+	if(WIN32)
+		add_custom_command(TARGET ${targetName} POST_BUILD
+			COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_RUNTIME_DLLS:${targetName}> "$<TARGET_FILE_DIR:${targetName}>"
+			COMMAND_EXPAND_LISTS
+		)
+	endif()
+endfunction()

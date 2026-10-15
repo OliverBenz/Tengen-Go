@@ -49,6 +49,7 @@ set_target_properties(${targetName}
 # Setup project settings
 set_target_configuration(${targetName} Config::Default)
 set_output_directory(${targetName})
+tengen_deploy_qt(${targetName})
 
 
 
