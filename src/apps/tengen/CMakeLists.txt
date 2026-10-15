@@ -2,7 +2,7 @@ include_guard(GLOBAL)
 
 set(targetName tengen)
 
-find_package(Qt6 REQUIRED COMPONENTS Widgets Concurrent)
+find_package(Qt6 ${TENGEN_QT_VERSION} EXACT REQUIRED COMPONENTS Widgets Concurrent)
 
 add_executable(${targetName}
     "${CMAKE_CURRENT_LIST_DIR}/main.cpp"
