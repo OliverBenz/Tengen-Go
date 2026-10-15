@@ -3,7 +3,7 @@ include_guard(GLOBAL)
 set(targetName visionPerception)
 
 # TODO: We still need this if tengen::vision::core links OpenCV privately?
-find_package(OpenCV REQUIRED)
+find_package(OpenCV ${TENGEN_OPENCV_VERSION} EXACT REQUIRED)
 
 # Get files to build
 set(headers

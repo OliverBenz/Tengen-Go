@@ -2,7 +2,7 @@ include_guard(GLOBAL)
 
 set(targetName gameGui)
 
-find_package(Qt6 REQUIRED COMPONENTS Widgets Multimedia)
+find_package(Qt6 ${TENGEN_QT_VERSION} EXACT REQUIRED COMPONENTS Widgets Multimedia)
 
 # Get files to build
 set(headers
