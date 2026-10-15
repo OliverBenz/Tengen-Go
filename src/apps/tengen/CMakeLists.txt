@@ -6,25 +6,37 @@ find_package(Qt6 ${TENGEN_QT_MIN_VERSION} REQUIRED COMPONENTS Widgets Concurrent
 
 add_executable(${targetName}
     "${CMAKE_CURRENT_LIST_DIR}/main.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/MainWindow.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/MainWindowPresenter.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/GamePresenter.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/BoardPresenter.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/BoardSizeWidget.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/PlayerColourWidget.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/LocalGameDialog.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/RulesConfigWidget.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/BotDialog.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/GnuGoConfigWidget.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/KataGoConfigWidget.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/ChatPresenter.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/NetworkPresenter.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/ConnectDialog.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/HostDialog.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/HelpDialog.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/AboutDialog.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/BoardStyleDialog.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/Logging.cpp"
+
+    "${CMAKE_CURRENT_LIST_DIR}/presenters/MainWindowPresenter.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/presenters/GamePresenter.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/presenters/BoardPresenter.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/presenters/ChatPresenter.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/presenters/NetworkPresenter.cpp"
+
+    "${CMAKE_CURRENT_LIST_DIR}/views/MainWindow.cpp"
+
+    "${CMAKE_CURRENT_LIST_DIR}/dialogs/LocalGameDialog.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/dialogs/BotDialog.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/dialogs/ConnectDialog.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/dialogs/HostDialog.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/dialogs/HelpDialog.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/dialogs/AboutDialog.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/dialogs/BoardStyleDialog.cpp"
+
+    "${CMAKE_CURRENT_LIST_DIR}/controls/BoardSizeWidget.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/controls/PlayerColourWidget.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/controls/RulesConfigWidget.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/controls/GnuGoConfigWidget.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/controls/KataGoConfigWidget.cpp"
+)
+
+target_include_directories(${targetName}
+    PRIVATE
+        "${CMAKE_CURRENT_LIST_DIR}/presenters"
+        "${CMAKE_CURRENT_LIST_DIR}/views"
+        "${CMAKE_CURRENT_LIST_DIR}/dialogs"
+        "${CMAKE_CURRENT_LIST_DIR}/controls"
 )
 
 target_link_libraries(${targetName}
