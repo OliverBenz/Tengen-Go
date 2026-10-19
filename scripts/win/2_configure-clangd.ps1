@@ -15,7 +15,7 @@ if (-not (Get-Command cl.exe -ErrorAction SilentlyContinue)) {
 }
 
 # Always configure fresh: a configure outside the dev shell caches MinGW tools (e.g. Strawberry's ld.exe as linker).
-Push-Location "$PSScriptRoot\.."
+Push-Location "$PSScriptRoot\..\.."
 try {
 	cmake --preset Win64-Ninja --fresh
 	if ($LASTEXITCODE -ne 0) {

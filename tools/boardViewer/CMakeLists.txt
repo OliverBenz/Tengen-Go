@@ -2,8 +2,8 @@ include_guard(GLOBAL)
 
 set(targetName boardViewer)
 
-find_package(Qt6 ${TENGEN_QT_VERSION} EXACT REQUIRED COMPONENTS Widgets)
-find_package(OpenCV ${TENGEN_OPENCV_VERSION} EXACT REQUIRED)
+find_package(Qt6 ${TENGEN_QT_MIN_VERSION} REQUIRED COMPONENTS Widgets)
+find_package(OpenCV ${TENGEN_OPENCV_MIN_VERSION} REQUIRED)
 
 set(headers
 	"${CMAKE_CURRENT_LIST_DIR}/mainWindow.hpp"

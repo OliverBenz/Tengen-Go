@@ -2,7 +2,7 @@ include_guard(GLOBAL)
 
 set(targetName visionCore)
 
-find_package(OpenCV ${TENGEN_OPENCV_VERSION} EXACT REQUIRED COMPONENTS
+find_package(OpenCV ${TENGEN_OPENCV_MIN_VERSION} REQUIRED COMPONENTS
 	core
 	imgproc
 	imgcodecs

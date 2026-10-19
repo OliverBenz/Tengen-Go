@@ -80,17 +80,17 @@ These are currently very basic and to be extended as required.
 
 ## Building
 
-The project is configured via [`CMakePresets.json`](CMakePresets.json): `Win64` (Visual Studio 17 2022, Debug/Release/RelWithDebInfo) on Windows, and `Linux64-Debug`/`Linux64-Release`/`Linux64-RelWithDebInfo` (Ninja) on Linux.
+The project is configured via [`CMakePresets.json`](CMakePresets.json): `Linux64-Debug`/`Linux64-Release`/`Linux64-RelWithDebInfo` (Ninja) on Linux, and `Win64` (Visual Studio 17 2022, Debug/Release/RelWithDebInfo) on Windows.
 
 ```
-cmake --preset Win64 && cmake --build --preset Win64-Debug
+cmake --preset Linux64-Debug && cmake --build --preset Linux64-Debug
 ```
 
 Qt 6 and OpenCV are required. On Linux they come from the system package manager.
-On Windows you install both by hand and add them to your environment variables, see the [Compilation Instructions](docs/Compilation.md).
+On Windows, [`scripts/win/1_setup_deps.py`](scripts/win/1_setup_deps.py) installs both, see the [Compilation Instructions](docs/Compilation.md).
 
 The Visual Studio generator can't write `compile_commands.json` for clangd.
-On Windows, run [`scripts/configure-clangd.ps1`](scripts/configure-clangd.ps1) instead: it configures the `Win64-Ninja` preset (MSVC + Ninja) from an x64 VS developer shell and copies the file to the project root.
+On Windows, run [`scripts/win/2_configure-clangd.ps1`](scripts/win/2_configure-clangd.ps1) instead: it configures the `Win64-Ninja` preset (MSVC + Ninja) from an x64 VS developer shell and copies the file to the project root.
 
 ## Bot Games
 

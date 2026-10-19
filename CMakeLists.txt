@@ -20,10 +20,10 @@ option(TENGEN_BUILD_SANDBOX "Create the tools for the project." ON)
 
 # ----- Environment -----
 
-set(TENGEN_QT_VERSION 6.12.0)    # Exact Qt version. Every find_package(Qt6) call requires it.
-set(TENGEN_OPENCV_VERSION 5.0.0) # Exact OpenCV version. Every find_package(OpenCV) call requires it.
+set(TENGEN_QT_MIN_VERSION 6.8)     # Minimum Qt version.
+set(TENGEN_OPENCV_MIN_VERSION 5.0) # Minimum OpenCV version, any 5.x.
 
-# Setup compile_commands.json for clangd support (only Ninja and Makefile generators - no VS). use scripts/configure-clangd.ps1 on windows.
+# Setup compile_commands.json for clangd support (only Ninja and Makefile generators - no VS). use scripts/win/2_configure-clangd.ps1 on windows.
 if(CMAKE_GENERATOR MATCHES "Ninja|Makefiles")
 	set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 	file(CREATE_LINK
