@@ -36,7 +36,7 @@
 		{
 			"name": "Win64-Ninja",
 			"displayName": "Windows x64 Ninja Debug",
-			"description": "MSVC with Ninja, mainly to generate compile_commands.json for clangd. Requires an x64 VS developer shell (see scripts/configure-clangd.ps1).",
+			"description": "MSVC with Ninja, mainly to generate compile_commands.json for clangd. Requires an x64 VS developer shell (see scripts/win/2_configure-clangd.ps1).",
 			"inherits": "Win64-Base",
 			"generator": "Ninja",
 			"architecture": {
