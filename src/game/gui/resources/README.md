@@ -1,6 +1,6 @@
 # Resources
 
-Images used by the board widget. They are loaded at runtime from this folder (`GUI_RESOURCES_DIR`).
+Images used by the board widget. The build copies this folder to `resources/` next to the executable, and they are loaded from there at runtime.
 
 | File               | Used for                                     |
 | ------------------ | -------------------------------------------- |

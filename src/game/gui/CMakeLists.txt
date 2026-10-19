@@ -46,12 +46,18 @@ set_target_properties(${targetName}
 		AUTOMOC ON # Auto handling of QT Meta-Object Compiler
 )
 
-set(resourcesDir "${CMAKE_CURRENT_LIST_DIR}/resources")
-target_compile_definitions(${targetName}
-	PRIVATE
-		GUI_RESOURCES_DIR="${resourcesDir}"
-)
-
 # Setup project settings
 set_target_configuration(${targetName} Config::Default)
 set_output_directory(${targetName})
+
+# Copy resource directory to the output
+add_custom_target(${targetName}_resources ALL
+	COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
+	        "${CMAKE_CURRENT_LIST_DIR}/resources"
+	        "$<GENEX_EVAL:$<TARGET_PROPERTY:${targetName},RUNTIME_OUTPUT_DIRECTORY>>/resources"
+)
+add_dependencies(${targetName} ${targetName}_resources)
+set_target_properties(${targetName}_resources
+	PROPERTIES
+		FOLDER "${IDE_FOLDER_SOURCE}/game"
+)

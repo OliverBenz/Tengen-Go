@@ -52,14 +52,14 @@ set_output_directory(${targetName})
 tengen_deploy_qt(${targetName})
 
 
-
-add_custom_target(${targetName}_help ALL
+# Copy resource directory to the output
+add_custom_target(${targetName}_resources ALL
     COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
-            "${CMAKE_CURRENT_LIST_DIR}/help"
-            "$<GENEX_EVAL:$<TARGET_PROPERTY:${targetName},RUNTIME_OUTPUT_DIRECTORY>>/help"
+            "${CMAKE_CURRENT_LIST_DIR}/resources"
+            "$<GENEX_EVAL:$<TARGET_PROPERTY:${targetName},RUNTIME_OUTPUT_DIRECTORY>>/resources"
 )
-add_dependencies(${targetName} ${targetName}_help)
-set_target_properties(${targetName}_help
+add_dependencies(${targetName} ${targetName}_resources)
+set_target_properties(${targetName}_resources
 	PROPERTIES
 		FOLDER "${IDE_FOLDER_SOURCE}/apps"
 )

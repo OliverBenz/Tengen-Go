@@ -4,7 +4,7 @@
 
 namespace tengen::gui {
 
-//! The pages of the user documentation. They are HTML files in help/ next to the executable.
+//! The pages of the user documentation. They are HTML files in resources/help/ next to the executable.
 enum class HelpPage {
 	Rules,
 	Engine,
