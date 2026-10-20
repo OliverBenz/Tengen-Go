@@ -153,7 +153,7 @@ bool SubProcess::start(const std::vector<std::string>& argv, const std::string& 
 	// Subprocess. CreateProcess() writes into the command line, so it gets our own buffer.
 	std::string commandLine = buildCommandLine(argv);
 	PROCESS_INFORMATION processInfo{};
-	const bool started = CreateProcessA(nullptr, commandLine.data(), nullptr, nullptr, TRUE, 0, nullptr, nullptr, &startupInfo, &processInfo) != 0;
+	const bool started = CreateProcessA(nullptr, commandLine.data(), nullptr, nullptr, TRUE, CREATE_NO_WINDOW, nullptr, nullptr, &startupInfo, &processInfo) != 0;
 
 	closeHandle(logHandle); // The child holds its own copy now.
 
