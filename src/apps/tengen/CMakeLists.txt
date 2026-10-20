@@ -44,7 +44,7 @@ set_target_properties(${targetName}
     PROPERTIES
       AUTOMOC          ON
       FOLDER           "${IDE_FOLDER_SOURCE}/apps"
-      WIN32_EXECUTABLE "${MSVC}"
+      WIN32_EXECUTABLE ON
 )
 
 # Setup project settings
@@ -66,7 +66,7 @@ set_target_properties(${targetName}_resources
 )
 
 
-# ----- Installation
+# ----- Installation -----
 install(TARGETS ${targetName} RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
 install(DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/resources/" DESTINATION "${CMAKE_INSTALL_BINDIR}/resources")
 
