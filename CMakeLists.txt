@@ -23,6 +23,12 @@ option(TENGEN_BUILD_SANDBOX "Create the tools for the project." ON)
 set(TENGEN_QT_MIN_VERSION 6.8)     # Minimum Qt version.
 set(TENGEN_OPENCV_MIN_VERSION 5.0) # Minimum OpenCV version, any 5.x.
 
+# Install layout: Windows keeps everything next to tengen.exe, Linux uses the GNUInstallDirs folders (bin/, ...).
+if(WIN32)
+	set(CMAKE_INSTALL_BINDIR ".")
+endif()
+include(GNUInstallDirs)
+
 # Setup compile_commands.json for clangd support (only Ninja and Makefile generators - no VS). use scripts/win/2_configure-clangd.ps1 on windows.
 if(CMAKE_GENERATOR MATCHES "Ninja|Makefiles")
 	set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
