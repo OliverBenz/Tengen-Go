@@ -42,8 +42,9 @@ target_compile_definitions(${targetName}
 
 set_target_properties(${targetName}
     PROPERTIES
-      AUTOMOC ON # Auto handling of QT Meta-Object Compiler
-      FOLDER "${IDE_FOLDER_SOURCE}/apps"
+      AUTOMOC          ON
+      FOLDER           "${IDE_FOLDER_SOURCE}/apps"
+      WIN32_EXECUTABLE "${MSVC}"
 )
 
 # Setup project settings
