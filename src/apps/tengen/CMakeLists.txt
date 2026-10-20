@@ -63,3 +63,17 @@ set_target_properties(${targetName}_resources
 	PROPERTIES
 		FOLDER "${IDE_FOLDER_SOURCE}/apps"
 )
+
+
+# ----- Installation
+install(TARGETS ${targetName} RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
+install(DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/resources/" DESTINATION "${CMAKE_INSTALL_BINDIR}/resources")
+
+# Windows: ship the Qt DLLs and plugins, and the MSVC runtime, so it runs on machines without Qt or Visual Studio.
+if(WIN32)
+	qt_generate_deploy_app_script(TARGET ${targetName} OUTPUT_SCRIPT deployScript NO_TRANSLATIONS NO_COMPILER_RUNTIME)
+	install(SCRIPT "${deployScript}")
+
+	set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION "${CMAKE_INSTALL_BINDIR}")
+	include(InstallRequiredSystemLibraries)
+endif()
