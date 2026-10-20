@@ -14,6 +14,7 @@ Usage:  python scripts/win/1_setup_deps.py [--deps-dir DIR] [--qt-arch ARCH] [--
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import platform
@@ -24,13 +25,19 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
+# ----- Dependency information -----
+
 # The versions we test and ship. CMakeLists.txt only requires a minimum, so other installs work too.
 QT_VERSION = "6.12.0"
 OPENCV_VERSION = "5.0.0"
 
-# aqtinstall 3.3.0 (latest release) can't read the Windows repository layout Qt uses since 6.11.
-# The fix (miurahr/aqtinstall#1000) is only on master, so pin a master commit until a release has it.
-AQT_REQUIREMENT = "aqtinstall @ https://github.com/miurahr/aqtinstall/archive/076e1659807d0b362a3ed684d54c2e9c775eb9c7.zip"
+# SHA-256 of each OpenCV version's Windows package, copied from its release page.
+OPENCV_SHA256 = {
+    "5.0.0": "9c6c1fcea58acdf06edba13148b2246e00c2658143fa51e61ecd370db8c39f63",
+}
+
+# aqtinstall and every package it pulls in, pinned with their hashes. See the file on how to regenerate it.
+AQT_REQUIREMENTS = Path(__file__).with_name("aqt-requirements.txt")
 
 QT_MODULES = ["qtmultimedia"]  # Add-on modules. Widgets and Concurrent are part of the base package.
 QT_DEFAULT_ARCH = "win64_msvc2022_64"
@@ -97,28 +104,39 @@ def open_url(url: str):
     return urllib.request.urlopen(request)
 
 
-def download(url: str, target: Path) -> None:
-    """Download to a .part file first, so a cut-off download never looks complete."""
+def download(url: str, target: Path, sha256: str) -> None:
+    """Download to a .part file first, so a cut-off download never looks complete.
+    Only a file matching the sha256 ever becomes the target."""
     print(f"Downloading {url}", flush=True)
     target.parent.mkdir(parents=True, exist_ok=True)
     part = target.with_name(target.name + ".part")
     with open_url(url) as response, open(part, "wb") as file:
         shutil.copyfileobj(response, file)
+    with open(part, "rb") as file:
+        digest = hashlib.file_digest(file, "sha256")
+
+    if digest.hexdigest() != sha256.lower():
+        part.unlink()
+        sys.exit(f"error: {url} does not match the pinned SHA-256.\n"
+                 f"  expected {sha256.lower()}\n"
+                 f"  got      {digest.hexdigest()}")
     part.replace(target)
 
 
 # ----- Qt -----
 
 def ensure_aqt(deps_dir: Path) -> Path:
-    """Return the Python of a private venv with the pinned aqtinstall. Rebuilds the venv when the pin changes."""
+    """Return the Python of a private venv with the pinned aqtinstall. Rebuilds the venv when the pins change."""
     venv = deps_dir / "tools" / "aqt-venv"
     python = venv / "Scripts" / "python.exe"
+    requirements = AQT_REQUIREMENTS.read_text(encoding="utf-8")
 
-    if not is_installed(venv, AQT_REQUIREMENT):
+    if not is_installed(venv, requirements):
         shutil.rmtree(venv, ignore_errors=True)
         run([sys.executable, "-m", "venv", venv])
-        run([python, "-m", "pip", "install", "--quiet", "--upgrade", "pip", AQT_REQUIREMENT])
-        mark_installed(venv, AQT_REQUIREMENT)
+        # Uses the venv's own pip: upgrading it would pull an unpinned package.
+        run([python, "-m", "pip", "install", "--quiet", "--require-hashes", "-r", AQT_REQUIREMENTS])
+        mark_installed(venv, requirements)
     return python
 
 
@@ -176,7 +194,7 @@ def install_opencv(deps_dir: Path, version: str) -> Path:
     else:
         name, url = find_opencv_asset(version)
         installer = deps_dir / "downloads" / name
-        download(url, installer)
+        download(url, installer, OPENCV_SHA256[version])
         extract_opencv(installer, target)
         installer.unlink()
         mark_installed(target)
@@ -201,6 +219,8 @@ def main() -> None:
     # 1) Check platform and parse arguments
     check_platform()
     args = parse_args()
+    if not args.skip_opencv and OPENCV_VERSION not in OPENCV_SHA256:
+        sys.exit(f"error: no SHA-256 pinned for OpenCV {OPENCV_VERSION}. Add it to OPENCV_SHA256.")
     deps_dir = args.deps_dir.expanduser().resolve()
     print(f"Installing into {deps_dir}\n"
           f"  Qt     {QT_VERSION}\n"

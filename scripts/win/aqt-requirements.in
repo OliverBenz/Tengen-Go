@@ -1,0 +1,8 @@
+# Heyhey, some info:
+# ------------------
+# aqtinstall 3.3.0 (latest release) can't read the Windows repository layout Qt uses since 6.11.
+# The fix (miurahr/aqtinstall#1000) is only on master, so pin a master commit until a release has it.
+# Changing this pin means regenerating aqt-requirements.txt, from within scripts/win:
+#   uv pip compile --universal --python-version 3.11 --generate-hashes aqt-requirements.in -o aqt-requirements.txt
+
+aqtinstall @ https://github.com/miurahr/aqtinstall/archive/076e1659807d0b362a3ed684d54c2e9c775eb9c7.zip
