@@ -154,9 +154,12 @@ Components that are useful on their own are licensed more permissively, so you c
 
 | Part                                                                           | License                                                                      |
 | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
-| Tengen, everything not listed below                                            | [AGPL-3.0-only](LICENSE)                                                     |
-| netCore (`src/net/core`)                                                       | Apache-2.0                                                                   |
-| visionCore (`src/vision/core`)                                                 | Apache-2.0                                                                   |
+| Tengen, everything not listed below                                            | [AGPL-3.0-only](LICENSES/AGPL-3.0-only.txt)                                  |
+| netCore (`src/net/core`)                                                       | [Apache-2.0](LICENSES/Apache-2.0.txt)                                        |
+| visionCore (`src/vision/core`)                                                 | [Apache-2.0](LICENSES/Apache-2.0.txt)                                        |
 | Third-party images, board textures, and own sounds in `src/game/gui/resources` | Their own licenses, listed in its [README](src/game/gui/resources/README.md) |
+
+The license of every file is listed in [`REUSE.toml`](REUSE.toml), the license texts are in [`LICENSES/`](LICENSES).
+[`NOTICES.md`](NOTICES.md) lists the licenses of everything that ships with Tengen, including Qt, FFmpeg and OpenCV, and is installed with it.
 
 Copyright (C) 2024 Oliver Benz.
