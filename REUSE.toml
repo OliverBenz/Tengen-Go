@@ -1,0 +1,61 @@
+# License of every file in the repository, by path (https://reuse.software). Check with: reuse lint
+# Files carry no license headers. When several annotations match a file, the last one wins,
+# so the general rule comes first and the more specific ones after it.
+version = 1
+
+# ----- Tengen -----
+
+# Default: everything not listed below.
+[[annotations]]
+path = "**"
+SPDX-FileCopyrightText = "2024 Oliver Benz"
+SPDX-License-Identifier = "AGPL-3.0-only"
+
+
+# ----- Standalone components -----
+
+# Useful on their own, so licensed permissively. Includes their tests.
+[[annotations]]
+path = [
+	"src/net/core/**",
+	"src/vision/core/**",
+	"tests/net/core.*/**",
+	"tests/vision/core.*/**",
+]
+SPDX-FileCopyrightText = "2024 Oliver Benz"
+SPDX-License-Identifier = "Apache-2.0"
+
+
+# ----- Resources -----
+
+# Own recordings.
+[[annotations]]
+path = "src/game/gui/resources/audio/**"
+SPDX-FileCopyrightText = "2024 Oliver Benz"
+SPDX-License-Identifier = "CC0-1.0"
+
+# Stones and board of the OGS "Anime" theme, from online-go/goban.
+[[annotations]]
+path = [
+	"src/game/gui/resources/anime_*",
+	"src/game/gui/resources/board_textures/anime_board.svg",
+]
+SPDX-FileCopyrightText = "Online-Go.com"
+SPDX-License-Identifier = "Apache-2.0"
+
+# Board textures.
+[[annotations]]
+path = [
+	"src/game/gui/resources/board_textures/1K-wood_fine_8-diffuse.jpg",
+	"src/game/gui/resources/board_textures/2K_afromosia_basecolor.png",
+]
+SPDX-FileCopyrightText = "ShareTextures"
+SPDX-License-Identifier = "CC0-1.0"
+
+[[annotations]]
+path = [
+	"src/game/gui/resources/board_textures/Wood094_2K-PNG_Color.png",
+	"src/game/gui/resources/board_textures/Wood095_2K-PNG_Color.png",
+]
+SPDX-FileCopyrightText = "ambientCG"
+SPDX-License-Identifier = "CC0-1.0"

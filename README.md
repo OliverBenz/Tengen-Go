@@ -1,30 +1,28 @@
 # Tengen (天元)
 
-A modular Go system combining game logic, networking, and real-world board perception.
-
-Tengen (天元) refers to the center point of a Go board. This project aims to be the center point between physical and digital Go.
+Tengen (天元) is the center point of a Go board. This project aims to be the center point between physical and digital Go.
 
 Tengen is a modular C++ system that combines:
 
-- Go game logic and rules engine
+- Go game logic and a rules engine
 - TCP networking
-- GUI client
-- Computer vision for detecting moves on a real board
-- Robotic arm control to place stones on a real board
+- A GUI client
+- Computer vision that detects moves on a real board
+- Robotic arm control that places stones on a real board
 
-The goal is to seamlessly integrate physical gameplay with digital systems.
-Challenging opponents remotely while playing over a real board instead of staring at a screen.
-
-The whole project is still very much work in progress. Current focus lies on the image detection system as well as a robotic arm that can mirror the opponents move on the physical board.
-The project is aimed to be kept modular so you can easily just take whatever parts are useful to you.
+The whole project is still very much work in progress. The current focus is the image detection and a robotic arm that mirrors the opponent's move on the physical board.
+It is kept modular, so you can take whatever parts are useful to you.
 
 ## Motivation
 
-The motivation for this project is simple.
 I don't enjoy playing on the computer and don't have Go-interested people near me.
-So let's replace the opponent with a robotic arm and play other people online but over the board.
+So let's replace the opponent with a robotic arm and play other people online, but over a real board.
 
-## Current Status
+The final goal is a full robotic Go set: a documented parts list for the hardware, and the software in this repository.
+You buy the parts at the best available price, enjoy assembling everything, install this software, and get local and online games, puzzles, and training against bots.
+All open source, so you can tinker as you like.
+
+## Status
 
 | Area             | Status                 | Notes                                                                                            |
 | ---------------- | ---------------------- | ------------------------------------------------------------------------------------------------ |
@@ -34,49 +32,40 @@ So let's replace the opponent with a robotic arm and play other people online bu
 | GUI Application  | Working / In Progress  | Qt client and standalone server exist; the application is still under active development.        |
 | Board Detection  | Working / Experimental | Board, grid, and stone detection exist, but still rely on a controlled setup.                    |
 | Board Perception | In Progress            | Setup/orientation logic exists; the live board detection loop is not finished yet.               |
-| Robot Arm        | Planned                | The long-term goal is documented, but this is not shipped in the repository yet.                 |
-
-### Goal
-
-The final goal is to have a full robotic Go set.
-We may document a parts list for the hardware and provide the software here.
-A user may then purchase this hardware at the best available price and experience the fun of assembling everything.
-Finally flashing this software to get access to local and online games, puzzles, and training against bots.
-All open source so you can tinker around as you like.
+| Robot Arm        | Planned                | The long-term goal is documented, but nothing is in the repository yet.                          |
 
 ## Components
 
-### Internal Components
+| Name             | Description                                                                          |
+| ---------------- | ------------------------------------------------------------------------------------ |
+| gameModel        | Core data structures of the game.                                                    |
+| gameCore         | Game rules, board state validation, deltas, and move handling.                       |
+| gameEngine       | Drives bot engines (GNU Go, KataGo) as separate processes over the Go Text Protocol. |
+| gameGui          | Qt 6 widgets built on gameModel.                                                     |
+| gameRuntime      | Application logic, connecting the game with vision and networking.                   |
+| netCore          | Low-level TCP transport, framing, and connection management.                         |
+| netNetwork       | Game protocol and client/server session handling, built on netCore.                  |
+| visionCore       | Board, grid, and stone detection with OpenCV.                                        |
+| visionPerception | Game-specific image detection, built on visionCore.                                  |
+| tengen           | The application, built on gameRuntime and gameGui.                                   |
 
-| Name             | Description                                                                                             |
-| ---------------- | ------------------------------------------------------------------------------------------------------- |
-| gameModel        | Library specifying the core data structures for the game.                                               |
-| gameCore         | Library for game rules, board state validation, deltas, and move handling.                              |
-| gameEngine       | Library for driving bot engines (GNU Go, KataGo) as separate processes over the Go Text Protocol.       |
-| gameGui          | Library for QT6 graphical user elements built on the gameModel.                                         |
-| netCore          | Library for low-level TCP transport, framing, and connection management.                                |
-| netNetwork       | Library for the game/network protocol and client/server session handling. Building on netCore.          |
-| visionCore       | Library for board, grid, and stone detection using OpenCV.                                              |
-| visionPerception | Library for the game specific image detection. Building on visionCore.                                  |
-| gameRuntime      | Library defining the application logic. Connecting the core game with vision algorithms and networking. |
-| tengen           | The final application built on the runtime and GUI libraries.                                           |
+The executables mainly handle input and output and talk to the runtime and core libraries.
+For example, `tengen` renders what the runtime reports and forwards user input through presenters and the session manager.
 
-Including a [ComponentName].GTest project which should be managed for each component.
-As the whole project is still very much work-in-progress, detailed testing is not yet present for each module.
+Besides `tengen` there is a standalone `server`, and two development tools: `visionTuner` visualizes the steps of the vision pipeline, and `boardViewer` renders board states from different file formats.
+Tests live in `tests/`, one project per component and kind, e.g. `gameCore.unit` or `visionCore.integration`. Not every component has detailed tests yet.
 
-The executables mainly specify IO handling and communicate with the runtime/core libraries.
-For example, `tengen` renders information from the runtime layer and forwards user input through presenters and the session manager.
-We also provide a standalone `server` and tools for development purposes - like the `visionTuner` for debugging and visualizing the vision pipeline steps and the `boardViewer` which aims to allow to render go board states from different file formats.
-These are currently very basic and to be extended as required.
+### External Dependencies
 
-### External Components
-
-| Name   | Description                        |
-| ------ | ---------------------------------- |
-| CMake  | Collection of CMake files.         |
-| Logger | Library for logging functionality. |
-| Asio   | Library for networking support.    |
-| GTest  | Google unit testing library.       |
+| Name          | Used for                                   |
+| ------------- | ------------------------------------------ |
+| Qt 6          | GUI and audio.                             |
+| OpenCV 5      | Image processing in the vision components. |
+| Asio          | Networking.                                |
+| nlohmann_json | JSON parsing.                              |
+| Logger        | Logging.                                   |
+| GTest         | Unit tests.                                |
+| CMake files   | Shared project settings (`lib/cmake`).     |
 
 ## Building
 
@@ -87,7 +76,7 @@ cmake --preset Linux64-Debug && cmake --build --preset Linux64-Debug
 ```
 
 Qt 6 and OpenCV are required. On Linux they come from the system package manager.
-On Windows, [`scripts/win/1_setup_deps.py`](scripts/win/1_setup_deps.py) installs both, see the [Compilation Instructions](docs/Compilation.md).
+On Windows, [`scripts/win/1_setup_deps.py`](scripts/win/1_setup_deps.py) installs both. See the [Compilation Instructions](docs/Compilation.md) for details.
 
 The Visual Studio generator can't write `compile_commands.json` for clangd.
 On Windows, run [`scripts/win/2_configure-clangd.ps1`](scripts/win/2_configure-clangd.ps1) instead: it configures the `Win64-Ninja` preset (MSVC + Ninja) from an x64 VS developer shell and copies the file to the project root.
@@ -96,8 +85,9 @@ On Windows, run [`scripts/win/2_configure-clangd.ps1`](scripts/win/2_configure-c
 
 Bot games are played against [GNU Go](https://www.gnu.org/software/gnugo/) or [KataGo](https://github.com/lightvector/KataGo).
 They run as separate processes and are not part of this repository, so you have to provide them yourself.
+
 Tengen looks for them in an `engine` folder, first in the user's data folder, then next to its own executable (for a Windows debug build, that is `build/Win64/out/bin/x64/Debug/`).
-Each engine comes from the first folder that holds all of its files. Engines in the data folder serve every build.
+Each engine comes from the first folder that holds all of its files, and engines in the data folder serve every build.
 
 | OS      | Data folder                                   |
 | ------- | --------------------------------------------- |
@@ -116,7 +106,7 @@ engine/
     └── gtp.cfg
 ```
 
-The bot dialog lists both engines. One whose files are not all there is greyed out, and the dialog looks again every time it opens, so an engine installed while Tengen runs shows up right away.
+The bot dialog lists both engines. An engine whose files are not all there is greyed out. The dialog checks again every time it opens, so an engine installed while Tengen runs shows up right away.
 
 ### GNU Go
 
@@ -142,25 +132,31 @@ Copy KataGo's whole folder into `engine/katago/`, then add:
 
 KataGo imitates a human of the rank you pick in the bot dialog, from 20k to 3d.
 
-## General Documentation
+## Documentation
 
-- [Compilation](docs/Compilation.md) — installing dependencies and building
-- [Core](docs/Core.md) — core rules/logic overview
-- [GUI](docs/GUI.md) — GUI architecture and rendering notes
-- [Networking](docs/Networking.md) — higher-level networking notes
+- [Compilation](docs/Compilation.md): installing dependencies and building
+- [Core](docs/Core.md): core rules and logic overview
+- [GUI](docs/GUI.md): GUI architecture and rendering notes
+- [Networking](docs/Networking.md): higher-level networking notes
 
-## Technical Documentation
+Per component:
 
-- [gameCore](src/game/core/README.md) — Core rules, game loop, deltas, and move validation
-- [netCore](src/net/core/README.md) — Network transport and framing details
-- [netNetwork](src/net/network/README.md) — Protocol, client/server wrappers, and session mapping
-- [visionCore](src/vision/core/README.md) — Board, grid, and stone detection pipeline
-- [visionPerception](src/vision/perception/README.md) — Mapping detected stones onto game coordinates
+- [gameCore](src/game/core/README.md): rules, game loop, deltas, and move validation
+- [netCore](src/net/core/README.md): network transport and framing
+- [netNetwork](src/net/network/README.md): protocol, client/server wrappers, and session mapping
+- [visionCore](src/vision/core/README.md): board, grid, and stone detection pipeline
+- [visionPerception](src/vision/perception/README.md): mapping detected stones onto game coordinates
 
 ## License
 
-Licensed under the GNU Affero General Public License v3.0 (AGPL-3.0-or-later). See `LICENSE`.
+Tengen is meant to be a free, open-source product for Go enthusiasts and hobbyists, and derived versions should stay open to everyone.
+Components that are useful on their own are licensed more permissively, so you can use them in your own projects.
+
+| Part                                                                           | License                                                                      |
+| ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
+| Tengen, everything not listed below                                            | [AGPL-3.0-only](LICENSE)                                                     |
+| netCore (`src/net/core`)                                                       | Apache-2.0                                                                   |
+| visionCore (`src/vision/core`)                                                 | Apache-2.0                                                                   |
+| Third-party images, board textures, and own sounds in `src/game/gui/resources` | Their own licenses, listed in its [README](src/game/gui/resources/README.md) |
 
 Copyright (C) 2024 Oliver Benz.
-
-Third-party assets (stone images, board textures) keep their own licenses, listed in [src/game/gui/resources](src/game/gui/resources/README.md).
