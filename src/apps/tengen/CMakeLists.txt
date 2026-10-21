@@ -35,9 +35,12 @@ target_link_libraries(${targetName}
         Qt6::Concurrent
 )
 
+# The About dialog finds the installed license texts relative to the executable.
+cmake_path(RELATIVE_PATH TENGEN_INSTALL_LICENSEDIR BASE_DIRECTORY "${CMAKE_INSTALL_BINDIR}" OUTPUT_VARIABLE licenseDir)
 target_compile_definitions(${targetName}
     PRIVATE
         TENGEN_VERSION="${PROJECT_VERSION}"
+        TENGEN_LICENSE_DIR="${licenseDir}"
 )
 
 set_target_properties(${targetName}
