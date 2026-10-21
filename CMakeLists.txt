@@ -29,6 +29,13 @@ if(WIN32)
 endif()
 include(GNUInstallDirs)
 
+# License texts: next to tengen.exe on Windows, share/licenses/tengen on Linux (Arch and Fedora convention).
+if(WIN32)
+	set(TENGEN_INSTALL_LICENSEDIR "licenses")
+else()
+	set(TENGEN_INSTALL_LICENSEDIR "${CMAKE_INSTALL_DATAROOTDIR}/licenses/tengen")
+endif()
+
 # Setup compile_commands.json for clangd support (only Ninja and Makefile generators - no VS). use scripts/win/2_configure-clangd.ps1 on windows.
 if(CMAKE_GENERATOR MATCHES "Ninja|Makefiles")
 	set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -53,4 +60,18 @@ if(TENGEN_BUILD_TESTS)
 	include(CTest)
 	enable_testing()
 	add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/tests")
+endif()
+
+
+# ----- Installation -----
+
+# Licenses, laid out as NOTICES.md describes
+# The resources folders bring the licenses of their third-party files along.
+install(DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/LICENSES/" DESTINATION "${TENGEN_INSTALL_LICENSEDIR}")
+install(FILES "${CMAKE_CURRENT_LIST_DIR}/NOTICES.md" DESTINATION "${TENGEN_INSTALL_LICENSEDIR}")
+install(DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/3rdparty/licenses/" DESTINATION "${TENGEN_INSTALL_LICENSEDIR}/3rdparty")
+
+# The official OpenCV package for Windows brings the licenses of the libraries it contains.
+if(WIN32 AND EXISTS "${OpenCV_DIR}/etc/licenses")
+	install(DIRECTORY "${OpenCV_DIR}/etc/licenses/" DESTINATION "${TENGEN_INSTALL_LICENSEDIR}/3rdparty/opencv")
 endif()
