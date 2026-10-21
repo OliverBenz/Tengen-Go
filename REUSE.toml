@@ -3,6 +3,10 @@
 # so the general rule comes first and the more specific ones after it.
 version = 1
 
+SPDX-PackageName = "Tengen"
+SPDX-PackageSupplier = "Oliver Benz <oliver.benz@proton.me>"
+SPDX-PackageDownloadLocation = "https://github.com/OliverBenz/Tengen-Go"
+
 # ----- Tengen -----
 
 # Default: everything not listed below.
