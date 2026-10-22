@@ -75,7 +75,16 @@ install(DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/resources/" DESTINATION "${CMAKE_IN
 
 # Windows: ship the Qt DLLs and plugins, and the MSVC runtime, so it runs on machines without Qt or Visual Studio.
 if(WIN32)
-	qt_generate_deploy_app_script(TARGET ${targetName} OUTPUT_SCRIPT deployScript NO_TRANSLATIONS NO_COMPILER_RUNTIME)
+	# No FFmpeg:
+	#   Qt plays our WAV sounds through its Windows backend, and FFmpeg would bring LGPL-2.1 source obligations.
+	#   windeployqt has the options from Qt 6.12. Older ones deploy FFmpeg, which NOTICES.md doesn't cover.
+	if(Qt6_VERSION VERSION_GREATER_EQUAL 6.12)
+		set(deployOptions DEPLOY_TOOL_OPTIONS --no-ffmpeg --exclude-plugins ffmpegmediaplugin)
+	else()
+		install(CODE [[message(WARNING "This Qt deploys FFmpeg, which NOTICES.md doesn't cover. Package with Qt 6.12 or newer.")]])
+	endif()
+
+	qt_generate_deploy_app_script(TARGET ${targetName} OUTPUT_SCRIPT deployScript NO_TRANSLATIONS NO_COMPILER_RUNTIME ${deployOptions})
 	install(SCRIPT "${deployScript}")
 
 	set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION "${CMAKE_INSTALL_BINDIR}")
