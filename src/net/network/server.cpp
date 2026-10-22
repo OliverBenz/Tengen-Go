@@ -37,12 +37,14 @@ private:
 
 private:
 	// Processing of server events.
-	void processClientMessage(const ServerQueueEvent& event);    //!< Translate payload to network event and handle.
-	void processClientConnect(const ServerQueueEvent& event);    //!< Creates session key.
-	void processClientDisconnect(const ServerQueueEvent& event); //!< Destroys session key.
-	void processShutdown(const ServerQueueEvent& event);         //!< Shutdown server.
+	void processClientMessage(const ServerQueueEvent& event);         //!< Translate payload to network event and handle.
+	void processClientConnect(const ServerQueueEvent& event);         //!< Creates session key.
+	void processClientDisconnect(const ServerQueueEvent& event);      //!< Destroys session key.
+	void processShutdown(const ServerQueueEvent& event);              //!< Shutdown server.
+	void processHello(SessionId sessionId, const ClientHello& hello); //!< Welcome the client with a seat, or reject it.
 
 	// Hand a player's message to the handler.
+	void handleNetworkEvent(Player player, const ClientHello& event);
 	void handleNetworkEvent(Player player, const ClientPutStone& event);
 	void handleNetworkEvent(Player player, const ClientPass& event);
 	void handleNetworkEvent(Player player, const ClientResign& event);
@@ -189,18 +191,8 @@ void Server::Implementation::processEvent(const ServerQueueEvent& event) {
 
 void Server::Implementation::processClientConnect(const ServerQueueEvent& event) {
 	// TODO: Possible to have this connectionId already registered? Yes, reconnect! Not thandled yet
-	const auto sessionId = m_sessionManager.add(event.connectionId);
-	const auto seat      = freeSeat();
-
-	// Store sessionId & send to client
-	m_sessionManager.setSeat(sessionId, seat);
-	send(sessionId, ServerSessionAssign{.sessionId = sessionId});
-
-	// Observers are no player; the handler only hears about players.
-	const auto player = toPlayer(seat);
-	if (m_handler && player) {
-		m_handler->onPlayerJoined(*player);
-	}
+	// The session starts without a seat. The client gets one with its hello.
+	m_sessionManager.add(event.connectionId);
 }
 
 void Server::Implementation::processClientMessage(const ServerQueueEvent& event) {
@@ -209,21 +201,52 @@ void Server::Implementation::processClientMessage(const ServerQueueEvent& event)
 		return;
 	}
 
-	const auto player = toPlayer(m_sessionManager.getSeat(sessionId));
-	if (!player) {
-		return; // Non players don't get to do shit.
-	}
-
 	// Server event message contains a network event. Parse and handle.
 	const auto networkEvent = network::fromClientMessage(event.payload);
 	if (!networkEvent) {
 		return;
 	}
 
+	// A client has no seat until a 'hello', and the hello is the only message that counts.
+	const auto seat = m_sessionManager.getSeat(sessionId);
+	if (seat == Seat::None) {
+		if (const auto* hello = std::get_if<ClientHello>(&*networkEvent)) {
+			processHello(sessionId, *hello);
+		}
+		return;
+	}
+
+	const auto player = toPlayer(seat);
+	if (!player) {
+		return; // Non players don't get to do shit.
+	}
+
 	// Forward client intent to the game/app layer.
 	if (m_handler) {
 		std::visit([&](const auto& e) { handleNetworkEvent(*player, e); }, *networkEvent);
 	}
+}
+
+void Server::Implementation::processHello(const SessionId sessionId, const ClientHello& hello) {
+	if (hello.protocol != PROTOCOL_VERSION) {
+		send(sessionId, ServerReject{.reason = RejectReason::ProtocolMismatch});
+		m_network.disconnect(m_sessionManager.getConnectionId(sessionId));
+		return;
+	}
+
+	const auto seat = freeSeat();
+	m_sessionManager.setSeat(sessionId, seat);
+	send(sessionId, ServerWelcome{.protocol = PROTOCOL_VERSION, .sessionId = sessionId, .seat = seat});
+
+	// Observers are no player; the handler only hears about players.
+	const auto player = toPlayer(seat);
+	if (m_handler && player) {
+		m_handler->onPlayerJoined(*player);
+	}
+}
+
+void Server::Implementation::handleNetworkEvent(const Player, const ClientHello&) {
+	// The session is open already. A second hello changes nothing.
 }
 
 void Server::Implementation::handleNetworkEvent(const Player player, const ClientPutStone& event) {

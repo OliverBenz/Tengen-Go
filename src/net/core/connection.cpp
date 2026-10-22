@@ -45,10 +45,24 @@ void Connection::send(const Message& msg) {
 	// Capture shared_ptr to keep this Connection alive until the queued work runs.
 	auto self = shared_from_this();
 	asio::post(m_strand, [self, msg] {
+		if (self->m_closing) {
+			return;
+		}
 		bool idle = self->m_writeQueue.empty();
 		self->m_writeQueue.push_back(msg);
 		if (idle && !self->m_writeInProgress) {
 			self->startWrite();
+		}
+	});
+}
+
+void Connection::close() {
+	// Posted into the strand behind earlier sends, so these still go out before the socket closes.
+	auto self = shared_from_this();
+	asio::post(m_strand, [self] {
+		self->m_closing = true;
+		if (!self->m_writeInProgress) {
+			self->doDisconnect();
 		}
 	});
 }
@@ -85,6 +99,9 @@ void Connection::startWrite() {
 			                  self->startWrite();
 		                  } else {
 			                  self->m_writeInProgress = false;
+			                  if (self->m_closing) {
+				                  self->doDisconnect();
+			                  }
 		                  }
 	                  }));
 }

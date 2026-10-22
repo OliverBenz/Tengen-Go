@@ -40,6 +40,14 @@ constexpr std::array END_REASON_NAMES{
         WireName<EndReason>{EndReason::Timeout, "timeout"},
         WireName<EndReason>{EndReason::Forfeit, "forfeit"},
 };
+constexpr std::array SEAT_NAMES{
+        WireName<Seat>{Seat::Black, "black"},
+        WireName<Seat>{Seat::White, "white"},
+        WireName<Seat>{Seat::Observer, "observer"},
+};
+constexpr std::array REJECT_REASON_NAMES{
+        WireName<RejectReason>{RejectReason::ProtocolMismatch, "protocol"},
+};
 
 template <typename E, std::size_t N>
 static const char* toName(const std::array<WireName<E>, N>& names, const E value) {
@@ -54,11 +62,7 @@ static const char* toName(const std::array<WireName<E>, N>& names, const E value
 
 //! The enum value with this wire name. Nullopt for anything that is not one of the names.
 template <typename E, std::size_t N>
-static std::optional<E> fromName(const std::array<WireName<E>, N>& names, const json& j) {
-	if (!j.is_string()) {
-		return std::nullopt;
-	}
-	const auto& name = j.get_ref<const std::string&>();
+static std::optional<E> fromName(const std::array<WireName<E>, N>& names, const std::string& name) {
 	for (const auto& entry: names) {
 		if (name == entry.name) {
 			return entry.value;
@@ -67,6 +71,12 @@ static std::optional<E> fromName(const std::array<WireName<E>, N>& names, const 
 	return std::nullopt;
 }
 
+static std::string toMessage(const ClientHello& e) {
+	json j;
+	j["type"]     = "hello";
+	j["protocol"] = e.protocol;
+	return j.dump();
+}
 static std::string toMessage(const ClientPutStone& e) {
 	json j;
 	j["type"] = "put";
@@ -104,6 +114,12 @@ std::optional<ClientEvent> fromClientMessage(const std::string& message) {
 		return {};
 	}
 	const auto type = j["type"].get<std::string>();
+	if (type == "hello") {
+		if (!j.contains("protocol") || !j["protocol"].is_number_unsigned()) {
+			return {};
+		}
+		return ClientHello{.protocol = j["protocol"].get<ProtocolVersion>()};
+	}
 	if (type == "put") {
 		if (!j.contains("x") || !j.contains("y") || !j["x"].is_number_unsigned() || !j["y"].is_number_unsigned()) {
 			return {};
@@ -125,10 +141,18 @@ std::optional<ClientEvent> fromClientMessage(const std::string& message) {
 	return {};
 }
 
-static std::string toMessage(const ServerSessionAssign& e) {
+static std::string toMessage(const ServerWelcome& e) {
 	json j;
-	j["type"]      = "session";
+	j["type"]      = "welcome";
+	j["protocol"]  = e.protocol;
 	j["sessionId"] = e.sessionId;
+	j["seat"]      = toName(SEAT_NAMES, e.seat);
+	return j.dump();
+}
+static std::string toMessage(const ServerReject& e) {
+	json j;
+	j["type"]   = "reject";
+	j["reason"] = toName(REJECT_REASON_NAMES, e.reason);
 	return j.dump();
 }
 static std::string toMessage(const ServerGameStart& e) {
@@ -196,17 +220,40 @@ std::string toMessage(ServerEvent event) {
 	return std::visit([&](auto&& ev) { return toMessage(ev); }, event);
 }
 
+static std::optional<ServerEvent> fromServerWelcomeMessage(const json& j) {
+	if (!j.contains("protocol") || !j["protocol"].is_number_unsigned() || !j.contains("sessionId") || !j["sessionId"].is_number_unsigned() || !j.contains("seat") || !j["seat"].is_string()) {
+		return {};
+	}
+	const auto seat = fromName(SEAT_NAMES, j["seat"].get_ref<const std::string&>());
+	if (!seat) {
+		return {};
+	}
+	return ServerWelcome{.protocol = j["protocol"].get<ProtocolVersion>(), .sessionId = j["sessionId"].get<SessionId>(), .seat = *seat};
+}
+
+static std::optional<ServerEvent> fromServerRejectMessage(const json& j) {
+	if (!j.contains("reason") || !j["reason"].is_string()) {
+		return {};
+	}
+	const auto reason = fromName(REJECT_REASON_NAMES, j["reason"].get_ref<const std::string&>());
+	if (!reason) {
+		return {};
+	}
+	return ServerReject{.reason = *reason};
+}
+
 static std::optional<ServerEvent> fromServerStartMessage(const json& j) {
 	if (!j.contains("boardSize") || !j["boardSize"].is_number_unsigned() || !j.contains("rules") || !j["rules"].is_object()) {
 		return {};
 	}
 
 	const auto& rules = j["rules"];
-	if (!rules.contains("scoring") || !rules.contains("ko") || !rules.contains("komi") || !rules["komi"].is_number() || !rules.contains("suicide") || !rules["suicide"].is_boolean()) {
+	if (!rules.contains("scoring") || !rules["scoring"].is_string() || !rules.contains("ko") || !rules["ko"].is_string() || !rules.contains("komi") || !rules["komi"].is_number() || !rules.contains("suicide") ||
+	    !rules["suicide"].is_boolean()) {
 		return {};
 	}
-	const auto scoring = fromName(SCORING_NAMES, rules["scoring"]);
-	const auto ko      = fromName(KO_NAMES, rules["ko"]);
+	const auto scoring = fromName(SCORING_NAMES, rules["scoring"].get_ref<const std::string&>());
+	const auto ko      = fromName(KO_NAMES, rules["ko"].get_ref<const std::string&>());
 	if (!scoring || !ko) {
 		return {};
 	}
@@ -218,13 +265,13 @@ static std::optional<ServerEvent> fromServerStartMessage(const json& j) {
 }
 
 static std::optional<ServerEvent> fromServerDeltaMessage(const json& j) {
-	if (!j.contains("moveId") || !j["moveId"].is_number_unsigned() || !j.contains("action") || !j.contains("player") || !j.contains("next")) {
+	if (!j.contains("moveId") || !j["moveId"].is_number_unsigned() || !j.contains("action") || !j["action"].is_string() || !j.contains("player") || !j["player"].is_string() || !j.contains("next") || !j["next"].is_string()) {
 		return {};
 	}
 
-	const auto action = fromName(ACTION_NAMES, j["action"]);
-	const auto player = fromName(PLAYER_NAMES, j["player"]);
-	const auto next   = fromName(PLAYER_NAMES, j["next"]);
+	const auto action = fromName(ACTION_NAMES, j["action"].get_ref<const std::string&>());
+	const auto player = fromName(PLAYER_NAMES, j["player"].get_ref<const std::string&>());
+	const auto next   = fromName(PLAYER_NAMES, j["next"].get_ref<const std::string&>());
 	if (!action || !player || !next) {
 		return {};
 	}
@@ -264,17 +311,20 @@ static std::optional<ServerEvent> fromServerDeltaMessage(const json& j) {
 }
 
 static std::optional<ServerEvent> fromServerEndMessage(const json& j) {
-	if (!j.contains("reason")) {
+	if (!j.contains("reason") || !j["reason"].is_string()) {
 		return {};
 	}
-	const auto reason = fromName(END_REASON_NAMES, j["reason"]);
+	const auto reason = fromName(END_REASON_NAMES, j["reason"].get_ref<const std::string&>());
 	if (!reason) {
 		return {};
 	}
 
 	GameResult result{.winner = std::nullopt, .reason = *reason};
 	if (j.contains("winner")) {
-		const auto winner = fromName(PLAYER_NAMES, j["winner"]);
+		if (!j["winner"].is_string()) {
+			return {};
+		}
+		const auto winner = fromName(PLAYER_NAMES, j["winner"].get_ref<const std::string&>());
 		if (!winner) {
 			return {};
 		}
@@ -289,11 +339,11 @@ std::optional<ServerEvent> fromServerMessage(const std::string& message) {
 		return {};
 	}
 	const auto type = j["type"].get<std::string>();
-	if (type == "session") {
-		if (!j.contains("sessionId") || !j["sessionId"].is_number_unsigned()) {
-			return {};
-		}
-		return ServerSessionAssign{.sessionId = j["sessionId"].get<SessionId>()};
+	if (type == "welcome") {
+		return fromServerWelcomeMessage(j);
+	}
+	if (type == "reject") {
+		return fromServerRejectMessage(j);
 	}
 	if (type == "start") {
 		return fromServerStartMessage(j);
@@ -305,10 +355,10 @@ std::optional<ServerEvent> fromServerMessage(const std::string& message) {
 		return fromServerEndMessage(j);
 	}
 	if (type == "chat") {
-		if (!j.contains("player") || !j.contains("messageId") || !j["messageId"].is_number_unsigned() || !j.contains("message") || !j["message"].is_string()) {
+		if (!j.contains("player") || !j["player"].is_string() || !j.contains("messageId") || !j["messageId"].is_number_unsigned() || !j.contains("message") || !j["message"].is_string()) {
 			return {};
 		}
-		const auto player = fromName(PLAYER_NAMES, j["player"]);
+		const auto player = fromName(PLAYER_NAMES, j["player"].get_ref<const std::string&>());
 		if (!player) {
 			return {};
 		}
