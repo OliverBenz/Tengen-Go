@@ -12,7 +12,6 @@ Source code: <https://github.com/OliverBenz/Tengen-Go>. The tag of a release hol
 | Tengen, everything not listed below          | AGPL-3.0-only | 2024 Oliver Benz | `AGPL-3.0-only.txt` |
 | netCore (networking, part of Tengen)         | Apache-2.0    | 2024 Oliver Benz | `Apache-2.0.txt`    |
 | visionCore (board detection, part of Tengen) | Apache-2.0    | 2024 Oliver Benz | `Apache-2.0.txt`    |
-| visionPerception (board perception)          | AGPL-3.0-only | 2024 Oliver Benz | `AGPL-3.0-only.txt` |
 | Stone sounds (`resources/audio`)             | CC0-1.0       | 2024 Oliver Benz | `CC0-1.0.txt`       |
 
 The license of every file in the repository is listed in `REUSE.toml`.
@@ -21,10 +20,11 @@ The license of every file in the repository is listed in `REUSE.toml`.
 
 Shipped in `resources/`. Its README lists each file with its source.
 
-| Part                                      | License    | Copyright                | License text     |
-| ----------------------------------------- | ---------- | ------------------------ | ---------------- |
-| Stones and board of the OGS "Anime" theme | Apache-2.0 | Online-Go.com            | `Apache-2.0.txt` |
-| Board textures                            | CC0-1.0    | ShareTextures, ambientCG | `CC0-1.0.txt`    |
+| Part                                                                      | License      | Copyright                | License text       |
+| ------------------------------------------------------------------------- | ------------ | ------------------------ | ------------------ |
+| Stones and board of the OGS "Anime" theme                                 | Apache-2.0   | Online-Go.com            | `Apache-2.0.txt`   |
+| Board textures                                                            | CC0-1.0      | ShareTextures, ambientCG | `CC0-1.0.txt`      |
+| Help: Rules (`help/rules.html`), from Wikipedia's [Rules of Go][go-rules] | CC-BY-SA-4.0 | Wikipedia contributors   | `CC-BY-SA-4.0.txt` |
 
 ## Libraries built into Tengen
 
@@ -38,13 +38,13 @@ Shipped in `resources/`. Its README lists each file with its source.
 
 Only in the Windows package. On Linux these come from the system.
 
-| Library                                                                               | Version                                   | License                   | Copyright                                  | License text                                                    |
-| ------------------------------------------------------------------------------------- | ----------------------------------------- | ------------------------- | ------------------------------------------ | --------------------------------------------------------------- |
-| [Qt][qt]: Core, Gui, Widgets, Concurrent, Multimedia, Network, Svg, and their plugins | 6.12.0                                    | LGPL-3.0-only             | The Qt Company Ltd. and other contributors | `3rdparty/LICENSE-LGPL-3.0.txt`, `3rdparty/LICENSE-GPL-3.0.txt` |
-| [Mesa][mesa] llvmpipe, software OpenGL (`opengl32sw.dll`), as built by Qt             | 11.2.2                                    | MIT, BSL-1.0              | 1999-2007 Brian Paul, 2013-2016 The Khronos Group Inc. (MIT); 2012 yohhoy (BSL-1.0, C11 threads emulation) | `3rdparty/LICENSE-MIT-Mesa.txt`, `3rdparty/LICENSE-BSL-1.0.txt` |
-| [LLVM][llvm], inside `opengl32sw.dll`                                                 | as built by Qt                            | Apache-2.0 WITH LLVM-exception | LLVM Team                             | `3rdparty/LICENSE-Apache-2.0-LLVM.txt`                          |
-| [OpenCV][opencv]: `opencv_world`                                                      | 5.0.0                                     | Apache-2.0                | Intel Corporation, Willow Garage, NVIDIA, AMD, OpenCV Foundation, Itseez, Xperience AI, OpenCV AI, and other contributors | `Apache-2.0.txt`                       |
-| Microsoft Visual C++ runtime, `D3DCompiler_47.dll`                                    |                                           | Microsoft redistributable | Microsoft Corporation                      |                                                                 |
+| Library                                                                               | Version        | License                        | Copyright                                                                                                                 | License text                                                    |
+| ------------------------------------------------------------------------------------- | -------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| [Qt][qt]: Core, Gui, Widgets, Concurrent, Multimedia, Network, Svg, and their plugins | 6.12.0         | LGPL-3.0-only                  | The Qt Company Ltd. and other contributors                                                                                | `3rdparty/LICENSE-LGPL-3.0.txt`, `3rdparty/LICENSE-GPL-3.0.txt` |
+| [Mesa][mesa] llvmpipe, software OpenGL (`opengl32sw.dll`), as built by Qt             | 11.2.2         | MIT, BSL-1.0                   | 1999-2007 Brian Paul, 2013-2016 The Khronos Group Inc. (MIT); 2012 yohhoy (BSL-1.0, C11 threads emulation)                | `3rdparty/LICENSE-MIT-Mesa.txt`, `3rdparty/LICENSE-BSL-1.0.txt` |
+| [LLVM][llvm], inside `opengl32sw.dll`                                                 | as built by Qt | Apache-2.0 WITH LLVM-exception | LLVM Team                                                                                                                 | `3rdparty/LICENSE-Apache-2.0-LLVM.txt`                          |
+| [OpenCV][opencv]: `opencv_world`                                                      | 5.0.0          | Apache-2.0                     | Intel Corporation, Willow Garage, NVIDIA, AMD, OpenCV Foundation, Itseez, Xperience AI, OpenCV AI, and other contributors | `Apache-2.0.txt`                                                |
+| Microsoft Visual C++ runtime, `D3DCompiler_47.dll`                                    |                | Microsoft redistributable      | Microsoft Corporation                                                                                                     |                                                                 |
 
 Qt itself contains third-party code under further licenses, listed in [Licenses Used in Qt][qt-licenses].
 OpenCV contains third-party libraries under their own licenses (e.g. image codecs and Intel IPP). Their texts are in `3rdparty/opencv/`, copied from OpenCV's package.
@@ -53,6 +53,7 @@ OpenCV's FFmpeg video plugin (`opencv_videoio_ffmpeg*.dll`) contains FFmpeg unde
 Qt is linked dynamically. You may replace its DLLs next to `tengen.exe` with your own builds of the same libraries.
 Its source code: <https://download.qt.io/official_releases/qt/6.12/6.12.0/single/>.
 
+[go-rules]: https://en.wikipedia.org/wiki/Rules_of_Go
 [json]: https://github.com/nlohmann/json
 [logger]: https://github.com/OliverBenz/Logger
 [asio]: https://think-async.com/Asio/
