@@ -29,7 +29,8 @@ private:
 
 private:
 	// Unwrap the messages, so the handler only sees model data.
-	void handleNetworkEvent(const ServerSessionAssign& event);
+	void handleNetworkEvent(const ServerWelcome& event);
+	void handleNetworkEvent(const ServerReject& event);
 	void handleNetworkEvent(const ServerGameStart& event);
 	void handleNetworkEvent(const ServerGameDelta& event);
 	void handleNetworkEvent(const ServerGameEnd& event);
@@ -57,12 +58,18 @@ bool Client::Implementation::connect(const std::string& host, std::uint16_t port
 		return false;
 	}
 
-	// Start the blocking read loop only after a successful connect.
-	if (m_client.connect(host, port)) {
-		startReadLoop();
-		return true;
+	if (!m_client.connect(host, port)) {
+		return false;
 	}
-	return false;
+	m_sessionId = 0;
+
+	// The hello opens the session; the server ignores everything else until then.
+	if (!send(ClientHello{.protocol = PROTOCOL_VERSION})) {
+		return false;
+	}
+
+	startReadLoop();
+	return true;
 }
 
 void Client::Implementation::disconnect() {
@@ -123,11 +130,17 @@ void Client::Implementation::readLoop() {
 	}
 }
 
-void Client::Implementation::handleNetworkEvent(const ServerSessionAssign& event) {
-	if (m_sessionId != 0u) {
-		// TODO: Update to handle reconnect
+void Client::Implementation::handleNetworkEvent(const ServerWelcome& event) {
+	// The server rejects other versions, so a mismatch here means a broken server.
+	if (event.protocol != PROTOCOL_VERSION) {
+		m_client.disconnect();
+		return;
 	}
 	m_sessionId = event.sessionId;
+}
+
+void Client::Implementation::handleNetworkEvent(const ServerReject&) {
+	m_client.disconnect();
 }
 
 void Client::Implementation::handleNetworkEvent(const ServerGameStart& event) {

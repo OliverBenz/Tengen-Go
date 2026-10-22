@@ -34,7 +34,7 @@ public:
 	void stop();                       //!< Disconnect clients and stop the server. Safe to call multiple times.
 
 	bool send(ConnectionId connectionId, const Message& msg); //!< Send message to the client with given connectionId. Returns false if not found.
-	void reject(ConnectionId connectionId);                   //!< Reject the client with given connectionId (force close connection).
+	void disconnect(ConnectionId connectionId);               //!< Close the connection once its queued messages are sent. onDisconnect follows.
 
 private:
 	class Implementation;

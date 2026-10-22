@@ -26,7 +26,7 @@ public:
 	void stop();
 
 	bool send(ConnectionId connectionId, const Message& msg);
-	void reject(ConnectionId connectionId);
+	void disconnect(ConnectionId connectionId);
 
 private:
 	void doAccept();                                                                //!< Start async accept loop.
@@ -130,12 +130,12 @@ bool TcpServer::Implementation::send(ConnectionId connectionId, const Message& m
 	return false;
 }
 
-void TcpServer::Implementation::reject(ConnectionId connectionId) {
+void TcpServer::Implementation::disconnect(ConnectionId connectionId) {
 	std::lock_guard<std::mutex> lock(m_connectionsMutex);
 
+	// The connection erases itself from the map in onDisconnect.
 	if (m_connections.contains(connectionId)) {
-		m_connections.at(connectionId)->stop();
-		m_connections.erase(connectionId);
+		m_connections.at(connectionId)->close();
 	}
 }
 
@@ -219,8 +219,8 @@ bool TcpServer::send(ConnectionId connectionId, const Message& msg) {
 	return m_pimpl->send(connectionId, msg);
 }
 
-void TcpServer::reject(ConnectionId connectionId) {
-	m_pimpl->reject(connectionId);
+void TcpServer::disconnect(ConnectionId connectionId) {
+	m_pimpl->disconnect(connectionId);
 }
 
 

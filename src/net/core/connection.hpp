@@ -27,6 +27,7 @@ public:
 
 	void start();                  //!< Start connection: begins async read loop and triggers onConnect.
 	void stop();                   //!< Stop connection: closes the socket and cancels IO (best-effort).
+	void close();                  //!< Close the connection once the queued messages are sent. Triggers onDisconnect. Safe to call from any thread.
 	void send(const Message& msg); //!< Send message to client. Safe to call from any thread.
 
 	ConnectionId connectionId() const; //!< Get the identifier of this connection.
@@ -46,6 +47,7 @@ private:
 
 	std::deque<Message> m_writeQueue;
 	bool m_writeInProgress{false};
+	bool m_closing{false}; //!< close() was called: accept no more messages, disconnect once the queue is empty.
 };
 
 } // namespace tengen::network::core
