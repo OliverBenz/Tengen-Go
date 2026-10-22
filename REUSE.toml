@@ -1,6 +1,5 @@
-# License of every file in the repository, by path (https://reuse.software). Check with: reuse lint
-# Files carry no license headers. When several annotations match a file, the last one wins,
-# so the general rule comes first and the more specific ones after it.
+# License of every file in the repository, by path (https://reuse.software).
+# Check with: reuse lint
 version = 1
 
 SPDX-PackageName = "Tengen"
@@ -37,6 +36,12 @@ SPDX-License-Identifier = "Apache-2.0"
 path = "src/game/gui/resources/audio/**"
 SPDX-FileCopyrightText = "2024 Oliver Benz"
 SPDX-License-Identifier = "CC0-1.0"
+
+# Rules help page, from the Wikipedia article "Rules of Go".
+[[annotations]]
+path = "src/apps/tengen/resources/help/rules.html"
+SPDX-FileCopyrightText = "Wikipedia contributors"
+SPDX-License-Identifier = "CC-BY-SA-4.0"
 
 # Stones and board of the OGS "Anime" theme, from online-go/goban.
 [[annotations]]
