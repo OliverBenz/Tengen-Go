@@ -126,7 +126,7 @@ static std::string toMessage(const ClientChat& e) {
 	return j.dump();
 }
 
-std::string toMessage(ClientEvent event) {
+std::string toMessage(const ClientEvent& event) {
 	return std::visit([&](auto&& ev) { return toMessage(ev); }, event);
 }
 
@@ -244,7 +244,7 @@ static std::string toMessage(const ServerChat& e) {
 	j["message"]   = e.message;
 	return j.dump();
 }
-std::string toMessage(ServerEvent event) {
+std::string toMessage(const ServerEvent& event) {
 	return std::visit([&](auto&& ev) { return toMessage(ev); }, event);
 }
 

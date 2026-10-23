@@ -30,7 +30,8 @@ private:
 
 	Seat freeSeat() const;
 
-	bool queueToSend(const ServerQueueEvent& event); //!< Queue a Send or Broadcast while running. False if it's empty or the server isn't running.
+	bool queueToSend(ServerQueueEvent event); //!< Queue a Send or Broadcast while running. False if it's empty or the server isn't running.
+	bool queue(ServerQueueEvent event);       //!< Queue any event while running. Dropped once stopped: the server thread won't handle it.
 
 	// Server thread: the only one that reads the sessions.
 	void sendNow(SessionId sessionId, const core::Message& message);
@@ -39,7 +40,7 @@ private:
 private:
 	// Network callbacks (run on libNetwork threads) just enqueue events.
 	void onClientConnected(core::ConnectionId connectionId);
-	void onClientMessage(core::ConnectionId connectionId, const core::Message& payload);
+	void onClientMessage(core::ConnectionId connectionId, core::Message payload);
 	void onClientDisconnected(core::ConnectionId connectionId);
 
 private:
@@ -80,7 +81,7 @@ Server::Implementation::Implementation(std::uint16_t port) : m_network{port} {
 	// Wire up network callbacks but keep them thin: they only enqueue events.
 	core::TcpServer::Callbacks callbacks;
 	callbacks.onConnect    = [this](core::ConnectionId connectionId) { return onClientConnected(connectionId); };
-	callbacks.onMessage    = [this](core::ConnectionId connectionId, const core::Message& payload) { return onClientMessage(connectionId, payload); };
+	callbacks.onMessage    = [this](core::ConnectionId connectionId, core::Message payload) { return onClientMessage(connectionId, std::move(payload)); };
 	callbacks.onDisconnect = [this](core::ConnectionId connectionId) { onClientDisconnected(connectionId); };
 	m_network.connect(callbacks);
 }
@@ -139,15 +140,19 @@ bool Server::Implementation::broadcast(const ServerEvent& event) {
 	return queueToSend(ServerQueueEvent{.type = ServerQueueEventType::Broadcast, .payload = toMessage(event)});
 }
 
-bool Server::Implementation::queueToSend(const ServerQueueEvent& event) {
+bool Server::Implementation::queueToSend(ServerQueueEvent event) {
 	if (event.payload.empty()) {
 		return false;
 	}
+	return queue(std::move(event));
+}
+
+bool Server::Implementation::queue(ServerQueueEvent event) {
 	std::lock_guard<std::mutex> stateLock(m_stateMutex);
 	if (m_state != State::Running) {
 		return false;
 	}
-	m_eventQueue.Push(event);
+	m_eventQueue.Push(std::move(event));
 	return true;
 }
 
@@ -166,19 +171,19 @@ void Server::Implementation::broadcastNow(const core::Message& message) {
 }
 
 void Server::Implementation::onClientConnected(core::ConnectionId connectionId) {
-	m_eventQueue.Push(ServerQueueEvent{.type = ServerQueueEventType::ClientConnected, .connectionId = connectionId});
+	queue(ServerQueueEvent{.type = ServerQueueEventType::ClientConnected, .connectionId = connectionId});
 }
 
-void Server::Implementation::onClientMessage(core::ConnectionId connectionId, const core::Message& payload) {
-	m_eventQueue.Push(ServerQueueEvent{
+void Server::Implementation::onClientMessage(core::ConnectionId connectionId, core::Message payload) {
+	queue(ServerQueueEvent{
 	        .type         = ServerQueueEventType::ClientMessage,
 	        .connectionId = connectionId,
-	        .payload      = payload,
+	        .payload      = std::move(payload),
 	});
 }
 
 void Server::Implementation::onClientDisconnected(core::ConnectionId connectionId) {
-	m_eventQueue.Push(ServerQueueEvent{.type = ServerQueueEventType::ClientDisconnected, .connectionId = connectionId});
+	queue(ServerQueueEvent{.type = ServerQueueEventType::ClientDisconnected, .connectionId = connectionId});
 }
 
 void Server::Implementation::serverLoop() {

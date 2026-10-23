@@ -16,7 +16,7 @@ class TcpServer {
 public:
 	struct Callbacks {
 		std::function<void(const ConnectionId&)> onConnect;
-		std::function<void(const ConnectionId&, const Message&)> onMessage;
+		std::function<void(const ConnectionId&, Message)> onMessage; //!< Gets the message to keep.
 		std::function<void(const ConnectionId&)> onDisconnect;
 	};
 

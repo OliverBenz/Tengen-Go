@@ -185,8 +185,8 @@ void TcpClient::Implementation::onConnected(const std::shared_ptr<asio::ip::tcp:
 
 	m_connection = std::make_shared<Connection>(std::move(*socket), CONNECTION_ID, std::move(callbacks));
 	m_connection->start();
-	for (const auto& message: m_pending) {
-		m_connection->send(message);
+	for (auto& message: m_pending) {
+		m_connection->send(std::move(message));
 	}
 	m_pending.clear();
 	m_resolver.reset();
