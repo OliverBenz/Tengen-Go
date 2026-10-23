@@ -59,7 +59,6 @@ private:
 	void stopLocalServer(); //!< Stop the hosted server off the GUI thread: it waits for slow clients.
 
 private:
-	network::Client m_network;
 	EventHub m_eventHub;
 	SessionGameInfo m_gameInfo{};
 
@@ -70,6 +69,8 @@ private:
 	std::unique_ptr<GameServer> m_localServer;
 	std::thread m_serverStopper; //!< Stops the last hosted server.
 	mutable std::mutex m_stateMutex;
+
+	network::Client m_network; //!< Last, so it goes first and no callback reaches the members above.
 };
 
 } // namespace tengen::app

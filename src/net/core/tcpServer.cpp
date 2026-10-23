@@ -191,9 +191,9 @@ bool TcpServer::Implementation::createConnection(asio::ip::tcp::socket socket, C
 			m_callbacks.onConnect(connection.connectionId());
 		}
 	};
-	callbacks.onMessage = [this](Connection& connection, const Message& message) {
+	callbacks.onMessage = [this](Connection& connection, Message message) {
 		if (m_callbacks.onMessage) {
-			m_callbacks.onMessage(connection.connectionId(), message);
+			m_callbacks.onMessage(connection.connectionId(), std::move(message));
 		}
 	};
 	callbacks.onDisconnect = [this](Connection& connection) {

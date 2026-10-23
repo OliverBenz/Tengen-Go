@@ -36,7 +36,7 @@ void Connection::stop() {
 	}
 }
 
-void Connection::send(const Message& msg) {
+void Connection::send(Message msg) {
 	if (!m_running.load() || msg.size() > MAX_PAYLOAD_BYTES) {
 		return;
 	}
@@ -44,12 +44,12 @@ void Connection::send(const Message& msg) {
 	// Post into the strand so write queue access stays serialized.
 	// Capture shared_ptr to keep this Connection alive until the queued work runs.
 	auto self = shared_from_this();
-	asio::post(m_strand, [self, msg] {
+	asio::post(m_strand, [self, msg = std::move(msg)]() mutable {
 		if (self->m_closing) {
 			return;
 		}
 		bool idle = self->m_writeQueue.empty();
-		self->m_writeQueue.push_back(msg);
+		self->m_writeQueue.push_back(std::move(msg));
 		if (idle && !self->m_writeInProgress) {
 			self->startWrite();
 		}
@@ -140,7 +140,7 @@ void Connection::startRead() {
 			                                  }
 
 			                                  if (self->m_callbacks.onMessage) {
-				                                  self->m_callbacks.onMessage(*self, *payload);
+				                                  self->m_callbacks.onMessage(*self, std::move(*payload));
 			                                  }
 			                                  self->startRead();
 		                                  }));

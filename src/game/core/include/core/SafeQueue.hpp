@@ -13,6 +13,7 @@ class SafeQueue {
 public:
 	//! Push element onto the queue.
 	void Push(const Entry& value);
+	void Push(Entry&& value);
 
 	//! Thread blocks here until there is an element to receive.
 	Entry Pop();
@@ -32,6 +33,15 @@ void SafeQueue<Entry>::Push(const Entry& value) {
 	{
 		std::lock_guard<std::mutex> lock(m_mutex);
 		m_queue.push_back(value);
+	}
+	m_condition.notify_one();
+}
+
+template <class Entry>
+void SafeQueue<Entry>::Push(Entry&& value) {
+	{
+		std::lock_guard<std::mutex> lock(m_mutex);
+		m_queue.push_back(std::move(value));
 	}
 	m_condition.notify_one();
 }

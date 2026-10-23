@@ -68,8 +68,8 @@ using ClientEvent = std::variant<ClientHello, ClientPutStone, ClientPass, Client
 using ServerEvent = std::variant<ServerWelcome, ServerReject, ServerGameStart, ServerGameDelta, ServerGameEnd, ServerChat>;
 
 // Serialize typed events to JSON messages.
-std::string toMessage(ClientEvent event);
-std::string toMessage(ServerEvent event);
+std::string toMessage(const ClientEvent& event);
+std::string toMessage(const ServerEvent& event);
 
 // Parse JSON messages into typed events. Returns empty on invalid input.
 std::optional<ClientEvent> fromClientMessage(const std::string& message);
