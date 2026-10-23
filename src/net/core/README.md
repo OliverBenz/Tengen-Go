@@ -23,38 +23,9 @@ This module is the low-level transport layer for the project. It is intentionall
 - `Connection` read/write handlers run on that IO thread and are serialized via the strand.
 - Callbacks (`onConnect`, `onMessage`, `onDisconnect`) are invoked from the IO thread, so your handler should be fast or offload work. The one exception is below.
 - No `TcpClient` call waits on the network, and all are safe from any thread. `connect()` and `disconnect()` only wait for a callback that is running. `disconnect()` then reports `onDisconnect(Requested)` on its own thread, still one callback at a time; after it returns, no callback of that connection runs.
+- `TcpServer::stop()` lets every connection send what is queued, then closes it. Clients that don't take their messages within a second are cut off.
 
-### Client side
-
-`TcpClient` mirrors `TcpServer`: it owns the IO thread and one `Connection` at a time, and reports back through callbacks. Each layer only talks to its neighbour: calls go down, callbacks come up. No user of `TcpClient` deals with threads or sockets.
-
-```mermaid
-flowchart LR
-    S["NetworkSession<br/>(runtime)"] -- "connect · send · disconnect" --> C["network::Client<br/>(protocol: JSON, handshake)"]
-    C -- "IClientHandler" --> S
-    C -- "connect · send · disconnect" --> T["core::TcpClient<br/>(IO thread + Connection)"]
-    T -- "onMessage · onDisconnect" --> C
-```
-
-```mermaid
-sequenceDiagram
-    participant S as NetworkSession
-    participant C as network::Client
-    participant T as core::TcpClient
-    S->>C: connect(host)
-    C->>T: connect(host, port, hello)
-    Note right of T: resolves and connects on its IO thread, the hello goes out first
-    T-->>C: onMessage(welcome), on the IO thread
-    Note over C: keeps the session id, no handler call
-    T-->>C: onMessage(start · delta · end · chat)
-    C-->>S: handler calls, on the IO thread
-    S->>C: disconnect()
-    C->>T: disconnect()
-    Note right of T: sends what is queued, then closes
-    T-->>C: onDisconnect(Requested), on the caller's thread
-    C-->>S: onDisconnected(), before disconnect() returns
-    Note over S,T: A failed connect or the server closing: T calls onDisconnect, C passes it on as onDisconnected.
-```
+How `network::Client` and `network::Server` build on these classes is described in [`../network/README.md`](../network/README.md).
 
 ## Message framing
 
