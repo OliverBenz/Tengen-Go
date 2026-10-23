@@ -13,7 +13,8 @@
 #include <unordered_map>
 #include <utility>
 
-namespace tengen::network::core {
+namespace tengen {
+namespace network::core {
 
 static ConnectionId CONN_ID = 1u;
 
@@ -224,4 +225,5 @@ void TcpServer::disconnect(ConnectionId connectionId) {
 }
 
 
-} // namespace tengen::network::core
+} // namespace network::core
+} // namespace tengen

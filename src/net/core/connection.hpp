@@ -9,10 +9,11 @@
 #include <functional>
 #include <memory>
 
-namespace tengen::network::core {
+namespace tengen {
+namespace network::core {
 
-//! Transportation primitive. Handles read/write from a single client connection.
-//! \note Internals are async and run on the server IO thread.
+//! Transportation primitive. Handles read/write of a single connection.
+//! \note Internals are async and run on the IO thread of the TcpServer or TcpClient that owns it.
 //!       We use shared_from_this() so any in-flight async op keeps the Connection alive.
 class Connection : public std::enable_shared_from_this<Connection> {
 public:
@@ -28,7 +29,7 @@ public:
 	void start();                  //!< Start connection: begins async read loop and triggers onConnect.
 	void stop();                   //!< Stop connection: closes the socket and cancels IO (best-effort).
 	void close();                  //!< Close the connection once the queued messages are sent. Triggers onDisconnect. Safe to call from any thread.
-	void send(const Message& msg); //!< Send message to client. Safe to call from any thread.
+	void send(const Message& msg); //!< Send a message to the other side. Safe to call from any thread.
 
 	ConnectionId connectionId() const; //!< Get the identifier of this connection.
 
@@ -38,11 +39,11 @@ private:
 	void doDisconnect(); //!< Internal cleanup.
 
 private:
-	std::atomic<bool> m_running{false};           //!< Connection (and io thread) running.
-	asio::ip::tcp::socket m_socket;               //!< Client socket.
+	std::atomic<bool> m_running{false};           //!< Connection running.
+	asio::ip::tcp::socket m_socket;               //!< The connected socket.
 	asio::strand<asio::any_io_executor> m_strand; //!< IO with different threads.
 
-	ConnectionId m_connectionId; //!< Unique identifier for user session.
+	ConnectionId m_connectionId; //!< Identifies the connection to its owner.
 	Callbacks m_callbacks;       //!< Used to signal to the parent.
 
 	std::deque<Message> m_writeQueue;
@@ -50,4 +51,5 @@ private:
 	bool m_closing{false}; //!< close() was called: accept no more messages, disconnect once the queue is empty.
 };
 
-} // namespace tengen::network::core
+} // namespace network::core
+} // namespace tengen
