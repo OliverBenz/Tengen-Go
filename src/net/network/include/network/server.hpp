@@ -11,6 +11,7 @@ namespace tengen::network {
 //! Callback interface invoked on the server's processing thread.
 //! The Server resolves sessions and seats itself: only seated players reach the handler, named by their colour.
 //! \note Keep handlers lightweight.
+//! \note Never call Server::stop() from a handler: it joins the thread the handler runs on.
 class IServerHandler {
 public:
 	virtual ~IServerHandler()                                      = default;
@@ -33,14 +34,14 @@ public:
 	Server(Server&&)                 = delete;
 	Server& operator=(Server&&)      = delete;
 
-	void start();
-	void stop();
+	void start(); //!< Once: a stopped server can't start again.
+	void stop();  //!< Send what is queued, then disconnect all clients. Waits up to a second for slow clients. Safe to call multiple times, not from a handler.
 
 	bool registerHandler(IServerHandler* handler); //!< Register a single handler. Returns false if already registered.
 	void setFirstSeat(Seat seat);                  //!< Seat the first player to connect takes; the second takes the other. Black unless set. Call before start().
 
-	bool send(SessionId sessionId, const ServerEvent& event); //!< Send event to client with given sessionId. Returns false on failure.
-	bool broadcast(const ServerEvent& event);                 //!< Send event to all connected clients. Returns true if any send succeeded.
+	bool send(SessionId sessionId, const ServerEvent& event); //!< Queue an event for one client. Any thread. False if the server isn't running or the event can't be serialized; an unknown session is dropped silently.
+	bool broadcast(const ServerEvent& event);                 //!< Queue an event for all welcomed clients. Any thread. False if the server isn't running or the event can't be serialized.
 
 private:
 	class Implementation;

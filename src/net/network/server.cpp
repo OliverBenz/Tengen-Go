@@ -5,9 +5,10 @@
 #include "serverEvents.hpp"
 #include "sessionManager.hpp"
 
-#include <atomic>
 #include <cassert>
+#include <mutex>
 #include <thread>
+#include <utility>
 
 namespace tengen::network {
 
@@ -20,14 +21,20 @@ public:
 	bool registerHandler(IServerHandler* handler);
 	void setFirstSeat(Seat seat);
 
-	bool send(SessionId sessionId, const ServerEvent& event); //!< Send event to client with given sessionId.
-	bool broadcast(const ServerEvent& event);                 //!< Send event to all connected clients.
+	bool send(SessionId sessionId, const ServerEvent& event); //!< Queue an event for one client. Any thread.
+	bool broadcast(const ServerEvent& event);                 //!< Queue an event for all welcomed clients. Any thread.
 
 private:
 	void serverLoop();                                //!< Server thread: drain queue and act.
 	void processEvent(const ServerQueueEvent& event); //!< Server loop calls this. Reads event type and distributes.
 
 	Seat freeSeat() const;
+
+	bool queueToSend(const ServerQueueEvent& event); //!< Queue a Send or Broadcast while running. False if it's empty or the server isn't running.
+
+	// Server thread: the only one that reads the sessions.
+	void sendNow(SessionId sessionId, const core::Message& message);
+	void broadcastNow(const core::Message& message);
 
 private:
 	// Network callbacks (run on libNetwork threads) just enqueue events.
@@ -40,7 +47,6 @@ private:
 	void processClientMessage(const ServerQueueEvent& event);         //!< Translate payload to network event and handle.
 	void processClientConnect(const ServerQueueEvent& event);         //!< Creates session key.
 	void processClientDisconnect(const ServerQueueEvent& event);      //!< Destroys session key.
-	void processShutdown(const ServerQueueEvent& event);              //!< Shutdown server.
 	void processHello(SessionId sessionId, const ClientHello& hello); //!< Welcome the client with a seat, or reject it.
 
 	// Hand a player's message to the handler.
@@ -51,7 +57,15 @@ private:
 	void handleNetworkEvent(Player player, const ClientChat& event);
 
 private:
-	std::atomic<bool> m_isRunning{false};
+	enum class State : std::uint8_t {
+		Created,
+		Running,
+		Stopped, //!< For good: a stopped server can't start again.
+	};
+
+	std::mutex m_lifecycleMutex; //!< start() and stop() run one at a time, so stop() always finds the threads start() made.
+	std::mutex m_stateMutex;     //!< Guards the state, so nothing is queued behind the shutdown.
+	State m_state{State::Created};
 	std::thread m_serverThread;
 
 	SessionManager m_sessionManager;
@@ -72,8 +86,14 @@ Server::Implementation::Implementation(std::uint16_t port) : m_network{port} {
 }
 
 void Server::Implementation::start() {
-	if (m_isRunning.exchange(true)) {
-		return;
+	std::lock_guard<std::mutex> lifecycleLock(m_lifecycleMutex);
+	{
+		std::lock_guard<std::mutex> stateLock(m_stateMutex);
+		if (m_state != State::Created) {
+			assert(m_state == State::Running && "A stopped server can't start again.");
+			return;
+		}
+		m_state = State::Running;
 	}
 
 	// Network runs on its own IO thread; serverLoop drains the queue on its own thread.
@@ -82,21 +102,20 @@ void Server::Implementation::start() {
 }
 
 void Server::Implementation::stop() {
-	// Wake serverLoop and stop network.
-	if (m_isRunning.exchange(false)) {
+	std::lock_guard<std::mutex> lifecycleLock(m_lifecycleMutex);
+	assert(std::this_thread::get_id() != m_serverThread.get_id()); // A handler can't stop its server.
+	{
+		// Under the state lock: what send() and broadcast() queued before goes out, nothing after.
+		std::lock_guard<std::mutex> stateLock(m_stateMutex);
+		const auto state = std::exchange(m_state, State::Stopped);
+		if (state != State::Running) {
+			return;
+		}
 		m_eventQueue.Push(ServerQueueEvent{.type = ServerQueueEventType::Shutdown});
 	}
-	m_network.stop();
 
-	try {
-		m_eventQueue.Release();
-	} catch (...) {
-		// Release never throws, but keep intent explicit.
-	}
-
-	if (m_serverThread.joinable()) {
-		m_serverThread.join();
-	}
+	m_serverThread.join(); // Handles every event before the shutdown, so the messages reach the connections.
+	m_network.stop();      // The connections send them, then close.
 }
 
 bool Server::Implementation::registerHandler(IServerHandler* handler) {
@@ -113,34 +132,37 @@ void Server::Implementation::setFirstSeat(const Seat seat) {
 }
 
 bool Server::Implementation::send(SessionId sessionId, const ServerEvent& event) {
-	const auto connectionId = m_sessionManager.getConnectionId(sessionId);
-	if (!connectionId) {
-		return false;
-	}
-	const auto message = toMessage(event);
-	if (message.empty()) {
-		return false;
-	}
-	return m_network.send(connectionId, message);
+	return queueToSend(ServerQueueEvent{.type = ServerQueueEventType::Send, .sessionId = sessionId, .payload = toMessage(event)});
 }
 
 bool Server::Implementation::broadcast(const ServerEvent& event) {
-	const auto message = toMessage(event);
-	if (message.empty()) {
+	return queueToSend(ServerQueueEvent{.type = ServerQueueEventType::Broadcast, .payload = toMessage(event)});
+}
+
+bool Server::Implementation::queueToSend(const ServerQueueEvent& event) {
+	if (event.payload.empty()) {
 		return false;
 	}
-	bool anySent = false;
+	std::lock_guard<std::mutex> stateLock(m_stateMutex);
+	if (m_state != State::Running) {
+		return false;
+	}
+	m_eventQueue.Push(event);
+	return true;
+}
 
+void Server::Implementation::sendNow(const SessionId sessionId, const core::Message& message) {
+	if (const auto connectionId = m_sessionManager.getConnectionId(sessionId)) {
+		m_network.send(connectionId, message);
+	}
+}
+
+void Server::Implementation::broadcastNow(const core::Message& message) {
 	m_sessionManager.forEachSession([&](const SessionContext& context) {
-		if (!context.isActive || context.seat == Seat::None) {
-			return;
-		}
-		if (m_network.send(context.connectionId, message)) {
-			anySent = true;
+		if (context.isActive && context.seat != Seat::None) {
+			m_network.send(context.connectionId, message);
 		}
 	});
-
-	return anySent;
 }
 
 void Server::Implementation::onClientConnected(core::ConnectionId connectionId) {
@@ -160,15 +182,12 @@ void Server::Implementation::onClientDisconnected(core::ConnectionId connectionI
 }
 
 void Server::Implementation::serverLoop() {
-	while (m_isRunning) {
+	// stop() ends the loop with the shutdown event.
+	for (auto event = m_eventQueue.Pop(); event.type != ServerQueueEventType::Shutdown; event = m_eventQueue.Pop()) {
+		// The server thread must survive a throwing handler. The event is lost, the next one goes on.
 		try {
-			const auto event = m_eventQueue.Pop();
 			processEvent(event);
-		} catch (const std::exception&) {
-			if (!m_isRunning) {
-				break;
-			}
-		}
+		} catch (...) {}
 	}
 }
 
@@ -183,9 +202,14 @@ void Server::Implementation::processEvent(const ServerQueueEvent& event) {
 	case ServerQueueEventType::ClientMessage:
 		processClientMessage(event);
 		break;
-	case ServerQueueEventType::Shutdown:
-		processShutdown(event);
+	case ServerQueueEventType::Send:
+		sendNow(event.sessionId, event.payload);
 		break;
+	case ServerQueueEventType::Broadcast:
+		broadcastNow(event.payload);
+		break;
+	case ServerQueueEventType::Shutdown:
+		break; // serverLoop ends on it.
 	}
 }
 
@@ -229,14 +253,15 @@ void Server::Implementation::processClientMessage(const ServerQueueEvent& event)
 
 void Server::Implementation::processHello(const SessionId sessionId, const ClientHello& hello) {
 	if (hello.protocol != PROTOCOL_VERSION) {
-		send(sessionId, ServerReject{.reason = RejectReason::ProtocolMismatch});
+		// Sent right away, so it goes out before the disconnect.
+		sendNow(sessionId, toMessage(ServerReject{.reason = RejectReason::ProtocolMismatch}));
 		m_network.disconnect(m_sessionManager.getConnectionId(sessionId));
 		return;
 	}
 
 	const auto seat = freeSeat();
 	m_sessionManager.setSeat(sessionId, seat);
-	send(sessionId, ServerWelcome{.protocol = PROTOCOL_VERSION, .sessionId = sessionId, .seat = seat});
+	sendNow(sessionId, toMessage(ServerWelcome{.protocol = PROTOCOL_VERSION, .sessionId = sessionId, .seat = seat}));
 
 	// Observers are no player; the handler only hears about players.
 	const auto player = toPlayer(seat);
@@ -278,10 +303,6 @@ void Server::Implementation::processClientDisconnect(const ServerQueueEvent& eve
 	if (m_handler && player) {
 		m_handler->onPlayerLeft(*player); // Server might want to pause timer.
 	}
-}
-
-void Server::Implementation::processShutdown(const ServerQueueEvent&) {
-	m_isRunning = false;
 }
 
 Seat Server::Implementation::freeSeat() const {
