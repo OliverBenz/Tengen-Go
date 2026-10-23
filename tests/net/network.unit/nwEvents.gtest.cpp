@@ -210,6 +210,28 @@ TEST(GameNetMessages, ServerFromMessageInvalid) {
 	rejects("not-json");
 }
 
+//! A number too big for its field is rejected instead of cut to its lower bits (2^32 + 1 would become 1).
+TEST(GameNetMessages, RejectsNumbersThatDontFit) {
+	const auto clientRejects = [](const char* message) { EXPECT_FALSE(network::fromClientMessage(message).has_value()) << message; };
+	const auto serverRejects = [](const char* message) { EXPECT_FALSE(network::fromServerMessage(message).has_value()) << message; };
+
+	// The largest value still fits.
+	const auto hello = network::fromClientMessage(R"({"type":"hello","protocol":4294967295})");
+	ASSERT_TRUE(hello.has_value());
+	EXPECT_EQ(std::get<network::ClientHello>(*hello).protocol, 4294967295u);
+
+	clientRejects(R"({"type":"hello","protocol":4294967297})");
+	clientRejects(R"({"type":"put","x":4294967296,"y":0})");
+	clientRejects(R"({"type":"put","x":0,"y":4294967297})");
+
+	serverRejects(R"({"type":"welcome","protocol":4294967297,"sessionId":1,"seat":"black"})");
+	serverRejects(R"({"type":"welcome","protocol":1,"sessionId":4294967296,"seat":"black"})");
+	serverRejects(R"({"type":"delta","moveId":4294967297,"action":"pass","player":"white","next":"black"})");
+	serverRejects(R"({"type":"delta","moveId":1,"action":"place","player":"black","next":"white","x":4294967296,"y":2})");
+	serverRejects(R"({"type":"delta","moveId":1,"action":"place","player":"black","next":"white","x":1,"y":2,"captures":[[4294967296,0]]})");
+	serverRejects(R"({"type":"chat","player":"white","messageId":4294967297,"message":"hi"})");
+}
+
 //! A board the game cannot be played on never reaches the session.
 //! TODO: Disabled until the start message checks isSupportedBoardSize().
 TEST(GameNetMessages, DISABLED_ServerRejectsUnsupportedBoardSize) {

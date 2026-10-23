@@ -7,8 +7,7 @@
 #include <memory>
 
 namespace tengen {
-namespace network {
-namespace core {
+namespace network::core {
 
 //! Connection manager that runs an async accept loop on a dedicated IO thread.
 //! \note    This is a thin wrapper: all heavy lifting is in Connection (async read/write).
@@ -41,6 +40,5 @@ private:
 	std::unique_ptr<Implementation> m_pimpl; //!< Pimpl to hide asio stuff in public interfaces.
 };
 
-} // namespace core
-} // namespace network
+} // namespace network::core
 } // namespace tengen

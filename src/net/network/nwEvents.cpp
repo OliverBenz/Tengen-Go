@@ -2,6 +2,8 @@
 
 #include <array>
 #include <cassert>
+#include <cstdint>
+#include <limits>
 #include <nlohmann/json.hpp>
 
 namespace tengen::network {
@@ -71,6 +73,29 @@ static std::optional<E> fromName(const std::array<WireName<E>, N>& names, const 
 	return std::nullopt;
 }
 
+//! The value as T. Nullopt unless it is an unsigned number that fits: get<T>() alone cuts off the upper bits (2^32 + 1 becomes 1).
+template <typename T>
+static std::optional<T> readUnsigned(const json& value) {
+	if (!value.is_number_unsigned()) {
+		return std::nullopt;
+	}
+	const auto number = value.get<std::uint64_t>();
+	if (number > std::numeric_limits<T>::max()) {
+		return std::nullopt;
+	}
+	return static_cast<T>(number);
+}
+
+//! The field 'key' of j as T. Nullopt if it is missing, or not an unsigned number that fits.
+template <typename T>
+static std::optional<T> readUnsigned(const json& j, const char* key) {
+	const auto it = j.find(key);
+	if (it == j.end()) {
+		return std::nullopt;
+	}
+	return readUnsigned<T>(*it);
+}
+
 static std::string toMessage(const ClientHello& e) {
 	json j;
 	j["type"]     = "hello";
@@ -115,16 +140,19 @@ std::optional<ClientEvent> fromClientMessage(const std::string& message) {
 	}
 	const auto type = j["type"].get<std::string>();
 	if (type == "hello") {
-		if (!j.contains("protocol") || !j["protocol"].is_number_unsigned()) {
+		const auto protocol = readUnsigned<ProtocolVersion>(j, "protocol");
+		if (!protocol) {
 			return {};
 		}
-		return ClientHello{.protocol = j["protocol"].get<ProtocolVersion>()};
+		return ClientHello{.protocol = *protocol};
 	}
 	if (type == "put") {
-		if (!j.contains("x") || !j.contains("y") || !j["x"].is_number_unsigned() || !j["y"].is_number_unsigned()) {
+		const auto x = readUnsigned<unsigned>(j, "x");
+		const auto y = readUnsigned<unsigned>(j, "y");
+		if (!x || !y) {
 			return {};
 		}
-		return ClientPutStone{.c = {j["x"].get<unsigned>(), j["y"].get<unsigned>()}};
+		return ClientPutStone{.c = {*x, *y}};
 	}
 	if (type == "pass") {
 		return ClientPass{};
@@ -221,14 +249,16 @@ std::string toMessage(ServerEvent event) {
 }
 
 static std::optional<ServerEvent> fromServerWelcomeMessage(const json& j) {
-	if (!j.contains("protocol") || !j["protocol"].is_number_unsigned() || !j.contains("sessionId") || !j["sessionId"].is_number_unsigned() || !j.contains("seat") || !j["seat"].is_string()) {
+	if (!j.contains("seat") || !j["seat"].is_string()) {
 		return {};
 	}
-	const auto seat = fromName(SEAT_NAMES, j["seat"].get_ref<const std::string&>());
-	if (!seat) {
+	const auto protocol  = readUnsigned<ProtocolVersion>(j, "protocol");
+	const auto sessionId = readUnsigned<SessionId>(j, "sessionId");
+	const auto seat      = fromName(SEAT_NAMES, j["seat"].get_ref<const std::string&>());
+	if (!protocol || !sessionId || !seat) {
 		return {};
 	}
-	return ServerWelcome{.protocol = j["protocol"].get<ProtocolVersion>(), .sessionId = j["sessionId"].get<SessionId>(), .seat = *seat};
+	return ServerWelcome{.protocol = *protocol, .sessionId = *sessionId, .seat = *seat};
 }
 
 static std::optional<ServerEvent> fromServerRejectMessage(const json& j) {
@@ -243,7 +273,8 @@ static std::optional<ServerEvent> fromServerRejectMessage(const json& j) {
 }
 
 static std::optional<ServerEvent> fromServerStartMessage(const json& j) {
-	if (!j.contains("boardSize") || !j["boardSize"].is_number_unsigned() || !j.contains("rules") || !j["rules"].is_object()) {
+	const auto boardSize = readUnsigned<std::size_t>(j, "boardSize");
+	if (!boardSize || !j.contains("rules") || !j["rules"].is_object()) {
 		return {};
 	}
 
@@ -259,25 +290,26 @@ static std::optional<ServerEvent> fromServerStartMessage(const json& j) {
 	}
 
 	return ServerGameStart{GameConfig{
-	        .boardSize = j["boardSize"].get<std::size_t>(),
+	        .boardSize = *boardSize,
 	        .rules     = {.scoringMethod = *scoring, .koRule = *ko, .komi = rules["komi"].get<float>(), .suicideLegal = rules["suicide"].get<bool>()},
 	}};
 }
 
 static std::optional<ServerEvent> fromServerDeltaMessage(const json& j) {
-	if (!j.contains("moveId") || !j["moveId"].is_number_unsigned() || !j.contains("action") || !j["action"].is_string() || !j.contains("player") || !j["player"].is_string() || !j.contains("next") || !j["next"].is_string()) {
+	if (!j.contains("action") || !j["action"].is_string() || !j.contains("player") || !j["player"].is_string() || !j.contains("next") || !j["next"].is_string()) {
 		return {};
 	}
 
+	const auto moveId = readUnsigned<unsigned>(j, "moveId");
 	const auto action = fromName(ACTION_NAMES, j["action"].get_ref<const std::string&>());
 	const auto player = fromName(PLAYER_NAMES, j["player"].get_ref<const std::string&>());
 	const auto next   = fromName(PLAYER_NAMES, j["next"].get_ref<const std::string&>());
-	if (!action || !player || !next) {
+	if (!moveId || !action || !player || !next) {
 		return {};
 	}
 
 	GameDelta delta{
-	        .moveId     = j["moveId"].get<unsigned>(),
+	        .moveId     = *moveId,
 	        .action     = *action,
 	        .player     = *player,
 	        .coord      = std::nullopt,
@@ -286,19 +318,26 @@ static std::optional<ServerEvent> fromServerDeltaMessage(const json& j) {
 	};
 
 	if (delta.action == GameAction::Place) {
-		if (!j.contains("x") || !j.contains("y") || !j["x"].is_number_unsigned() || !j["y"].is_number_unsigned()) {
+		const auto x = readUnsigned<unsigned>(j, "x");
+		const auto y = readUnsigned<unsigned>(j, "y");
+		if (!x || !y) {
 			return {};
 		}
-		delta.coord = Coord{.x = j["x"].get<unsigned>(), .y = j["y"].get<unsigned>()};
+		delta.coord = Coord{.x = *x, .y = *y};
 		if (j.contains("captures")) {
 			if (!j["captures"].is_array()) {
 				return {};
 			}
 			for (const auto& cap: j["captures"]) {
-				if (!cap.is_array() || cap.size() != 2 || !cap[0].is_number_unsigned() || !cap[1].is_number_unsigned()) {
+				if (!cap.is_array() || cap.size() != 2) {
 					return {};
 				}
-				delta.captures.push_back(Coord{.x = cap[0].get<unsigned>(), .y = cap[1].get<unsigned>()});
+				const auto capX = readUnsigned<unsigned>(cap[0]);
+				const auto capY = readUnsigned<unsigned>(cap[1]);
+				if (!capX || !capY) {
+					return {};
+				}
+				delta.captures.push_back(Coord{.x = *capX, .y = *capY});
 			}
 		}
 	} else {
@@ -355,17 +394,17 @@ std::optional<ServerEvent> fromServerMessage(const std::string& message) {
 		return fromServerEndMessage(j);
 	}
 	if (type == "chat") {
-		if (!j.contains("player") || !j["player"].is_string() || !j.contains("messageId") || !j["messageId"].is_number_unsigned() || !j.contains("message") || !j["message"].is_string()) {
+		if (!j.contains("player") || !j["player"].is_string() || !j.contains("message") || !j["message"].is_string()) {
 			return {};
 		}
-		const auto player = fromName(PLAYER_NAMES, j["player"].get_ref<const std::string&>());
-		if (!player) {
+		const auto player    = fromName(PLAYER_NAMES, j["player"].get_ref<const std::string&>());
+		const auto messageId = readUnsigned<unsigned>(j, "messageId");
+		if (!player || !messageId) {
 			return {};
 		}
 
-		const auto chatMessageId = j["messageId"].get<unsigned>();
-		const auto chatMessage   = j["message"].get<std::string>();
-		return ServerChat{*player, chatMessageId, std::move(chatMessage)};
+		const auto chatMessage = j["message"].get<std::string>();
+		return ServerChat{*player, *messageId, std::move(chatMessage)};
 	}
 	return {};
 }

@@ -3,14 +3,39 @@
 #include "network/core/tcpClient.hpp"
 
 #include <atomic>
-#include <cstring>
-#include <thread>
+#include <cstdint>
 
 namespace tengen::network {
 
+namespace {
+
+//! Why a connection ended. Not passed to the handler yet.
+enum class DisconnectReason : std::uint8_t {
+	ClosedLocally,  //!< disconnect() was called.
+	ConnectFailed,  //!< The server could not be reached.
+	ConnectionLost, //!< The server closed the connection, or it broke.
+	Rejected,       //!< The server refused the hello.
+	ProtocolError,  //!< The server sent something it shouldn't.
+	Error,          //!< Handling a message threw.
+};
+
+DisconnectReason toReason(const core::DisconnectReason reason) {
+	switch (reason) {
+	case core::DisconnectReason::Requested:
+		return DisconnectReason::ClosedLocally;
+	case core::DisconnectReason::ConnectFailed:
+		return DisconnectReason::ConnectFailed;
+	case core::DisconnectReason::ConnectionLost:
+		return DisconnectReason::ConnectionLost;
+	}
+	return DisconnectReason::ConnectionLost;
+}
+
+} // namespace
+
 class Client::Implementation {
 public:
-	Implementation() = default;
+	Implementation();
 
 	bool registerHandler(IClientHandler* handler);
 
@@ -23,9 +48,11 @@ public:
 	SessionId sessionId() const;
 
 private:
-	void startReadLoop(); //!< Starts background read thread for blocking reads.
-	void stopReadLoop();
-	void readLoop();
+	// TcpClient callbacks, one at a time.
+	void onMessage(const core::Message& message);
+	void onDisconnect(core::DisconnectReason reason); //!< The only place that tells the handler a connection ended.
+
+	void close(DisconnectReason reason); //!< End the connection from inside a callback.
 
 private:
 	// Unwrap the messages, so the handler only sees model data.
@@ -37,13 +64,19 @@ private:
 	void handleNetworkEvent(const ServerChat& event);
 
 private:
-	core::TcpClient m_client;
-	std::atomic<bool> m_running{false}; //!< Read thread running.
-	std::thread m_readThread;
-
 	IClientHandler* m_handler{nullptr};
-	SessionId m_sessionId{0};
+	std::atomic<SessionId> m_sessionId{0};                           //!< Set in callbacks, read by the owner.
+	DisconnectReason m_closeReason{DisconnectReason::ClosedLocally}; //!< Hands the reason from close() to onDisconnect().
+
+	core::TcpClient m_client; //!< Last, so it goes first and no callback reaches the members above.
 };
+
+Client::Implementation::Implementation()
+    : m_client(core::TcpClient::Callbacks{
+              .onMessage    = [this](const core::Message& message) { onMessage(message); },
+              .onDisconnect = [this](const core::DisconnectReason reason) { onDisconnect(reason); },
+      }) {
+}
 
 bool Client::Implementation::registerHandler(IClientHandler* handler) {
 	if (m_handler) {
@@ -54,30 +87,16 @@ bool Client::Implementation::registerHandler(IClientHandler* handler) {
 }
 
 bool Client::Implementation::connect(const std::string& host, std::uint16_t port) {
-	if (m_client.isConnected()) {
-		return false;
-	}
-
-	if (!m_client.connect(host, port)) {
-		return false;
-	}
-	m_sessionId = 0;
-
-	// The hello opens the session; the server ignores everything else until then.
-	if (!send(ClientHello{.protocol = PROTOCOL_VERSION})) {
-		return false;
-	}
-
-	startReadLoop();
-	return true;
+	// The server ignores everything before the hello.
+	return m_client.connect(host, port, toMessage(ClientHello{.protocol = PROTOCOL_VERSION}));
 }
 
 void Client::Implementation::disconnect() {
 	m_client.disconnect();
-	stopReadLoop();
 }
+
 bool Client::Implementation::isConnected() const {
-	return m_client.isConnected();
+	return m_client.isConnected() && m_sessionId != 0;
 }
 
 bool Client::Implementation::send(const ClientEvent& event) {
@@ -88,59 +107,49 @@ SessionId Client::Implementation::sessionId() const {
 	return m_sessionId;
 }
 
-void Client::Implementation::startReadLoop() {
-	if (m_running.exchange(true)) {
-		return;
-	}
-
-	m_readThread = std::thread([this] { readLoop(); });
-}
-
-void Client::Implementation::stopReadLoop() {
-	if (!m_running.exchange(false)) {
-		return;
-	}
-
-	if (m_readThread.joinable() && m_readThread.get_id() != std::this_thread::get_id()) {
-		m_readThread.join();
-	} else if (m_readThread.joinable()) {
-		m_readThread.detach();
-	}
-}
-
-void Client::Implementation::readLoop() {
-	while (m_running) {
-		if (!m_client.isConnected()) {
-			break;
+void Client::Implementation::onMessage(const core::Message& message) {
+	// A throwing handler must not take the IO thread down.
+	try {
+		const auto event = fromServerMessage(message);
+		if (!event) {
+			close(DisconnectReason::ProtocolError); // Same version on both sides, so the server is broken.
+			return;
 		}
+		std::visit([&](const auto& e) { handleNetworkEvent(e); }, *event);
+	} catch (...) { close(DisconnectReason::Error); }
+}
 
-		// TcpClient::read is blocking; this loop lives on its own thread.
-		try {
-			const auto message = m_client.read();
-			const auto event   = fromServerMessage(message);
-			if (!event) {
-				continue;
-			}
-			std::visit([&](const auto& e) { handleNetworkEvent(e); }, *event);
-		} catch (...) { break; }
-	}
-
+void Client::Implementation::onDisconnect(const core::DisconnectReason reason) {
+	// Pass the reason on once onDisconnected takes one.
+	[[maybe_unused]] const auto ourReason = reason == core::DisconnectReason::Requested ? m_closeReason : toReason(reason);
 	if (m_handler) {
-		m_handler->onDisconnected();
+		// The connection is over, but the IO thread must survive a throwing handler.
+		try {
+			m_handler->onDisconnected();
+		} catch (...) {}
 	}
+	// After the handler, which may still want the id. A new welcome can't come earlier: callbacks run one at a time.
+	m_sessionId = 0;
+}
+
+void Client::Implementation::close(const DisconnectReason reason) {
+	// Inside a callback, disconnect() reports right away, so the reason is set for onDisconnect().
+	m_closeReason = reason;
+	m_client.disconnect();
+	m_closeReason = DisconnectReason::ClosedLocally;
 }
 
 void Client::Implementation::handleNetworkEvent(const ServerWelcome& event) {
-	// The server rejects other versions, so a mismatch here means a broken server.
-	if (event.protocol != PROTOCOL_VERSION) {
-		m_client.disconnect();
+	// The server rejects other versions, and 0 means no session. Either way, the server is broken.
+	if (event.protocol != PROTOCOL_VERSION || event.sessionId == 0) {
+		close(DisconnectReason::ProtocolError);
 		return;
 	}
 	m_sessionId = event.sessionId;
 }
 
 void Client::Implementation::handleNetworkEvent(const ServerReject&) {
-	m_client.disconnect();
+	close(DisconnectReason::Rejected);
 }
 
 void Client::Implementation::handleNetworkEvent(const ServerGameStart& event) {
@@ -171,9 +180,7 @@ void Client::Implementation::handleNetworkEvent(const ServerChat& event) {
 Client::Client() : m_pimpl(std::make_unique<Implementation>()) {
 }
 
-Client::~Client() {
-	disconnect();
-}
+Client::~Client() = default;
 
 bool Client::registerHandler(IClientHandler* handler) {
 	return m_pimpl->registerHandler(handler);

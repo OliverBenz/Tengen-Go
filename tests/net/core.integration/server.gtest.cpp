@@ -89,6 +89,18 @@ private:
 	std::atomic<unsigned> m_turn{0};
 };
 
+namespace {
+
+//! Wait until the server welcomed the client, up to a second.
+bool waitForWelcome(const network::Client& client) {
+	for (int i = 0; i < 100 && client.sessionId() == 0u; ++i) {
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	}
+	return client.sessionId() != 0u;
+}
+
+} // namespace
+
 TEST(Networking, ServerDeltaFromPutStone) {
 	constexpr std::uint16_t kPort = 12346;
 
@@ -105,15 +117,16 @@ TEST(Networking, ServerDeltaFromPutStone) {
 	ASSERT_TRUE(client1.registerHandler(&handler1));
 	ASSERT_TRUE(client2.registerHandler(&handler2));
 
-	client1.connect("127.0.0.1", kPort);
-	client2.connect("127.0.0.1", kPort);
-
-	std::this_thread::sleep_for(std::chrono::milliseconds(50));
+	// One after the other: the first client the server welcomes plays Black.
+	ASSERT_TRUE(client1.connect("127.0.0.1", kPort));
+	ASSERT_TRUE(waitForWelcome(client1));
+	ASSERT_TRUE(client2.connect("127.0.0.1", kPort));
+	ASSERT_TRUE(waitForWelcome(client2));
 
 	// Player 1 places a stone. Valid move
 	ASSERT_TRUE(client1.send(network::ClientPutStone{1u, 2u}));
 
-	// Player 2 recives the delta
+	// Player 2 receives the delta
 	GameDelta delta{};
 	ASSERT_TRUE(handler2.waitForDelta(std::chrono::milliseconds(300), delta));
 
