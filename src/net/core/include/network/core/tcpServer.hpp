@@ -29,8 +29,8 @@ public:
 	TcpServer& operator=(TcpServer&&)      = delete;
 
 	void connect(Callbacks callbacks); //!< Connect callback functions to get event signalling. Call before start.
-	void start();                      //!< Start accepting clients. Safe to call multiple times (subsequent calls no-op).
-	void stop();                       //!< Disconnect clients and stop the server. Safe to call multiple times.
+	void start();                      //!< Start accepting clients. Once: a stopped server can't start again.
+	void stop();                       //!< Send what is queued, disconnect clients and stop the server. Waits up to a second for slow clients. Safe to call multiple times, not from a callback.
 
 	bool send(ConnectionId connectionId, const Message& msg); //!< Send message to the client with given connectionId. Returns false if not found.
 	void disconnect(ConnectionId connectionId);               //!< Close the connection once its queued messages are sent. onDisconnect follows.

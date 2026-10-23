@@ -7,6 +7,7 @@
 #include "tengen/gameServer.hpp"
 
 #include <algorithm>
+#include <cassert>
 #include <format>
 #include <stdexcept>
 
@@ -20,6 +21,9 @@ NetworkSession::NetworkSession() {
 }
 NetworkSession::~NetworkSession() {
 	disconnect();
+	if (m_serverStopper.joinable()) {
+		m_serverStopper.join();
+	}
 }
 
 void NetworkSession::subscribe(IAppSignalListener* listener, uint64_t signalMask) {
@@ -39,7 +43,7 @@ void NetworkSession::connect(const std::string& hostIp) {
 		m_chatHistory.clear();
 		m_pendingChat.clear();
 	}
-	m_localServer.reset();
+	stopLocalServer();
 	m_network.connect(hostIp);
 
 	m_eventHub.signal(AS_BoardChange);
@@ -49,6 +53,11 @@ void NetworkSession::connect(const std::string& hostIp) {
 
 bool NetworkSession::host(const GameConfig& config, const Player hostColour) {
 	disconnect();
+
+	// The last server has to free the port first. Only waits if it is still stopping.
+	if (m_serverStopper.joinable()) {
+		m_serverStopper.join();
+	}
 
 	// Creating server may throw on invalid game config.
 	try {
@@ -78,12 +87,17 @@ bool NetworkSession::host(const GameConfig& config, const Player hostColour) {
 	return true;
 }
 
+void NetworkSession::stopLocalServer() {
+	if (!m_localServer) {
+		return;
+	}
+	assert(!m_serverStopper.joinable()); // host() waited for the last stop before it made this server.
+	m_serverStopper = std::thread([server = std::move(m_localServer)] { server->stop(); });
+}
+
 void NetworkSession::disconnect() {
 	m_network.disconnect();
-	if (m_localServer) {
-		m_localServer->stop();
-		m_localServer.reset();
-	}
+	stopLocalServer();
 
 	{
 		std::lock_guard<std::mutex> lock(m_stateMutex);
@@ -99,10 +113,7 @@ void NetworkSession::disconnect() {
 }
 
 void NetworkSession::shutdown() {
-	if (m_localServer) {
-		m_localServer->stop();
-		m_localServer.reset();
-	}
+	stopLocalServer();
 	m_network.disconnect();
 
 	{

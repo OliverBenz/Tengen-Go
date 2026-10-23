@@ -108,4 +108,53 @@ TEST(GameNet, ConnectAgainFromOnDisconnected) {
 	EXPECT_FALSE(client.isConnected());
 }
 
+namespace {
+
+//! Counts the chat messages, and whether the server closed the connection after them.
+class ChatCounter : public network::IClientHandler {
+public:
+	void onGameStart(const GameConfig&) override {
+	}
+	void onGameDelta(const GameDelta&) override {
+	}
+	void onGameEnd(const GameResult&) override {
+	}
+	void onChatMessage(Player, unsigned, const std::string&) override {
+		++chats;
+	}
+	void onDisconnected() override {
+		chatsBeforeDisconnect = chats.load();
+		disconnected          = true;
+	}
+
+	std::atomic<unsigned> chats{0};
+	std::atomic<unsigned> chatsBeforeDisconnect{0};
+	std::atomic<bool> disconnected{false};
+};
+
+} // namespace
+
+//! What the server queued before stop() still reaches the client, and only then is it disconnected.
+TEST(GameNet, StopSendsQueuedMessages) {
+	constexpr unsigned kMessages = 100u;
+
+	network::Server server;
+	server.start();
+
+	ChatCounter handler;
+	network::Client client;
+	ASSERT_TRUE(client.registerHandler(&handler));
+	ASSERT_TRUE(client.connect("127.0.0.1"));
+	ASSERT_TRUE(waitFor([&] { return client.isConnected(); }));
+
+	for (unsigned i = 1u; i <= kMessages; ++i) {
+		ASSERT_TRUE(server.broadcast(network::ServerChat{Player::Black, i, "last words"}));
+	}
+	server.stop();
+	EXPECT_FALSE(server.broadcast(network::ServerChat{Player::Black, kMessages + 1u, "too late"}));
+
+	ASSERT_TRUE(waitFor([&] { return handler.disconnected.load(); }));
+	EXPECT_EQ(handler.chatsBeforeDisconnect, kMessages);
+}
+
 } // namespace tengen::gtest

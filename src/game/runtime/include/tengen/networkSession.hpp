@@ -11,6 +11,7 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <thread>
 #include <unordered_map>
 
 namespace tengen::app {
@@ -55,6 +56,9 @@ public: // network::IClientHandler Interface
 	void onDisconnected() override;
 
 private:
+	void stopLocalServer(); //!< Stop the hosted server off the GUI thread: it waits for slow clients.
+
+private:
 	network::Client m_network;
 	EventHub m_eventHub;
 	SessionGameInfo m_gameInfo{};
@@ -64,6 +68,7 @@ private:
 	std::unordered_map<unsigned, ChatEntry> m_pendingChat{}; //!< Messages received out of order.
 
 	std::unique_ptr<GameServer> m_localServer;
+	std::thread m_serverStopper; //!< Stops the last hosted server.
 	mutable std::mutex m_stateMutex;
 };
 
