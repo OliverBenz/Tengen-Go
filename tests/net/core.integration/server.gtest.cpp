@@ -111,7 +111,7 @@ TEST(Networking, ServerDeltaFromPutStone) {
 	network::Server server{kPort};
 	TestServerHandler serverHandler(server);
 	ASSERT_TRUE(server.registerHandler(&serverHandler));
-	server.start();
+	ASSERT_TRUE(server.start());
 
 	network::Client client1;
 	network::Client client2;

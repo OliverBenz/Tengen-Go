@@ -34,7 +34,7 @@ public:
 	Server(Server&&)                 = delete;
 	Server& operator=(Server&&)      = delete;
 
-	void start(); //!< Once: a stopped server can't start again.
+	bool start(); //!< True if the server runs. Once a server stopped, it can't start again.
 	void stop();  //!< Send what is queued, then disconnect all clients. Waits up to a second for slow clients. Safe to call multiple times, not from a handler.
 
 	bool registerHandler(IServerHandler* handler); //!< Register a single handler. Returns false if already registered.

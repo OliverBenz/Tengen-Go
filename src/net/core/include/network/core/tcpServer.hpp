@@ -29,7 +29,7 @@ public:
 	TcpServer(TcpServer&&)                 = delete;
 	TcpServer& operator=(TcpServer&&)      = delete;
 
-	void start(); //!< Start accepting clients. Once: a stopped server can't start again.
+	bool start(); //!< Start accepting clients. Once a server stopped, it can't start again.
 	void stop();  //!< Send what is queued, disconnect clients and stop the server. Waits up to a second for slow clients. Safe to call multiple times, not from a callback.
 
 	bool send(ConnectionId connectionId, const Message& msg); //!< Send message to the client with given connectionId. Returns false if not found.

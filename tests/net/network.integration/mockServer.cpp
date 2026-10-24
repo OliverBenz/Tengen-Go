@@ -6,7 +6,7 @@ namespace tengen::gtest {
 
 MockServer::MockServer() {
 	EXPECT_TRUE(m_network.registerHandler(this));
-	m_network.start();
+	EXPECT_TRUE(m_network.start());
 }
 MockServer::~MockServer() {
 	m_network.stop();

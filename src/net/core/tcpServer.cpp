@@ -25,7 +25,7 @@ class TcpServer::Implementation {
 public:
 	Implementation(Callbacks callbacks, std::uint16_t port);
 
-	void start();
+	bool start();
 	void stop();
 
 	bool send(ConnectionId connectionId, const Message& msg);
@@ -96,23 +96,24 @@ void TcpServer::Implementation::setupAcceptor(const std::uint16_t port) {
 	m_acceptorReady = true;
 }
 
-void TcpServer::Implementation::start() {
+bool TcpServer::Implementation::start() {
 	std::lock_guard<std::mutex> lifecycleLock(m_lifecycleMutex);
 	auto expected = State::Created;
 	if (!m_state.compare_exchange_strong(expected, State::Running)) {
 		assert(expected == State::Running && "A stopped server can't start again.");
-		return;
+		return expected == State::Running;
 	}
 
 	// If acceptor init failed during construction, don't start a dead server.
 	if (!m_acceptorReady) {
 		m_state = State::Stopped;
-		return;
+		return false;
 	}
 
 	m_workGuard.emplace(asio::make_work_guard(m_ioContext)); // Keeps run() going while there is no pending work.
 	doAccept();                                              // Queued now, handled once the IO thread runs.
 	m_ioThread = std::thread([this]() { m_ioContext.run(); });
+	return true;
 }
 
 void TcpServer::Implementation::stop() {
@@ -255,8 +256,8 @@ TcpServer::~TcpServer() {
 	stop();
 }
 
-void TcpServer::start() {
-	m_pimpl->start();
+bool TcpServer::start() {
+	return m_pimpl->start();
 }
 
 void TcpServer::stop() {
