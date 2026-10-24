@@ -1,0 +1,89 @@
+% Layout, colours, boxes, code and diagram styles for the asio cheat sheet.
+
+\usepackage[a4paper, margin=13mm, top=11mm, bottom=13mm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[default]{sourcesanspro}
+\usepackage[scale=0.86]{sourcecodepro}
+\usepackage{microtype}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, fit, backgrounds, calc, shapes.misc, decorations.pathreplacing}
+\usepackage[most]{tcolorbox}
+\usepackage{listings}
+\usepackage{multicol}
+\usepackage{enumitem}
+\usepackage{tabularx, booktabs, colortbl}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+
+% --- Colours: one per thread, used the same way in every diagram ---------------
+\definecolor{io}{HTML}{1F5FA8}       % an IO thread (runs io_context::run)
+\definecolor{app}{HTML}{C8621B}      % the caller: GUI / game / any thread
+\definecolor{srv}{HTML}{2E8540}      % network::Server's processing thread
+\definecolor{strand}{HTML}{7A3E9D}   % strand
+\definecolor{bad}{HTML}{B3261E}
+\definecolor{ink}{HTML}{222222}
+\definecolor{soft}{HTML}{F3F5F8}
+\definecolor{rule}{HTML}{C9D1DC}
+\color{ink}
+
+% --- Text ----------------------------------------------------------------------
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{3pt}
+\setlength{\columnsep}{6mm}
+\setlist{nosep, leftmargin=*, topsep=1pt}
+\renewcommand{\arraystretch}{1.18}
+
+\titleformat{\section}{\large\bfseries\color{io}}{}{0pt}{}[\vspace{-3pt}{\color{rule}\titlerule}]
+\titlespacing*{\section}{0pt}{7pt}{4pt}
+\titleformat{\subsection}{\normalsize\bfseries\color{io!80!black}}{}{0pt}{}
+\titlespacing*{\subsection}{0pt}{5pt}{2pt}
+
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[L]{\scriptsize\color{gray}Asio cheat sheet · Tengen netCore / netNetwork}
+\fancyfoot[R]{\scriptsize\color{gray}\thepage}
+
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\thr}[2]{\textcolor{#1}{\textbf{#2}}} % coloured thread name
+\newcommand{\src}[1]{\textcolor{gray}{\footnotesize\texttt{#1}}} % repo location
+
+% --- Boxes ---------------------------------------------------------------------
+\tcbset{
+	base/.style={enhanced, breakable, boxrule=0.5pt, arc=2pt, left=5pt, right=5pt, top=3pt, bottom=3pt,
+		fonttitle=\bfseries\small, coltitle=white, before skip=4pt, after skip=4pt},
+}
+\newtcolorbox{keybox}[1][]{base, colback=soft, colframe=io, title=#1}
+\newtcolorbox{warnbox}[1][]{base, colback=bad!4, colframe=bad, title=#1}
+\newtcolorbox{repobox}[1][]{base, colback=srv!4, colframe=srv, title=#1}
+\newtcolorbox{plainbox}{base, colback=white, colframe=rule}
+
+% --- Code ----------------------------------------------------------------------
+\lstset{
+	language=C++, basicstyle=\ttfamily\footnotesize, columns=fullflexible, keepspaces=true,
+	keywordstyle=\color{io}\bfseries, commentstyle=\color{srv}\itshape, stringstyle=\color{app},
+	morekeywords={auto, constexpr, nullptr},
+	emph={post, async_read, async_write, async_accept, async_resolve, async_connect, bind_executor, make_work_guard, run, stop, join, shared_from_this},
+	emphstyle=\color{strand}\bfseries,
+	tabsize=2, showstringspaces=false, aboveskip=2pt, belowskip=2pt, xleftmargin=2pt,
+}
+
+% --- Diagrams ------------------------------------------------------------------
+\tikzset{
+	>={Stealth[length=5pt]},
+	every node/.style={font=\footnotesize},
+	thread/.style={draw=#1, fill=#1!8, line width=0.8pt, rounded corners=3pt, inner sep=4pt, align=center},
+	op/.style={draw=#1, fill=white, rounded corners=2pt, inner sep=2.5pt, font=\scriptsize\ttfamily, align=center},
+	handler/.style={draw=io, fill=io!15, minimum width=7mm, minimum height=4.5mm, inner sep=1pt, font=\scriptsize\ttfamily},
+	flow/.style={->, line width=0.7pt, draw=#1},
+	flow/.default=ink,
+	lbl/.style={font=\scriptsize, fill=white, inner sep=1pt, align=center},
+	note/.style={font=\scriptsize\itshape, text=gray!80!black, align=left},
+	state/.style={draw=io, fill=io!8, rounded corners=6pt, minimum width=20mm, minimum height=7mm, font=\small\bfseries},
+	lane/.style={draw=none, fill=#1!6, rounded corners=2pt},
+	step/.style={circle, fill=#1, text=white, font=\scriptsize\bfseries, inner sep=1pt, minimum size=4mm},
+}
+% Centred figure without the extra space of a center environment.
+\newenvironment{diagram}{\par\smallskip\centering}{\par\smallskip}
+\newcommand{\stepnum}[2][io]{\tikz[baseline=-3pt]\node[step=#1]{#2};}
