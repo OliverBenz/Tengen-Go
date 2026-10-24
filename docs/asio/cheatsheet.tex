@@ -1,0 +1,201 @@
+% Pages 1-2: how asio works, the rules that follow from it, the calls we use, threads and locks.
+
+\begin{tcolorbox}[enhanced, colback=io, colframe=io, arc=2pt, left=6pt, right=6pt, top=4pt, bottom=4pt]
+	\color{white}
+	{\LARGE\bfseries Asio cheat sheet}\hfill{\small standalone Asio 1.36 · as used in \texttt{src/net}}\par
+	\small Thread colours used throughout:
+	\tikz[baseline=-3pt]\node[thread=app, text=ink, font=\scriptsize]{caller / app thread};
+	\tikz[baseline=-3pt]\node[thread=io, text=ink, font=\scriptsize]{IO thread (runs \texttt{run()})};
+	\tikz[baseline=-3pt]\node[thread=srv, text=ink, font=\scriptsize]{server thread};
+	\tikz[baseline=-3pt]\node[thread=strand, text=ink, font=\scriptsize]{strand};
+\end{tcolorbox}
+
+\section{The whole idea in one picture}
+
+\begin{diagram}
+\begin{tikzpicture}[x=1mm, y=1mm]
+	% caller
+	\node[thread=app, minimum width=42mm, minimum height=30mm, anchor=north west] (caller) at (0, 0) {};
+	\node[anchor=north, font=\small\bfseries, text=app] at (caller.north) {any thread};
+	\node[op=app, anchor=west] (post) at (2, -11) {asio::post(ctx, f)};
+	\node[op=app, anchor=west] (start) at (2, -25) {async\_read(sock, buf, h)};
+
+	% io_context
+	\node[draw=io, line width=0.8pt, rounded corners=3pt, minimum width=80mm, minimum height=39mm, anchor=north west] (ctx) at (50, 3) {};
+	\node[anchor=north west, font=\small\bfseries, text=io] at (ctx.north west) {asio::io\_context};
+	\node[handler] (h1) at (96, -11) {h};
+	\node[handler, right=1mm of h1] (h2) {f};
+	\node[handler, right=1mm of h2] (h3) {h};
+	\node[anchor=south, font=\scriptsize\bfseries, text=io] at (h2.north) {ready queue};
+	\node[draw=gray, dashed, rounded corners=2pt, fill=gray!5, minimum width=66mm, minimum height=12mm, anchor=north west] (os) at (57, -20) {};
+	\node[anchor=north west, font=\scriptsize\bfseries, text=gray!70!black] at (os.north west) {in flight: the OS works};
+	\node[op=gray] (r) at (70, -29) {read};
+	\node[op=gray] (a) at (86, -29) {accept};
+	\node[op=gray] (w) at (102, -29) {write};
+
+	% IO thread
+	\node[thread=io, minimum width=46mm, minimum height=30mm, anchor=north west] (iot) at (138, 0) {};
+	\node[anchor=north, font=\small\bfseries, text=io] at (iot.north) {IO thread: \texttt{ctx.run()}};
+	\node[anchor=north west, align=left, font=\scriptsize, text width=42mm] at ($(iot.north west)+(2,-6)$) {
+		loop:\\
+		\quad take the next handler\\
+		\quad call it; nothing else runs meanwhile\\
+		until no work is left or \texttt{stop()}};
+
+	% arrows
+	\draw[flow=app] (post.east) -- node[lbl, above, pos=0.55] {queued directly} (h1.west);
+	\draw[flow=app] (start.east) -- node[lbl, above, pos=0.4] {returns at once} (start.east -| os.west);
+	\draw[flow=gray] (h1.south |- os.north) -- node[lbl, right, fill=none] {done: \texttt{h(ec, n)} queued} (h1.south);
+	\draw[flow=io] (h3.east) -- node[lbl, above] {pop} (iot.west |- h3);
+	\draw[flow=io, rounded corners=3pt] (iot.south) -- ++(0, -12) -| node[lbl, pos=0.25, below] {a handler usually starts the next operation: a loop without recursion} (w.south);
+\end{tikzpicture}
+\end{diagram}
+{\small Asio is a \textbf{queue of callbacks}. You \emph{start} an operation and hand it a \emph{completion handler}. When the OS is done, the handler is queued, and it runs only when a thread is inside \code{run()}. In Tengen every \code{io\_context} has \textbf{exactly one} such thread, owned by \code{TcpServer} or \code{TcpClient}.}
+
+\begin{multicols}{2}
+\section{Eight rules that follow}
+\begin{enumerate}[leftmargin=12pt, itemsep=2.5pt]
+	\item \textbf{Starting returns at once.} The handler runs later, never inside the \code{async\_*} call, even if the data was already there. So \code{startRead()} calling itself from its handler is a loop, not recursion.
+	\item \textbf{Handlers run only inside \code{run()}.} One thread in \code{run()} $\Rightarrow$ handlers never overlap: an \emph{implicit strand}, for free.
+	\item \textbf{\code{run()} returns when it runs out of work.} A pending operation or a \code{work\_guard} counts as work. After \code{stop()} queued handlers are \emph{not} run; they die uncalled with the context.
+	\item \textbf{The handler must keep alive what it uses.} \code{asio::buffer()} is only pointer + size. Capture \code{self = shared\_from\_this()} and \code{shared\_ptr}s to buffers in the lambda.
+	\item \textbf{Sockets aren't thread-safe.} A socket, acceptor or resolver is used by one thread at a time: the IO thread. Other threads \code{post()} the work to it. Posting itself is thread-safe.
+	\item \textbf{One \code{async\_write} per socket at a time.} It is a loop of partial writes; a second one would interleave bytes. Hence a write queue. Same for reads.
+	\item \textbf{Cancel is not undo.} \code{close()} and \code{cancel()} make pending handlers run \emph{anyway}, with \code{error::operation\_aborted}. One that finished just before is queued with success. Each handler checks \code{ec} and ``am I still current?'' first.
+	\item \textbf{Errors are values.} Async handlers get an \code{error\_code}; sync calls throw unless you pass one: \code{sock.close(ec)}. An exception leaving a handler leaves \code{run()} $\Rightarrow$ \code{std::terminate} on a \code{std::thread}.
+\end{enumerate}
+
+\columnbreak
+\begin{keybox}[The two questions for every handler]
+	\textbf{Who keeps it alive?} Every object, buffer and \code{this} it touches must outlive it (rule 4).\\
+	\textbf{Is it still wanted?} It may run after a cancel, a close or a reconnect (rule 7).
+\end{keybox}
+
+\section{An IO thread's life}
+\begin{lstlisting}
+asio::io_context ctx;
+auto guard = asio::make_work_guard(ctx); // keeps run() alive
+std::thread io([&] { ctx.run(); });      // the IO thread
+
+asio::post(ctx, [] { /* on io */ });     // from any thread
+
+guard.reset(); // run() may end once the work is done ...
+ctx.stop();    // ... or end now: queued ones not called
+io.join();     // never from io itself: throws, terminates
+\end{lstlisting}
+
+\section{Handler signatures}
+{\footnotesize
+\begin{tabular}{@{}>{\ttfamily}l>{\ttfamily}l@{}}
+	\toprule
+	\normalfont\bfseries operation & \normalfont\bfseries handler \\ \midrule
+	async\_read, async\_write & (ec, size\_t bytes) \\
+	acceptor.async\_accept & (ec, tcp::socket) \\
+	resolver.async\_resolve & (ec, results) \\
+	async\_connect(sock, results) & (ec, endpoint) \\
+	post(ex, f) & () \\ \bottomrule
+\end{tabular}\par}
+\smallskip
+{\small \code{ec} is an \code{asio::error\_code}. The handler runs on error too; test \code{if (ec)} first. Only a stopped context never calls it.}
+
+\begin{keybox}[Review checklist]
+\begin{enumerate}[leftmargin=12pt]
+	\item Each \code{async\_*}: who keeps object and buffer alive?
+	\item Does each handler check \code{ec} and ``still current?'' first?
+	\item Is a socket, acceptor or resolver touched off the IO thread?
+	\item At most one write and one read in flight per socket?
+	\item Is a callback called under a lock it could take again?
+	\item Can a handler wait for, join or destroy its own thread?
+	\item Can an exception leave a handler?
+	\item On stop: what is flushed, what dropped? Intended?
+\end{enumerate}
+\end{keybox}
+\end{multicols}
+
+\newpage
+\section{The calls used in \texttt{src/net}}
+\small
+\begin{tabularx}{\linewidth}{@{}>{\ttfamily\raggedright}p{62mm}X>{\raggedright\arraybackslash}p{54mm}@{}}
+	\toprule
+	\normalfont\bfseries call & \bfseries what it does & \bfseries keep in mind \\
+	\midrule
+	\multicolumn{3}{@{}l}{\bfseries\color{io}Event loop} \\
+	make\_work\_guard(ctx), .reset() & counts as pending work & keeps an idle \code{run()} alive \\
+	io\_context::run() & runs handlers on this thread until out of work & blocks; one thread per context here \\
+	post(ctx \textnormal{or} strand, f) & queues \code{f} to run there & never runs inside \code{post}; any thread \\
+	io\_context::stop() & makes \code{run()} return as soon as possible & any thread; queued handlers aren't called \\
+	\midrule
+	\multicolumn{3}{@{}l}{\bfseries\color{strand}Executors and strands} \\
+	sock.get\_executor() & the context an object belongs to & what you build a strand from \\
+	strand<any\_io\_executor> s(ex) & sub-queue: never overlaps, keeps order & matters only with several \code{run()} threads \\
+	bind\_executor(s, h) & the completion handler \code{h} runs through \code{s} & also the inner steps of \code{async\_read}/\code{write} \\
+	\midrule
+	\multicolumn{3}{@{}l}{\bfseries\color{io}TCP setup} \\
+	acceptor.open / bind / listen & server: a listening socket, step by step & \code{ec} overloads: no throws in the ctor \\
+	resolver.async\_resolve(host, port, h) & client: name lookup & \code{cancel()} $\Rightarrow$ \code{operation\_aborted} \\
+	async\_connect(sock, results, h) & client: tries each endpoint until one connects & \code{sock.async\_connect} takes just one \\
+	acceptor.async\_accept(h) & server: takes \emph{one} waiting client & re-arm in the handler for the next \\
+	\midrule
+	\multicolumn{3}{@{}l}{\bfseries\color{io}Data} \\
+	buffer(ptr, n) & a view on memory you own & valid until the handler runs \\
+	array<const\_buffer, 2>\{a, b\} & a gather list: sent back to back & header + payload in one write \\
+	async\_read(sock, buf, h) & reads \emph{exactly} \code{buf.size()} bytes & peer closed $\Rightarrow$ \code{error::eof} \\
+	async\_write(sock, bufs, h) & writes everything & one at a time per socket (rule 6) \\
+	\midrule
+	\multicolumn{3}{@{}l}{\bfseries\color{io}Closing} \\
+	sock.shutdown(shutdown\_both, ec) & sends FIN; no more sends or receives & the peer's read ends with \code{eof} \\
+	sock.close(ec) & frees the socket, cancels its operations & handlers get \code{operation\_aborted} \\
+	resolver.cancel() & aborts a running lookup & handler gets \code{operation\_aborted} \\
+	\bottomrule
+\end{tabularx}
+
+\smallskip
+\textbf{Not used here, but you will meet them:}
+\code{sock.async\_read\_some} (whatever has arrived) ·
+\code{dispatch(ex, f)} (inline if already on \code{ex}, else posts) ·
+\code{steady\_timer} (timeouts) ·
+\code{co\_spawn} + \code{use\_awaitable} (the same chains as coroutines).
+\normalsize
+
+\begin{multicols}{2}
+\section{What serializes what}
+\small
+\begin{tabularx}{\linewidth}{@{}>{\raggedright}p{19mm}X>{\raggedright\arraybackslash}p{23mm}@{}}
+	\toprule
+	\bfseries tool & \bfseries guarantees & \bfseries in Tengen \\ \midrule
+	one \code{run()} thread & handlers of that context never overlap & all of TcpServer, TcpClient \\
+	\textcolor{strand}{\bfseries strand} & its handlers never overlap and run in post order & \code{Connection} write queue \\
+	\code{post} & the work runs on the thread that owns the object & \code{send}, \code{close}, cancelling \\
+	\code{std::mutex} & state shared with threads outside asio & connection map, client state \\
+	queue + thread & work leaves the IO thread, in order & \code{network::Server} \\ \bottomrule
+\end{tabularx}
+
+\smallskip
+With one \code{run()} thread the strand is redundant today. Don't add a second one: \code{TcpClient}'s connect handlers aren't on a strand, and \code{Connection::start()} starts its first read off the strand.
+\normalsize
+
+\columnbreak
+\section{Locks around asio: how it fails}
+\begin{warnbox}[Never]
+\begin{itemize}[leftmargin=10pt]
+	\item \textbf{join the IO thread from a handler.} \code{stop()} or a destructor called in a callback joins the thread it runs on: \code{join()} throws and the program terminates. Asserts in \code{TcpServer::stop}, \code{Server::stop} and \code{\textasciitilde TcpClient} catch it.
+	\item \textbf{wait in a handler} for a thread that waits for that handler. \code{TcpClient::connect()} and \code{disconnect()} wait for a running callback.
+	\item \textbf{hold a lock while calling out}, if the callee may take it too. A \code{std::mutex} locked twice on one thread hangs; that is why \code{TcpClient}'s callback lock is recursive.
+	\item \textbf{block the IO thread.} Every connection of that context stalls with it.
+\end{itemize}
+\end{warnbox}
+\end{multicols}
+
+\section{Who keeps it alive while a handler waits?}
+\small
+\begin{tabularx}{\linewidth}{@{}>{\raggedright}p{50mm}X@{}}
+	\toprule
+	\bfseries object & \bfseries kept alive by \\ \midrule
+	\code{Connection} & \code{self = shared\_from\_this()}, captured in every handler \\
+	read header, payload; write header & \code{make\_shared}, captured in the handler \\
+	write payload & \code{m\_writeQueue.front()}, popped only after its write. \code{deque::push\_back} never moves elements; a \code{vector} would! \\
+	resolver, socket while connecting & \code{shared\_ptr}s captured in the handlers (\code{TcpClient::connect}) \\
+	\code{this} in TcpServer, TcpClient handlers & the destructor stops and joins the IO thread before any member dies \\
+	\code{network::Client} members & \code{m\_client} is declared last, so it is destroyed first: no callback reaches a dead member \\ \bottomrule
+\end{tabularx}
+\normalsize

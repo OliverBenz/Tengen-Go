@@ -14,6 +14,9 @@ namespace tengen::gtest {
 
 class TestClientHandler final : public network::IClientHandler {
 public:
+	void onWelcome(std::optional<Player>) override {
+	}
+
 	void onGameStart(const GameConfig&) override {
 	}
 
@@ -31,7 +34,7 @@ public:
 	void onChatMessage(Player, unsigned, const std::string&) override {
 	}
 
-	void onDisconnected() override {
+	void onDisconnected(network::DisconnectReason) override {
 		std::lock_guard<std::mutex> lock(m_mutex);
 		m_disconnected = true;
 		m_cv.notify_all();
@@ -58,7 +61,8 @@ private:
 
 class TestServerHandler final : public network::IServerHandler {
 public:
-	explicit TestServerHandler(network::Server& server) : m_server(server) {
+	explicit TestServerHandler(network::Server& server)
+	    : m_server(server) {
 	}
 
 	void onPlayerJoined(Player) override {
@@ -89,13 +93,25 @@ private:
 	std::atomic<unsigned> m_turn{0};
 };
 
+namespace {
+
+//! Wait until the server welcomed the client, up to a second.
+bool waitForWelcome(const network::Client& client) {
+	for (int i = 0; i < 100 && client.sessionId() == 0u; ++i) {
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	}
+	return client.sessionId() != 0u;
+}
+
+} // namespace
+
 TEST(Networking, ServerDeltaFromPutStone) {
 	constexpr std::uint16_t kPort = 12346;
 
 	network::Server server{kPort};
 	TestServerHandler serverHandler(server);
 	ASSERT_TRUE(server.registerHandler(&serverHandler));
-	server.start();
+	ASSERT_TRUE(server.start());
 
 	network::Client client1;
 	network::Client client2;
@@ -105,15 +121,16 @@ TEST(Networking, ServerDeltaFromPutStone) {
 	ASSERT_TRUE(client1.registerHandler(&handler1));
 	ASSERT_TRUE(client2.registerHandler(&handler2));
 
-	client1.connect("127.0.0.1", kPort);
-	client2.connect("127.0.0.1", kPort);
-
-	std::this_thread::sleep_for(std::chrono::milliseconds(50));
+	// One after the other: the first client the server welcomes plays Black.
+	ASSERT_TRUE(client1.connect("127.0.0.1", kPort));
+	ASSERT_TRUE(waitForWelcome(client1));
+	ASSERT_TRUE(client2.connect("127.0.0.1", kPort));
+	ASSERT_TRUE(waitForWelcome(client2));
 
 	// Player 1 places a stone. Valid move
 	ASSERT_TRUE(client1.send(network::ClientPutStone{1u, 2u}));
 
-	// Player 2 recives the delta
+	// Player 2 receives the delta
 	GameDelta delta{};
 	ASSERT_TRUE(handler2.waitForDelta(std::chrono::milliseconds(300), delta));
 

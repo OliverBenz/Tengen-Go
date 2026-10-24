@@ -7,8 +7,7 @@
 #include <string>
 
 namespace tengen {
-namespace network {
-namespace core {
+namespace network::core {
 
 using ConnectionId = std::uint32_t; //!< Identifies a connection on network layer.
 using Message      = std::string;   //!< Message type.
@@ -43,6 +42,5 @@ constexpr std::uint32_t from_network_u32(std::uint32_t value) {
 	return to_network_u32(value);
 }
 
-} // namespace core
-} // namespace network
+} // namespace network::core
 } // namespace tengen

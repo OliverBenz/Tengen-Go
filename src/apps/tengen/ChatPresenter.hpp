@@ -10,7 +10,7 @@ namespace gui {
 class ChatWidget;
 }
 
-class ChatPresenter : public QObject, public app::IAppSignalListener {
+class ChatPresenter final : public QObject, public app::IAppSignalListener {
 	Q_OBJECT
 
 public:

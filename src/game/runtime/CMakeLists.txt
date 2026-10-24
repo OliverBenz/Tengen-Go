@@ -10,8 +10,11 @@ set(headers
 	"${CMAKE_CURRENT_LIST_DIR}/include/tengen/IAppSignal.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/tengen/IGameSession.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/tengen/IChatSession.hpp"
+	"${CMAKE_CURRENT_LIST_DIR}/include/tengen/INetworkSession.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/tengen/eventHub.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/tengen/sessionGameInfo.hpp"
+	"${CMAKE_CURRENT_LIST_DIR}/include/tengen/sessionChatInfo.hpp"
+	"${CMAKE_CURRENT_LIST_DIR}/include/tengen/sessionNetworkInfo.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/tengen/gameServer.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/logging.hpp"
 )
@@ -22,6 +25,8 @@ set(sources
 	"${CMAKE_CURRENT_LIST_DIR}/openSession.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/eventHub.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/sessionGameInfo.cpp"
+	"${CMAKE_CURRENT_LIST_DIR}/sessionChatInfo.cpp"
+	"${CMAKE_CURRENT_LIST_DIR}/sessionNetworkInfo.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/gameServer.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/logging.cpp"
 )

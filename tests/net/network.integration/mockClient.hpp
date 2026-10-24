@@ -14,11 +14,12 @@ public:
 	void tryPlace(unsigned x, unsigned y);
 
 public:
+	void onWelcome(std::optional<Player> player) override;
 	void onGameStart(const GameConfig& config) override;
 	void onGameDelta(const GameDelta& delta) override;
 	void onGameEnd(const GameResult& result) override;
 	void onChatMessage(Player player, unsigned messageId, const std::string& message) override;
-	void onDisconnected() override;
+	void onDisconnected(network::DisconnectReason reason) override;
 
 private:
 	network::Client m_network;

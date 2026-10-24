@@ -14,6 +14,11 @@
 namespace tengen::network {
 
 // Client Network Events (client -> server)
+
+//! First message on a connection. The server ignores everything else until it arrives.
+struct ClientHello {
+	ProtocolVersion protocol; //!< Protocol version of the client.
+};
 struct ClientPutStone {
 	Coord c;
 };
@@ -24,8 +29,16 @@ struct ClientChat {
 };
 
 // Server Events (server -> client)
-struct ServerSessionAssign {
-	SessionId sessionId; //!< Session Id assigned to player.
+//! Answer to a hello with a matching version. Opens the session.
+struct ServerWelcome {
+	ProtocolVersion protocol; //!< Protocol version of the server.
+	SessionId sessionId;      //!< Session Id assigned to the client.
+	Seat seat;                //!< Seat assigned to the client. Never Seat::None.
+};
+
+//! Answer to a refused hello. The server closes the connection right after.
+struct ServerReject {
+	RejectReason reason;
 };
 
 //! The game started.
@@ -51,12 +64,12 @@ struct ServerChat {
 };
 
 
-using ClientEvent = std::variant<ClientPutStone, ClientPass, ClientResign, ClientChat>;
-using ServerEvent = std::variant<ServerSessionAssign, ServerGameStart, ServerGameDelta, ServerGameEnd, ServerChat>;
+using ClientEvent = std::variant<ClientHello, ClientPutStone, ClientPass, ClientResign, ClientChat>;
+using ServerEvent = std::variant<ServerWelcome, ServerReject, ServerGameStart, ServerGameDelta, ServerGameEnd, ServerChat>;
 
 // Serialize typed events to JSON messages.
-std::string toMessage(ClientEvent event);
-std::string toMessage(ServerEvent event);
+std::string toMessage(const ClientEvent& event);
+std::string toMessage(const ServerEvent& event);
 
 // Parse JSON messages into typed events. Returns empty on invalid input.
 std::optional<ClientEvent> fromClientMessage(const std::string& message);

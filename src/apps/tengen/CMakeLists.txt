@@ -18,6 +18,7 @@ add_executable(${targetName}
     "${CMAKE_CURRENT_LIST_DIR}/GnuGoConfigWidget.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/KataGoConfigWidget.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ChatPresenter.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/NetworkPresenter.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ConnectDialog.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/HostDialog.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/HelpDialog.cpp"

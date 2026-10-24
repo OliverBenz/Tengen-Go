@@ -7,11 +7,20 @@
 
 namespace tengen::network {
 
-using SessionId = std::uint32_t;
+using SessionId       = std::uint32_t;
+using ProtocolVersion = std::uint32_t;
+
+//! Version of the wire protocol.
+inline constexpr ProtocolVersion PROTOCOL_VERSION = 1u;
+
+//! Why the server refused a client.
+enum class RejectReason : std::uint8_t {
+	ProtocolMismatch, //!< The client speaks another protocol version.
+};
 
 //! The role in the game.
 enum class Seat : std::uint8_t {
-	None,    //!< Just connected.
+	None,    //!< Connected, but no hello yet.
 	Black,   //!< Plays for black.
 	White,   //!< Plays for white.
 	Observer //!< Only gets updated on board change.

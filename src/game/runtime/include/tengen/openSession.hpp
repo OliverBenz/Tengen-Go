@@ -13,7 +13,7 @@
 namespace tengen::app {
 
 //! Free play locally you control both players.
-class OpenSession : public IGameSession, public IGameStateListener {
+class OpenSession final : public IGameSession, public IGameStateListener {
 public:
 	//! \throws std::invalid_argument if the board size is not supported.
 	explicit OpenSession(const GameConfig& config);

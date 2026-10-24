@@ -25,4 +25,5 @@ set_output_directory(${targetName})
 
 # Add tests
 include(GoogleTest)
-gtest_discover_tests(${targetName})
+# MockServer listens on the default port, so these tests must not run in parallel.
+gtest_discover_tests(${targetName} PROPERTIES RESOURCE_LOCK network_default_port)

@@ -1,0 +1,140 @@
+% Page 4: the rules applied, taken from src/net.
+
+\newpage
+\section{Example 1 · Connection: framing and the read loop \hfill\src{src/net/core/connection.cpp}}
+
+\begin{diagram}
+\begin{tikzpicture}[x=1mm, y=1mm, byte/.style={draw=io, fill=io!12, minimum width=7mm, minimum height=6mm, font=\scriptsize\ttfamily}, pay/.style={draw=app, fill=app!10, minimum height=6mm, font=\scriptsize\ttfamily}]
+	\node[byte] (b0) at (0, 0) {00};
+	\node[byte, right=0pt of b0] (b1) {00};
+	\node[byte, right=0pt of b1] (b2) {00};
+	\node[byte, right=0pt of b2] (b3) {0F};
+	\node[pay, right=0pt of b3, minimum width=36mm] (p) {\{"type":"pass"\}};
+	\node[byte, right=0pt of p] (c0) {00};
+	\node[byte, right=0pt of c0] (c1) {00};
+	\node[byte, right=0pt of c1] (c2) {00};
+	\node[byte, right=0pt of c2] (c3) {1A};
+	\node[pay, right=0pt of c3, minimum width=46mm] (q) {\{"type":"put","x":3,"y":4\}};
+	\node[right=1mm of q] (dots) {$\cdots$};
+	\draw[decorate, decoration={brace, amplitude=3pt}] (b0.north west) -- node[above=3pt, font=\scriptsize] {header: size, big-endian} (b3.north east);
+	\draw[decorate, decoration={brace, mirror, amplitude=3pt}] (p.south west) -- node[below=3pt, font=\scriptsize] {payload: exactly 15 bytes, at most 4 KiB} (p.south east);
+	\node[note, anchor=west, right=2mm of dots] {no gaps,\\no end markers};
+\end{tikzpicture}
+\end{diagram}
+{\small TCP keeps the order of bytes, not the boundaries of messages: one send can arrive in pieces, two can arrive glued together. So each message carries its length, and the reader asks \code{async\_read} for exactly 4 bytes, then for exactly \emph{size} bytes. A size above \code{MAX\_PAYLOAD\_BYTES} means the stream is lost: there is no way to find the next boundary, so the connection closes.}
+
+\begin{diagram}
+\begin{tikzpicture}[x=1mm, y=1mm, box/.style={draw=io, fill=io!8, rounded corners=2pt, minimum height=9mm, align=center, font=\scriptsize, inner sep=2pt}]
+	\node[box] (s) at (0, 0) {\code{startRead()}};
+	\node[box] (r1) at (30, 0) {\code{async\_read}\\4 bytes};
+	\node[box] (c) at (62, 0) {size $\leq$ max?};
+	\node[box] (r2) at (94, 0) {\code{async\_read}\\size bytes};
+	\node[box] (m) at (130, 0) {\code{onMessage(payload)}};
+	\node[box, draw=bad, fill=bad!8, minimum width=60mm] (d) at (62, -15) {\code{doDisconnect()}: close socket, \code{onDisconnect} once};
+	\draw[flow=io] (s) -- (r1);
+	\draw[flow=io, dashed] (r1) -- node[lbl, above=2pt] {later: handler} (c);
+	\draw[flow=io] (c) -- (r2);
+	\draw[flow=io, dashed] (r2) -- node[lbl, above=2pt] {later: handler} (m);
+	\draw[flow=io, rounded corners=3pt] (m.north) -- ++(0, 6) -| node[lbl, pos=0.25, above] {loop: the handler calls \code{startRead()} again (rule 1)} (s.north);
+	\draw[flow=bad] (r1.south) |- node[lbl, pos=0.3, left] {\code{ec}} ($(d.west)+(0,2)$);
+	\draw[flow=bad] (c.south) -- node[lbl, right] {too big} (d.north);
+	\draw[flow=bad] (r2.south) |- node[lbl, pos=0.3, right] {\code{ec}} ($(d.east)+(0,2)$);
+\end{tikzpicture}
+\end{diagram}
+\begin{multicols}{2}
+\begin{lstlisting}
+auto header = std::make_shared<BasicMessageHeader>(); // rule 4
+auto self   = shared_from_this();                     // rule 4
+asio::async_read(m_socket,
+    asio::buffer(header.get(), sizeof(BasicMessageHeader)),
+    asio::bind_executor(m_strand,
+        [self, header](asio::error_code ec, std::size_t) {
+    if (ec || !self->m_running) {  // rule 7: first thing
+        self->doDisconnect();      // closed by us or the peer
+        return;
+    }
+    // ... size check, read payload, onMessage, startRead()
+}));
+\end{lstlisting}
+\columnbreak
+\begin{itemize}[leftmargin=10pt]
+	\item \code{header} and \code{self} ride along in the lambda, so they live exactly as long as the read.
+	\item A local \code{BasicMessageHeader h;} with \code{buffer(\&h, 4)} would be written to after \code{startRead()} returned: a dangling buffer.
+	\item \code{doDisconnect()} starts with \code{m\_running.exchange(false)}: whoever ends the connection first reports it, the others return quietly.
+\end{itemize}
+\end{multicols}
+
+\section{Example 2 · Connection: the write queue}
+
+\begin{diagram}
+\begin{tikzpicture}[x=1mm, y=1mm, item/.style={draw=#1, fill=#1!12, minimum width=13mm, minimum height=5mm, font=\scriptsize\ttfamily, inner sep=1pt}]
+	\node[font=\scriptsize\bfseries, text=app] at (6, 13) {any threads};
+	\node[op=app] (a) at (6, 6)  {send(a)};
+	\node[op=app] (b) at (6, 0)  {send(b)};
+	\node[op=app] (x) at (6, -6) {close()};
+
+	\node[thread=strand, minimum width=40mm, minimum height=26mm] (st) at (50, 1) {};
+	\node[anchor=north, font=\scriptsize\bfseries, text=strand] at (st.north) {strand: in post order};
+	\node[item=strand] (p1) at (50, 4)  {push a};
+	\node[item=strand] (p2) at (50, -1.5) {push b};
+	\node[item=strand] (p3) at (50, -7) {closing};
+
+	\node[draw=io, line width=0.8pt, rounded corners=2pt, minimum width=40mm, minimum height=26mm] (dq) at (100, 1) {};
+	\node[anchor=north west, font=\scriptsize\bfseries, text=io] at (dq.north west) {\code{m\_writeQueue}};
+	\node[item=io, fill=io!30] (q1) at (93, 0) {a};
+	\node[item=io, right=1mm of q1] (q2) {b};
+	\node[note, below=0.5mm of q1] {front: on the wire};
+
+	\node[op=io] (w) at (155, 8) {async\_write(header + front)};
+	\node[note, anchor=north] at (155, 3) {done: \code{pop\_front()}\\more? write the next\\empty and closing? disconnect};
+
+	\draw[flow=app, dashed] (a.east) -- node[lbl, above] {post} (p1.west);
+	\draw[flow=app, dashed] (b.east) -- node[lbl, above] {post} (p2.west);
+	\draw[flow=app, dashed] (x.east) -- node[lbl, above] {post} (p3.west);
+	\draw[flow=strand] (st.east) -- (dq.west);
+	\draw[flow=io] (w.west -| dq.east) -- (w.west);
+	\draw[flow=io, rounded corners=3pt] (w.north) -- ++(0, 6) -| node[lbl, pos=0.25, above] {the handler runs on the strand} (dq.north -| q2);
+\end{tikzpicture}
+\end{diagram}
+\begin{itemize}[leftmargin=10pt]
+	\item \textbf{Why post?} The queue and its flags belong to the strand. \code{send()} moves the message into the lambda and returns.
+	\item \textbf{Why a queue?} Rule 6: the next \code{async\_write} may start only in the handler of the last (\code{m\_writeInProgress}).
+	\item \textbf{Why is \code{close()} posted too?} It lands \emph{behind} the sends posted before it, so they still go out. Sends posted after it see \code{m\_closing} and are dropped.
+\end{itemize}
+
+\section{Example 3 · TcpClient: handlers that come too late \hfill\src{src/net/core/tcpClient.cpp}}
+
+\begin{multicols}{2}
+\begin{diagram}
+\begin{tikzpicture}[x=1mm, y=1mm]
+	\node[state] (idle) at (0, 0) {Idle};
+	\node[state] (cing) at (48, 0) {Connecting};
+	\node[state] (cted) at (48, -26) {Connected};
+	\draw[flow=app, line width=0.9pt] (idle) to[bend left=20] node[lbl, above] {\code{connect()}} (cing);
+	\draw[flow=io, line width=0.9pt] (cing) to[bend left=20] node[lbl, below] {failed} (idle);
+	\draw[flow=io, line width=0.9pt] (cing) -- node[lbl, right] {\code{onConnected}} (cted);
+	\draw[flow=io, line width=0.9pt] (cted.north west) -- node[lbl, above right, pos=0.45] {lost} (idle.south east);
+	\draw[flow=app, line width=0.9pt, dashed] (cted.west) to[out=180, in=-90] node[lbl, below left, pos=0.4] {\code{disconnect()}} (idle.south);
+\end{tikzpicture}
+\end{diagram}
+{\small The \thr{app}{caller} starts and ends, the \thr{io}{IO thread} reports what happened. \code{disconnect()} works from Connecting too. Every way back to Idle calls \code{onDisconnect} exactly once (destroying the client calls none); after \code{disconnect()} it runs on the caller's thread, before \code{disconnect()} returns.}
+
+\columnbreak
+\textbf{The race.} \code{disconnect(); connect();} quickly: the first attempt's handler still runs, with \code{operation\_aborted} or even success (rule 7), and must not touch the second attempt. Each handler captured \emph{its} socket, so it compares:
+\begin{lstlisting}
+if (socket != m_socket) return; // let go of already
+\end{lstlisting}
+No ABA: while the handler holds the old socket, no new socket can get its address.
+
+\textbf{Cancelling from the caller's thread} (rule 5):
+\begin{lstlisting}
+asio::post(m_ioContext,
+    [resolver = std::exchange(m_resolver, nullptr),
+     socket   = std::exchange(m_socket, nullptr)] {
+  resolver->cancel();  // on the IO thread
+  asio::error_code ec;
+  socket->close(ec);   // handlers: operation_aborted
+});
+\end{lstlisting}
+\code{exchange} does two jobs: it hands the objects to the IO thread and empties the members, which makes the attempt stale.
+\end{multicols}

@@ -76,7 +76,7 @@ std::optional<T> roundTrip(const T& event) {
 TEST(GameNetMessages, ServerToMessage) {
 	using nlohmann::json;
 
-	EXPECT_EQ(json::parse(network::toMessage(network::ServerSessionAssign{1u})), json({{"type", "session"}, {"sessionId", 1u}}));
+	EXPECT_EQ(json::parse(network::toMessage(network::ServerWelcome{1u, 2u, network::Seat::Black})), json({{"type", "welcome"}, {"protocol", 1u}, {"sessionId", 2u}, {"seat", "black"}}));
 
 	const GameRules rules{.scoringMethod = Scoring::Area, .koRule = Ko::Situational, .komi = 7.5f, .suicideLegal = true};
 	EXPECT_EQ(json::parse(network::toMessage(network::ServerGameStart{GameConfig{.boardSize = 19u, .rules = rules}})),
@@ -105,9 +105,11 @@ TEST(GameNetMessages, ServerToMessage) {
 }
 
 TEST(GameNetMessages, ServerFromMessageValid) {
-	const auto session = parseAs<network::ServerSessionAssign>(R"({"type":"session","sessionId":42})");
-	ASSERT_TRUE(session.has_value());
-	EXPECT_EQ(session->sessionId, 42u);
+	const auto welcome = parseAs<network::ServerWelcome>(R"({"type":"welcome","protocol":1,"sessionId":42,"seat":"white"})");
+	ASSERT_TRUE(welcome.has_value());
+	EXPECT_EQ(welcome->protocol, 1u);
+	EXPECT_EQ(welcome->sessionId, 42u);
+	EXPECT_EQ(welcome->seat, network::Seat::White);
 
 	const auto start = parseAs<network::ServerGameStart>(R"({"type":"start","boardSize":13,"rules":{"scoring":"territory","ko":"simple","komi":6.5,"suicide":false}})");
 	ASSERT_TRUE(start.has_value());
@@ -173,7 +175,7 @@ TEST(GameNetMessages, DISABLED_ServerIgnoresUnneededFields) {
 TEST(GameNetMessages, ServerFromMessageInvalid) {
 	const auto rejects = [](const char* message) { EXPECT_FALSE(network::fromServerMessage(message).has_value()) << message; };
 
-	rejects(R"({"type":"session"})");
+	rejects(R"({"type":"welcome"})");
 
 	// Start: every rule is required and names must be known.
 	rejects(R"({"type":"start","rules":{"scoring":"area","ko":"simple","komi":7.5,"suicide":true}})");
@@ -206,6 +208,28 @@ TEST(GameNetMessages, ServerFromMessageInvalid) {
 
 	rejects(R"({"type":"unknown"})");
 	rejects("not-json");
+}
+
+//! A number too big for its field is rejected instead of cut to its lower bits (2^32 + 1 would become 1).
+TEST(GameNetMessages, RejectsNumbersThatDontFit) {
+	const auto clientRejects = [](const char* message) { EXPECT_FALSE(network::fromClientMessage(message).has_value()) << message; };
+	const auto serverRejects = [](const char* message) { EXPECT_FALSE(network::fromServerMessage(message).has_value()) << message; };
+
+	// The largest value still fits.
+	const auto hello = network::fromClientMessage(R"({"type":"hello","protocol":4294967295})");
+	ASSERT_TRUE(hello.has_value());
+	EXPECT_EQ(std::get<network::ClientHello>(*hello).protocol, 4294967295u);
+
+	clientRejects(R"({"type":"hello","protocol":4294967297})");
+	clientRejects(R"({"type":"put","x":4294967296,"y":0})");
+	clientRejects(R"({"type":"put","x":0,"y":4294967297})");
+
+	serverRejects(R"({"type":"welcome","protocol":4294967297,"sessionId":1,"seat":"black"})");
+	serverRejects(R"({"type":"welcome","protocol":1,"sessionId":4294967296,"seat":"black"})");
+	serverRejects(R"({"type":"delta","moveId":4294967297,"action":"pass","player":"white","next":"black"})");
+	serverRejects(R"({"type":"delta","moveId":1,"action":"place","player":"black","next":"white","x":4294967296,"y":2})");
+	serverRejects(R"({"type":"delta","moveId":1,"action":"place","player":"black","next":"white","x":1,"y":2,"captures":[[4294967296,0]]})");
+	serverRejects(R"({"type":"chat","player":"white","messageId":4294967297,"message":"hi"})");
 }
 
 //! A board the game cannot be played on never reaches the session.
