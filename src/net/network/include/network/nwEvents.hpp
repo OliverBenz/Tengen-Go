@@ -1,5 +1,6 @@
 #pragma once
 
+#include "model/chatMessage.hpp"
 #include "model/coordinate.hpp"
 #include "model/gameConfig.hpp"
 #include "model/gameDelta.hpp"
@@ -57,10 +58,9 @@ struct ServerGameEnd {
 	GameResult result;
 };
 
+//! A player said something. Goes to every welcomed client.
 struct ServerChat {
-	Player player;       //!< Player who sent the message.
-	unsigned messageId;  //!< Unique identifier.
-	std::string message; //!< Chat message.
+	ChatMessage chat;
 };
 
 

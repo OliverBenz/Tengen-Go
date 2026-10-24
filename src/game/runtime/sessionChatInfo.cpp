@@ -10,17 +10,17 @@ void SessionChatInfo::reset() {
 	m_pending.clear();
 }
 
-bool SessionChatInfo::update(const ChatEntry& entry) {
+bool SessionChatInfo::update(const ChatMessage& chat) {
 	bool appended = false;
 
-	if (entry.messageId < m_expectedMessageId) {
+	if (chat.messageId < m_expectedMessageId) {
 		// Ignore already seen messages.
-	} else if (entry.messageId == m_expectedMessageId) {
-		m_history.emplace_back(entry);
+	} else if (chat.messageId == m_expectedMessageId) {
+		m_history.emplace_back(chat);
 		++m_expectedMessageId;
 		appended = true;
 	} else {
-		m_pending.emplace(entry.messageId, entry);
+		m_pending.emplace(chat.messageId, chat);
 	}
 
 	// Try inserting pending chat messages to history.
@@ -37,8 +37,8 @@ bool SessionChatInfo::update(const ChatEntry& entry) {
 	return appended;
 }
 
-std::vector<ChatEntry> SessionChatInfo::getSince(const unsigned messageId) const {
-	const auto it = std::ranges::upper_bound(m_history, messageId, {}, &ChatEntry::messageId);
+std::vector<ChatMessage> SessionChatInfo::getSince(const unsigned messageId) const {
+	const auto it = std::ranges::upper_bound(m_history, messageId, {}, &ChatMessage::messageId);
 	return {it, m_history.end()};
 }
 

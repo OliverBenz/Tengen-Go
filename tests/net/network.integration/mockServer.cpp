@@ -61,7 +61,7 @@ void MockServer::onResign(const Player player) {
 }
 
 void MockServer::onChat(const Player player, const std::string& message) {
-	m_network.broadcast(network::ServerChat{player, m_messageId++, message});
+	m_network.broadcast(network::ServerChat{{.messageId = m_messageId++, .player = player, .text = message}});
 }
 
 } // namespace tengen::gtest

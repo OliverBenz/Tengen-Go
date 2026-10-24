@@ -141,11 +141,12 @@ KataGo imitates a human of the rank you pick in the bot dialog, from 20k to 3d.
 
 Per component:
 
-- [gameCore](src/game/core/README.md): rules, game loop, deltas, and move validation
-- [netCore](src/net/core/README.md): network transport and framing
-- [netNetwork](src/net/network/README.md): protocol, client/server wrappers, and session mapping
-- [visionCore](src/vision/core/README.md): board, grid, and stone detection pipeline
-- [visionPerception](src/vision/perception/README.md): mapping detected stones onto game coordinates
+- [game::model](src/game/model/README.md): modelling the data of a real game
+- [game::core](src/game/core/README.md): rules, game loop, deltas, and move validation
+- [net::core](src/net/core/README.md): network transport and framing
+- [net::gameNet](src/net/network/README.md): protocol, client/server wrappers, and session mapping
+- [vision::core](src/vision/core/README.md): board, grid, and stone detection pipeline
+- [vision::perception](src/vision/perception/README.md): mapping detected stones onto game coordinates
 
 ## License
 

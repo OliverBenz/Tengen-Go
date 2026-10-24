@@ -25,13 +25,13 @@ enum class DisconnectReason : std::uint8_t {
 //! Keep handlers short, and never wait in one for the thread that connects, disconnects or destroys the client: both would hang.
 class IClientHandler {
 public:
-	virtual ~IClientHandler()                                                                 = default;
-	virtual void onWelcome(std::optional<Player> player)                                      = 0; //!< The server took us in. Nullopt: we only watch.
-	virtual void onGameStart(const GameConfig& config)                                        = 0; //!< The game started.
-	virtual void onGameDelta(const GameDelta& delta)                                          = 0; //!< One accepted move.
-	virtual void onGameEnd(const GameResult& result)                                          = 0; //!< The game ended. Right after the last delta.
-	virtual void onChatMessage(Player player, unsigned messageId, const std::string& message) = 0; //!< A chat message is received.
-	virtual void onDisconnected(DisconnectReason reason)                                      = 0; //!< The connection ended, or could not be made.
+	virtual ~IClientHandler()                            = default;
+	virtual void onWelcome(std::optional<Player> player) = 0; //!< The server took us in. Nullopt: we only watch.
+	virtual void onGameStart(const GameConfig& config)   = 0; //!< The game started.
+	virtual void onGameDelta(const GameDelta& delta)     = 0; //!< One accepted move.
+	virtual void onGameEnd(const GameResult& result)     = 0; //!< The game ended. Right after the last delta.
+	virtual void onChatMessage(const ChatMessage& chat)  = 0; //!< A player said something.
+	virtual void onDisconnected(DisconnectReason reason) = 0; //!< The connection ended, or could not be made.
 };
 
 class Client {

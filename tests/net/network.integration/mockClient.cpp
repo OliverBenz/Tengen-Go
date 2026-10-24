@@ -59,8 +59,8 @@ void MockClient::onGameEnd(const GameResult& result) {
 	std::cout << std::format("[Client] Received game end. Winner: {}\n", result.winner ? toString(*result.winner) : "none");
 }
 
-void MockClient::onChatMessage(const Player player, unsigned, const std::string& message) {
-	std::cout << std::format("[Client] Received message from '{}':{}\n", toString(player), message);
+void MockClient::onChatMessage(const ChatMessage& chat) {
+	std::cout << std::format("[Client] Received message from '{}':{}\n", toString(chat.player), chat.text);
 }
 
 void MockClient::onDisconnected(network::DisconnectReason) {

@@ -141,7 +141,7 @@ Player NetworkSession::currentPlayer() const {
 	std::lock_guard<std::mutex> lock(m_stateMutex);
 	return m_gameInfo.getPlayer();
 }
-std::vector<ChatEntry> NetworkSession::getChatSince(const unsigned messageId) const {
+std::vector<ChatMessage> NetworkSession::getChatSince(const unsigned messageId) const {
 	std::lock_guard<std::mutex> lock(m_stateMutex);
 	return m_chatInfo.getSince(messageId);
 }
@@ -206,11 +206,11 @@ void NetworkSession::onGameEnd(const GameResult& result) {
 	}
 	m_eventHub.signal(AS_StateChange);
 }
-void NetworkSession::onChatMessage(const Player player, const unsigned messageId, const std::string& message) {
+void NetworkSession::onChatMessage(const ChatMessage& chat) {
 	bool appended = false;
 	{
 		std::lock_guard<std::mutex> lock(m_stateMutex);
-		appended = m_chatInfo.update(ChatEntry{player, messageId, message});
+		appended = m_chatInfo.update(chat);
 	}
 	if (appended) {
 		m_eventHub.signal(AS_NewChat);

@@ -2,6 +2,7 @@
 
 #include "core/IGameStateListener.hpp"
 #include "core/game.hpp"
+#include "model/chatMessage.hpp"
 #include "model/gameConfig.hpp"
 #include "model/player.hpp"
 #include "network/server.hpp"
@@ -40,17 +41,11 @@ public: // IGameStateListener Interface
 	void onGameEnd(const GameResult& result) override;
 
 private:
-	struct ChatEntry {
-		Player player;
-		std::string message;
-	};
-
-private:
 	Game m_game;              //!< Our unique game instance.
 	std::thread m_gameThread; //!< Runs the game loop.
 
-	std::unordered_set<Player> m_seated;  //!< Players whose seat is taken.
-	std::vector<ChatEntry> m_chatHistory; //!< Well what could that be.
+	std::unordered_set<Player> m_seated;    //!< Players whose seat is taken.
+	std::vector<ChatMessage> m_chatHistory; //!< Well what could that be.
 
 	network::Server m_server{}; //!< The network interface.
 };

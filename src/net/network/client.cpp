@@ -173,13 +173,12 @@ void Client::Implementation::handleNetworkEvent(const ServerGameEnd& event) {
 
 void Client::Implementation::handleNetworkEvent(const ServerChat& event) {
 	if (m_handler) {
-		m_handler->onChatMessage(event.player, event.messageId, event.message);
+		m_handler->onChatMessage(event.chat);
 	}
 }
 
 
-Client::Client()
-    : m_pimpl(std::make_unique<Implementation>()) {
+Client::Client() : m_pimpl(std::make_unique<Implementation>()) {
 }
 
 Client::~Client() = default;
