@@ -16,7 +16,7 @@ namespace app {
 
 
 //! Hosts a game for two network players and handles the communication between network and game.
-class GameServer : public network::IServerHandler, public IGameStateListener {
+class GameServer final : public network::IServerHandler, public IGameStateListener {
 public:
 	//! The first client to connect plays firstPlayer.
 	//! \throws std::invalid_argument if the board size is not supported.

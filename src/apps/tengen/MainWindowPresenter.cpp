@@ -16,7 +16,8 @@
 
 namespace tengen {
 
-MainWindowPresenter::MainWindowPresenter(gui::MainWindow& mainWindow) : QObject(nullptr), m_mainWindow(mainWindow) {
+MainWindowPresenter::MainWindowPresenter(gui::MainWindow& mainWindow)
+    : QObject(nullptr), m_mainWindow(mainWindow) {
 	QObject::connect(&m_mainWindow, &gui::MainWindow::gameLocalRequested, this, &MainWindowPresenter::onNewLocalGameRequested);
 	QObject::connect(&m_mainWindow, &gui::MainWindow::gameBotRequested, this, &MainWindowPresenter::onNewBotGameRequested);
 	QObject::connect(&m_mainWindow, &gui::MainWindow::gameHostRequested, this, &MainWindowPresenter::onHostRequested);
@@ -71,10 +72,10 @@ void MainWindowPresenter::onNewBotGameRequested(const GameConfig& config, const 
 void MainWindowPresenter::onConnectRequested(const QString& hostIp) {
 	onShutdownRequested();
 
-	// TODO: The server does not tell us our seat yet, so show the colours like a local game until it does.
-	showLocalPlayers();
+	showLocalPlayers(); // Until the welcome tells us our colour.
 
-	auto session = std::make_unique<app::NetworkSession>();
+	auto session       = std::make_unique<app::NetworkSession>();
+	m_networkPresenter = std::make_unique<NetworkPresenter>(*session, m_mainWindow.gameWidget());
 	session->connect(hostIp.toStdString());
 
 	auto& game      = static_cast<app::IGameSession&>(*session);
@@ -88,9 +89,11 @@ void MainWindowPresenter::onHostRequested(const GameConfig& config, const Player
 	onShutdownRequested();
 	showPlayers(hostColour, tr("Opponent"));
 
-	auto session = std::make_unique<app::NetworkSession>();
+	auto session       = std::make_unique<app::NetworkSession>();
+	m_networkPresenter = std::make_unique<NetworkPresenter>(*session, m_mainWindow.gameWidget());
 	if (!session->host(config, hostColour)) {
 		// TODO: Signal to the user that host failed.
+		m_networkPresenter.reset();
 		return;
 	}
 
@@ -103,7 +106,8 @@ void MainWindowPresenter::onHostRequested(const GameConfig& config, const Player
 
 void MainWindowPresenter::onShutdownRequested() {
 	if (m_gameSession) {
-		m_gamePresenter = nullptr; // Destroy before m_game
+		m_gamePresenter    = nullptr; // Destroy before m_game
+		m_networkPresenter = nullptr;
 		m_gameSession->shutdown();
 		m_gameSession.reset();
 	}

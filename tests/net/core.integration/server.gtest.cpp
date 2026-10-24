@@ -17,9 +17,6 @@ public:
 	void onWelcome(std::optional<Player>) override {
 	}
 
-	void onRejected(network::RejectReason) override {
-	}
-
 	void onGameStart(const GameConfig&) override {
 	}
 
@@ -37,7 +34,7 @@ public:
 	void onChatMessage(Player, unsigned, const std::string&) override {
 	}
 
-	void onDisconnected() override {
+	void onDisconnected(network::DisconnectReason) override {
 		std::lock_guard<std::mutex> lock(m_mutex);
 		m_disconnected = true;
 		m_cv.notify_all();

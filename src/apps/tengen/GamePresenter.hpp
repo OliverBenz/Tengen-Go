@@ -12,7 +12,7 @@
 
 namespace tengen {
 
-class GamePresenter : public QObject, public app::IAppSignalListener {
+class GamePresenter final : public QObject, public app::IAppSignalListener {
 	Q_OBJECT
 
 public:

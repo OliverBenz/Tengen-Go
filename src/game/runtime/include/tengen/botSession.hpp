@@ -18,7 +18,7 @@ namespace tengen::app {
 
 //! Play locally against a bot engine.
 //! The engine answers on a thread of its own and signals us through the listener interface.
-class BotSession : public IGameSession, public IGameStateListener, public engine::IEngineListener {
+class BotSession final : public IGameSession, public IGameStateListener, public engine::IEngineListener {
 public:
 	enum class Status {
 		Idle,     //!< The engine is not up yet. The board takes no moves.

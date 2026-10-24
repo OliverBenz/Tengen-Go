@@ -32,10 +32,6 @@ void MockClient::onWelcome(const std::optional<Player> player) {
 	std::cout << std::format("[Client] Welcomed as '{}'.\n", player ? toString(*player) : "observer");
 }
 
-void MockClient::onRejected(network::RejectReason) {
-	std::cout << "[Client] Rejected by the server.\n";
-}
-
 void MockClient::onGameStart(const GameConfig& config) {
 	std::cout << std::format("[Client] Received game start: board={}, komi={}\n", config.boardSize, config.rules.komi);
 }
@@ -67,7 +63,7 @@ void MockClient::onChatMessage(const Player player, unsigned, const std::string&
 	std::cout << std::format("[Client] Received message from '{}':{}\n", toString(player), message);
 }
 
-void MockClient::onDisconnected() {
+void MockClient::onDisconnected(network::DisconnectReason) {
 	std::cout << std::format("[Client] Client {} disconnected.\n", m_network.sessionId());
 }
 

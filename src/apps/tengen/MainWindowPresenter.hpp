@@ -2,6 +2,7 @@
 
 #include "GamePresenter.hpp"
 #include "MainWindow.hpp"
+#include "NetworkPresenter.hpp"
 #include "engine/engineCatalog.hpp"
 #include "model/gameConfig.hpp"
 #include "tengen/IGameSession.hpp"
@@ -33,9 +34,10 @@ private:
 	void showPlayers(Player ownColour, const QString& opponentName); //!< Set the player strings in the status box based given your stone colour and the opponent name. You get the name "You".
 
 private:
-	gui::MainWindow& m_mainWindow;                             //!< The main window.
-	std::unique_ptr<app::IGameSession> m_gameSession{nullptr}; //!< The actual game.
-	std::unique_ptr<GamePresenter> m_gamePresenter{nullptr};   //!< The 'drawer' of the game.
+	gui::MainWindow& m_mainWindow;                                 //!< The main window.
+	std::unique_ptr<app::IGameSession> m_gameSession{nullptr};     //!< The actual game.
+	std::unique_ptr<GamePresenter> m_gamePresenter{nullptr};       //!< The 'drawer' of the game.
+	std::unique_ptr<NetworkPresenter> m_networkPresenter{nullptr}; //!< Network games only: our seat, why the connection ended.
 };
 
 } // namespace tengen
