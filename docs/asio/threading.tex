@@ -1,0 +1,114 @@
+% Page 3: which thread runs what in Tengen, how TcpClient locks, how the server shuts down.
+
+\newpage
+\section{Threads in Tengen \hfill {\normalsize\mdseries arrow colour = the thread that runs the call}}
+
+\begin{diagram}
+\begin{tikzpicture}[x=1mm, y=1mm, layer/.style={draw=rule, fill=soft, line width=0.6pt, rounded corners=2pt, minimum width=50mm, minimum height=7.5mm, align=center, font=\footnotesize}]
+	% client column
+	\node[font=\small\bfseries] at (40, 8) {client process};
+	\node[layer] (c1) at (40, 0)   {\textbf{NetworkSession} (\code{IClientHandler})};
+	\node[layer] (c2) at (40, -18) {\textbf{network::Client}: JSON, handshake};
+	\node[layer] (c3) at (40, -36) {\textbf{core::TcpClient}: state, two locks};
+	\node[layer] (c4) at (40, -54) {\textbf{Connection}: reads, write queue};
+	\node[thread=io, anchor=north, minimum width=50mm, font=\scriptsize] at ($(c4.south)+(0,-3)$) {\textbf{client IO thread}};
+
+	% server column
+	\node[font=\small\bfseries] at (144, 8) {server process};
+	\node[layer] (s1) at (144, 0)   {\textbf{GameServer} (\code{IServerHandler})};
+	\node[layer, draw=srv, fill=srv!10] (s2) at (144, -18) {\textbf{network::Server}: queue, sessions};
+	\node[layer] (s3) at (144, -36) {\textbf{core::TcpServer}: accept, map};
+	\node[layer] (s4) at (144, -54) {\textbf{Connection} $\times N$};
+	\node[thread=io, anchor=north, minimum width=50mm, font=\scriptsize] at ($(s4.south)+(0,-3)$) {\textbf{server IO thread}};
+	\node[thread=srv, anchor=east, text width=30mm, font=\scriptsize] at ($(s2.west)+(-16,0)$) {\textbf{server thread} drains the queue; the only one touching sessions};
+	\draw[srv, line width=0.8pt, dotted] ($(s2.west)+(-16,0)$) -- (s2.west);
+
+	% wire
+	\draw[line width=1.6pt, draw=gray!60] (c4.east) -- node[above, font=\scriptsize] {TCP} (s4.west);
+
+	% client: calls go down on the caller's thread, callbacks come up on the IO thread
+	\draw[flow=app, line width=1pt] ($(c1.south)+(-12,0)$) -- ($(c2.north)+(-12,0)$);
+	\draw[flow=app, line width=1pt] ($(c2.south)+(-12,0)$) -- ($(c3.north)+(-12,0)$);
+	\draw[flow=app, line width=1pt, dashed] ($(c3.south)+(-12,0)$) -- ($(c4.north)+(-12,0)$);
+	\node[lbl, text=app, anchor=east] at ($(c1.south)+(-13,-5.25)$) {connect, send,\\disconnect};
+	\node[lbl, text=app, anchor=east] at ($(c3.south)+(-13,-5.25)$) {post};
+	\foreach \a/\b in {c4/c3, c3/c2, c2/c1} \draw[flow=io, line width=1pt] ($(\a.north)+(12,0)$) -- ($(\b.south)+(12,0)$);
+	\node[lbl, text=io, anchor=west] at ($(c3.north)+(13,5.25)$) {onMessage};
+	\node[lbl, text=io, anchor=west] at ($(c2.north)+(13,5.25)$) {onGameDelta \dots};
+
+	% server: the IO thread only queues, the server thread does the rest
+	\draw[flow=io, line width=1pt] ($(s4.north)+(-12,0)$) -- ($(s3.south)+(-12,0)$);
+	\draw[flow=io, line width=1pt] ($(s3.north)+(-12,0)$) -- node[lbl, text=io, left=1pt] {only queue()} ($(s2.south)+(-12,0)$);
+	\draw[flow=srv, line width=1pt] ($(s2.north)+(-12,0)$) -- node[lbl, text=srv, left=1pt] {onPlace \dots} ($(s1.south)+(-12,0)$);
+	\draw[flow=app, line width=1pt] ($(s1.south)+(12,0)$) -- node[lbl, text=app, right=1pt] {broadcast: queue} ($(s2.north)+(12,0)$);
+	\draw[flow=srv, line width=1pt] ($(s2.south)+(12,0)$) -- node[lbl, text=srv, right=1pt] {sendNow} ($(s3.north)+(12,0)$);
+	\draw[flow=srv, line width=1pt, dashed] ($(s3.south)+(12,0)$) -- node[lbl, text=srv, right=1pt] {post} ($(s4.north)+(12,0)$);
+\end{tikzpicture}
+\end{diagram}
+{\small Calls go down, callbacks come up. Dashed = \code{post}: the caller only queues, the \thr{io}{IO thread} does the I/O. The client has no thread of its own, so \code{NetworkSession}'s handler runs \emph{on the IO thread}: it must be quick and lock its own state. The server leaves the IO thread at once, so a slow game never stalls the sockets. \code{GameServer} hands moves to the game's own thread, which broadcasts start, deltas and end; only chat is broadcast from the \thr{srv}{server thread}.}
+
+\section{TcpClient: two locks, one report per connection}
+\begin{diagram}
+\begin{tikzpicture}[x=1mm, y=1mm, seg/.style={draw=#1, fill=#1!18, minimum height=6mm, font=\scriptsize, inner sep=1pt, anchor=west}]
+	\fill[lane=app] (0, 0) rectangle (184, 9);
+	\fill[lane=io] (0, -13) rectangle (184, -4);
+	\node[anchor=west, font=\scriptsize\bfseries, text=app] at (1, 4.5) {caller};
+	\node[anchor=west, font=\scriptsize\bfseries, text=io] at (1, -8.5) {IO thread};
+
+	\node[seg=app, minimum width=26mm] (l) at (16, 4.5) {\code{disconnect()}: lock};
+	\node[seg=app, minimum width=50mm, right=0pt of l] (r) {\code{release()}: Idle, forget connection};
+	\node[seg=app, minimum width=40mm, right=0pt of r] (d) {\code{onDisconnect(Requested)}};
+	\node[seg=app, minimum width=10mm, right=0pt of d] (u) {unlock};
+
+	\node[seg=io, minimum width=34mm] (f) at (30, -8.5) {read fails: \code{onConnectionEnded}};
+	\node[seg=gray, minimum width=68mm, right=0pt of f, fill=gray!10] (wt) {waits for \code{m\_callbackMutex}};
+	\node[seg=io, minimum width=44mm, right=0pt of wt] (n) {not current any more $\Rightarrow$ return};
+	\draw[flow=app] (u.south east) -- (n.north west);
+	\draw[decorate, decoration={brace, amplitude=2.5pt}, draw=app] ($(l.north west)+(0,0.5)$) -- node[above=2pt, font=\scriptsize, text=app] {holds \code{m\_callbackMutex}} ($(u.north east)+(0,0.5)$);
+\end{tikzpicture}
+\end{diagram}
+\begin{multicols}{2}
+\small
+\begin{itemize}[leftmargin=10pt]
+	\item \code{m\_callbackMutex} is held around \emph{every} callback: they run one at a time, and \code{disconnect()} returns only once no callback of that connection can run any more.
+	\item It is \textbf{recursive}: a callback may call \code{disconnect()} on the same thread. \code{network::Client::close()} does, on a reject or a bad message.
+\end{itemize}
+\columnbreak
+\begin{itemize}[leftmargin=10pt]
+	\item \code{m\_mutex} guards the state and is \textbf{never} held during a callback, so \code{send()} and \code{isConnected()} never wait for one.
+	\item Lock order: callback lock first, then state lock.
+\end{itemize}
+\end{multicols}
+\normalsize
+
+\section{Shutting down in order \hfill\src{tcpServer.cpp · server.cpp}}
+
+\begin{diagram}
+\begin{tikzpicture}[x=1mm, y=1mm]
+	\fill[lane=app] (0, 0) rectangle (184, 9);
+	\fill[lane=io] (0, -14) rectangle (184, -5);
+	\node[anchor=west, font=\scriptsize\bfseries, text=app] at (1, 4.5) {\code{stop()}};
+	\node[anchor=west, font=\scriptsize\bfseries, text=io] at (1, -9.5) {IO thread};
+	\node[step=app] (s1) at (14, 4.5) {1}; \node[anchor=west, font=\scriptsize] at (17, 4.5) {state = Stopped};
+	\node[step=app] (s2) at (44, 4.5) {2}; \node[anchor=west, font=\scriptsize] at (47, 4.5) {\code{close()} each};
+	\node[step=app] (s3) at (72, 4.5) {3}; \node[anchor=west, font=\scriptsize] at (75, 4.5) {\code{wait\_for} empty map, $\leq$ 1 s};
+	\node[step=app] (s4) at (117, 4.5) {4}; \node[anchor=west, font=\scriptsize] at (120, 4.5) {\code{reset} guard, \code{stop}, \code{join}};
+	\node[step=app] (s5) at (153, 4.5) {5}; \node[anchor=west, font=\scriptsize] at (156, 4.5) {acceptor, leftovers};
+	\node[anchor=west, font=\scriptsize] at (13, -9.5) {new clients turned away};
+	\node[anchor=west, font=\scriptsize] (fl) at (47, -9.5) {each: flush, close, erase; the last notifies};
+	\node[anchor=west, font=\scriptsize] (end) at (117, -9.5) {\code{run()} returns};
+	\node[anchor=west, font=\scriptsize, text=gray] at (156, -9.5) {(no IO thread)};
+	\draw[flow=app, dashed] (s2.south) -- ++(0, -6.5);
+	\draw[flow=io] (fl.north east) -- node[lbl, right, fill=none] {notify} (s3.south);
+	\draw[flow=io] (end.north west) -- (s4.south);
+\end{tikzpicture}
+\end{diagram}
+\begin{itemize}[leftmargin=10pt]
+	\item \stepnum[app]{3} \code{wait\_for} \emph{releases} \code{m\_connectionsMutex} while it waits, so the IO thread can erase and notify.
+	\item \stepnum[app]{5} only after the join: the acceptor and the sockets of slow clients have no other thread using them any more (rule 5).
+	\item \code{network::Server::stop()} first pushes a \code{Shutdown} event under its state lock and joins the server thread. The queue is FIFO, so every \code{send}/\code{broadcast} before it reaches the connections, and nothing can be queued after it. Then \code{TcpServer::stop()} flushes and closes.
+\end{itemize}
+
+\begin{warnbox}[Worth knowing when reviewing]
+\code{doAccept} calls \code{start()} $\rightarrow$ \code{onConnect} while holding \code{m\_connectionsMutex}. Fine today, since \code{network::Server}'s callback only queues. A callback that calls \code{TcpServer::send()} or \code{disconnect()} there would lock it a second time and hang.
+\end{warnbox}
