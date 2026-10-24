@@ -37,11 +37,12 @@ private:
 		Stopped, //!< For good: a stopped server can't start again.
 	};
 
+	void setupAcceptor(std::uint16_t port);
 	void doAccept();                                                                //!< Start async accept loop.
 	bool createConnection(asio::ip::tcp::socket socket, ConnectionId connectionId); //!< Create and add new connection to map.
 
 private:
-	asio::io_context m_ioContext{};
+	asio::io_context m_ioContext{}; // Initialized. The acceptor uses it in the ctor initializer.
 	asio::ip::tcp::acceptor m_acceptor;
 	std::optional<asio::executor_work_guard<asio::io_context::executor_type>> m_workGuard;
 	bool m_acceptorReady{false};
@@ -61,24 +62,33 @@ private:
 
 TcpServer::Implementation::Implementation(Callbacks callbacks, std::uint16_t port)
     : m_acceptor(m_ioContext), m_callbacks(std::move(callbacks)) {
-	// Do a manual open/bind/listen so we can stay in error_code land and avoid throws.
+	setupAcceptor(port);
+}
+
+void TcpServer::Implementation::setupAcceptor(const std::uint16_t port) {
+	m_acceptorReady = false; // Default but let's be explicit.
+
 	asio::error_code ec;
 	m_acceptor.open(asio::ip::tcp::v4(), ec);
 	if (ec) {
 		return;
 	}
+
 	m_acceptor.set_option(asio::ip::tcp::acceptor::reuse_address(true), ec);
 	if (ec) {
 		return;
 	}
+
 	m_acceptor.bind(asio::ip::tcp::endpoint(asio::ip::tcp::v4(), port), ec);
 	if (ec) {
 		return;
 	}
+
 	m_acceptor.listen(asio::socket_base::max_listen_connections, ec);
 	if (ec) {
 		return;
 	}
+
 	m_acceptorReady = true;
 }
 
@@ -89,23 +99,28 @@ void TcpServer::Implementation::start() {
 		assert(expected == State::Running && "A stopped server can't start again.");
 		return;
 	}
+
 	// If acceptor init failed during construction, don't start a dead server.
 	if (!m_acceptorReady) {
 		m_state = State::Stopped;
 		return;
 	}
 
-	m_workGuard.emplace(asio::make_work_guard(m_ioContext));
-	doAccept();
+	m_workGuard.emplace(asio::make_work_guard(m_ioContext)); // Keeps run() going while there is no pending work.
+	doAccept();                                              // Queued now, handled once the IO thread runs.
 	m_ioThread = std::thread([this]() { m_ioContext.run(); });
 }
 
 void TcpServer::Implementation::stop() {
 	std::lock_guard<std::mutex> lifecycleLock(m_lifecycleMutex);
+	if (std::this_thread::get_id() == m_ioThread.get_id()) {
+		assert(false && "A callback can't stop its server.");
+		return;
+	}
+
 	if (m_state.exchange(State::Stopped) != State::Running) {
 		return;
 	}
-	assert(std::this_thread::get_id() != m_ioThread.get_id()); // A callback can't stop its server.
 
 	// Each connection sends what is queued, then closes and leaves the map. New clients are turned away by the state.
 	{
@@ -138,20 +153,20 @@ void TcpServer::Implementation::stop() {
 bool TcpServer::Implementation::send(ConnectionId connectionId, const Message& msg) {
 	std::lock_guard<std::mutex> lock(m_connectionsMutex);
 
-	if (m_connections.contains(connectionId)) {
-		m_connections.at(connectionId)->send(msg);
-		return true;
+	const auto connection = m_connections.find(connectionId);
+	if (connection == m_connections.end()) {
+		return false;
 	}
-
-	return false;
+	connection->second->send(msg);
+	return true;
 }
 
 void TcpServer::Implementation::disconnect(ConnectionId connectionId) {
 	std::lock_guard<std::mutex> lock(m_connectionsMutex);
 
 	// The connection erases itself from the map in onDisconnect.
-	if (m_connections.contains(connectionId)) {
-		m_connections.at(connectionId)->close();
+	if (const auto connection = m_connections.find(connectionId); connection != m_connections.end()) {
+		connection->second->close();
 	}
 }
 
@@ -163,6 +178,7 @@ void TcpServer::Implementation::doAccept() {
 			if (m_state != State::Running) {
 				return; // Turned away: the socket closes here.
 			}
+
 			const auto connectionId = m_nextConnectionId++;
 			if (createConnection(std::move(socket), connectionId)) {
 				assert(m_connections.contains(connectionId));

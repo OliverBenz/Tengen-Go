@@ -107,7 +107,11 @@ void Server::Implementation::start() {
 
 void Server::Implementation::stop() {
 	std::lock_guard<std::mutex> lifecycleLock(m_lifecycleMutex);
-	assert(std::this_thread::get_id() != m_serverThread.get_id()); // A handler can't stop its server.
+	if (std::this_thread::get_id() == m_serverThread.get_id()) {
+		assert(false && "A handler can't stop its server.");
+		return;
+	}
+
 	{
 		// Under the state lock: what send() and broadcast() queued before goes out, nothing after.
 		std::lock_guard<std::mutex> stateLock(m_stateMutex);
@@ -326,10 +330,12 @@ Seat Server::Implementation::freeSeat() const {
 }
 
 
-Server::Server() : m_pimpl(std::make_unique<Implementation>(core::DEFAULT_PORT)) {
+Server::Server()
+    : m_pimpl(std::make_unique<Implementation>(core::DEFAULT_PORT)) {
 }
 
-Server::Server(std::uint16_t port) : m_pimpl(std::make_unique<Implementation>(port)) {
+Server::Server(std::uint16_t port)
+    : m_pimpl(std::make_unique<Implementation>(port)) {
 }
 
 Server::~Server() {
