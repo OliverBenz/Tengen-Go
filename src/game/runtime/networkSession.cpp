@@ -6,7 +6,6 @@
 #include "model/gameResult.hpp"
 #include "tengen/gameServer.hpp"
 
-#include <algorithm>
 #include <cassert>
 #include <format>
 #include <stdexcept>
@@ -36,13 +35,13 @@ void NetworkSession::unsubscribe(IAppSignalListener* listener) {
 
 
 void NetworkSession::connect(const std::string& hostIp) {
+	resetState(PLACEHOLDER_CONFIG, GameStatus::Ready);
 	{
 		std::lock_guard<std::mutex> lock(m_stateMutex);
-		m_gameInfo.reset(PLACEHOLDER_CONFIG, GameStatus::Ready);
-		m_expectedMessageId = 1u;
-		m_chatHistory.clear();
-		m_pendingChat.clear();
+		m_networkInfo.connecting();
 	}
+	// Before connecting: the welcome or the end may come at once, and must not be reported a second time by us.
+	m_eventHub.signal(AS_ConnectionChange);
 	stopLocalServer();
 	m_network.connect(hostIp);
 
@@ -67,14 +66,13 @@ bool NetworkSession::host(const GameConfig& config, const Player hostColour) {
 		return false;
 	}
 
-	// Initialize the session
+	resetState(config, GameStatus::Ready);
 	{
 		std::lock_guard<std::mutex> lock(m_stateMutex);
-		m_gameInfo.reset(config, GameStatus::Ready);
-		m_expectedMessageId = 1u;
-		m_chatHistory.clear();
-		m_pendingChat.clear();
+		m_networkInfo.connecting();
 	}
+	// Before connecting: the welcome or the end may come at once, and must not be reported a second time by us.
+	m_eventHub.signal(AS_ConnectionChange);
 
 	// We connect first, so we take the seat the server hands to its first player.
 	m_localServer->start();
@@ -98,14 +96,7 @@ void NetworkSession::stopLocalServer() {
 void NetworkSession::disconnect() {
 	m_network.disconnect();
 	stopLocalServer();
-
-	{
-		std::lock_guard<std::mutex> lock(m_stateMutex);
-		m_gameInfo.reset(PLACEHOLDER_CONFIG, GameStatus::Idle);
-		m_expectedMessageId = 1u;
-		m_chatHistory.clear();
-		m_pendingChat.clear();
-	}
+	resetState(PLACEHOLDER_CONFIG, GameStatus::Idle);
 
 	m_eventHub.signal(AS_BoardChange);
 	m_eventHub.signal(AS_PlayerChange);
@@ -115,14 +106,13 @@ void NetworkSession::disconnect() {
 void NetworkSession::shutdown() {
 	stopLocalServer();
 	m_network.disconnect();
+	resetState(PLACEHOLDER_CONFIG, GameStatus::Idle);
+}
 
-	{
-		std::lock_guard<std::mutex> lock(m_stateMutex);
-		m_gameInfo.reset(PLACEHOLDER_CONFIG, GameStatus::Idle);
-		m_expectedMessageId = 1u;
-		m_chatHistory.clear();
-		m_pendingChat.clear();
-	}
+void NetworkSession::resetState(const GameConfig& config, const GameStatus status) {
+	std::lock_guard<std::mutex> lock(m_stateMutex);
+	m_gameInfo.reset(config, status);
+	m_chatInfo.reset();
 }
 
 
@@ -153,18 +143,19 @@ Player NetworkSession::currentPlayer() const {
 }
 std::vector<ChatEntry> NetworkSession::getChatSince(const unsigned messageId) const {
 	std::lock_guard<std::mutex> lock(m_stateMutex);
-
-	// Find first entry with id > messageId
-	auto it = std::upper_bound(m_chatHistory.begin(), m_chatHistory.end(), messageId,
-	                           [](const unsigned value, const ChatEntry& e) { return e.messageId > value; });
-
-	return {it, m_chatHistory.end()};
+	return m_chatInfo.getSince(messageId);
+}
+SessionNetworkInfo NetworkSession::networkInfo() const {
+	std::lock_guard<std::mutex> lock(m_stateMutex);
+	return m_networkInfo;
 }
 
-void NetworkSession::onWelcome(std::optional<Player>) {
-}
-
-void NetworkSession::onRejected(network::RejectReason) {
+void NetworkSession::onWelcome(const std::optional<Player> player) {
+	{
+		std::lock_guard<std::mutex> lock(m_stateMutex);
+		m_networkInfo.update(player);
+	}
+	m_eventHub.signal(AS_ConnectionChange);
 }
 
 void NetworkSession::onGameStart(const GameConfig& config) {
@@ -219,44 +210,22 @@ void NetworkSession::onChatMessage(const Player player, const unsigned messageId
 	bool appended = false;
 	{
 		std::lock_guard<std::mutex> lock(m_stateMutex);
-
-		if (messageId < m_expectedMessageId) {
-			// Ignore already seen messages.
-		} else if (messageId == m_expectedMessageId) {
-			m_chatHistory.emplace_back(ChatEntry{player, messageId, message});
-			++m_expectedMessageId;
-			appended = true;
-		} else {
-			m_pendingChat.emplace(messageId, ChatEntry{player, messageId, message});
-		}
-
-		// Try insterting pending chat messages to history.
-		while (true) {
-			auto it = m_pendingChat.find(m_expectedMessageId);
-			if (it == m_pendingChat.end()) {
-				break;
-			}
-			m_chatHistory.emplace_back(it->second);
-			m_pendingChat.erase(it);
-			++m_expectedMessageId;
-			appended = true;
-		}
+		appended = m_chatInfo.update(ChatEntry{player, messageId, message});
 	}
 	if (appended) {
 		m_eventHub.signal(AS_NewChat);
 	}
 }
-void NetworkSession::onDisconnected() {
+void NetworkSession::onDisconnected(const network::DisconnectReason reason) {
+	resetState(PLACEHOLDER_CONFIG, GameStatus::Idle);
 	{
 		std::lock_guard<std::mutex> lock(m_stateMutex);
-		m_gameInfo.reset(PLACEHOLDER_CONFIG, GameStatus::Idle);
-		m_expectedMessageId = 1u;
-		m_chatHistory.clear();
-		m_pendingChat.clear();
+		m_networkInfo.update(reason);
 	}
 	m_eventHub.signal(AS_BoardChange);
 	m_eventHub.signal(AS_PlayerChange);
 	m_eventHub.signal(AS_StateChange);
+	m_eventHub.signal(AS_ConnectionChange);
 }
 
 } // namespace tengen::app

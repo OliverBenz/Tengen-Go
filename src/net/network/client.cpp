@@ -9,16 +9,6 @@ namespace tengen::network {
 
 namespace {
 
-//! Why a connection ended. Not passed to the handler yet.
-enum class DisconnectReason : std::uint8_t {
-	ClosedLocally,  //!< disconnect() was called.
-	ConnectFailed,  //!< The server could not be reached.
-	ConnectionLost, //!< The server closed the connection, or it broke.
-	Rejected,       //!< The server refused the hello.
-	ProtocolError,  //!< The server sent something it shouldn't.
-	Error,          //!< Handling a message threw.
-};
-
 DisconnectReason toReason(const core::DisconnectReason reason) {
 	switch (reason) {
 	case core::DisconnectReason::Requested:
@@ -29,6 +19,14 @@ DisconnectReason toReason(const core::DisconnectReason reason) {
 		return DisconnectReason::ConnectionLost;
 	}
 	return DisconnectReason::ConnectionLost;
+}
+
+DisconnectReason toReason(const RejectReason reason) {
+	switch (reason) {
+	case RejectReason::ProtocolMismatch:
+		return DisconnectReason::ProtocolMismatch;
+	}
+	return DisconnectReason::ProtocolError;
 }
 
 } // namespace
@@ -120,12 +118,11 @@ void Client::Implementation::onMessage(const core::Message& message) {
 }
 
 void Client::Implementation::onDisconnect(const core::DisconnectReason reason) {
-	// Pass the reason on once onDisconnected takes one.
-	[[maybe_unused]] const auto ourReason = reason == core::DisconnectReason::Requested ? m_closeReason : toReason(reason);
+	const auto ourReason = reason == core::DisconnectReason::Requested ? m_closeReason : toReason(reason);
 	if (m_handler) {
 		// The connection is over, but the IO thread must survive a throwing handler.
 		try {
-			m_handler->onDisconnected();
+			m_handler->onDisconnected(ourReason);
 		} catch (...) {}
 	}
 	// After the handler, which may still want the id. A new welcome can't come earlier: callbacks run one at a time.
@@ -153,10 +150,7 @@ void Client::Implementation::handleNetworkEvent(const ServerWelcome& event) {
 }
 
 void Client::Implementation::handleNetworkEvent(const ServerReject& event) {
-	if (m_handler) {
-		m_handler->onRejected(event.reason);
-	}
-	close(DisconnectReason::Rejected);
+	close(toReason(event.reason));
 }
 
 void Client::Implementation::handleNetworkEvent(const ServerGameStart& event) {

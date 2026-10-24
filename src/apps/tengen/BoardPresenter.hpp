@@ -8,7 +8,7 @@
 
 namespace tengen {
 
-class BoardPresenter : public QObject, public app::IAppSignalListener {
+class BoardPresenter final : public QObject, public app::IAppSignalListener {
 	Q_OBJECT
 
 public:

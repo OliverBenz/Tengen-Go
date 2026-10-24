@@ -58,8 +58,8 @@ sequenceDiagram
     C->>T: disconnect()
     Note right of T: sends what is queued, then closes
     T-->>C: onDisconnect(Requested), on the caller's thread
-    C-->>S: onDisconnected(), before disconnect() returns
-    Note over S,R: A failed connect, a reject or the server closing ends the same way: C passes it on as onDisconnected.
+    C-->>S: onDisconnected(ClosedLocally), before disconnect() returns
+    Note over S,R: A failed connect, a reject or the server closing ends the same way: C passes it on as onDisconnected, with the reason.
 ```
 
 All handler calls run one at a time: on the IO thread, or `onDisconnected` on the thread that calls `disconnect()`. A handler must never wait for a thread that calls `connect()` or `disconnect()`.

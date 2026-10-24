@@ -5,23 +5,27 @@
 #include "tengen/IAppSignal.hpp"
 #include "tengen/IChatSession.hpp"
 #include "tengen/IGameSession.hpp"
+#include "tengen/INetworkSession.hpp"
 #include "tengen/eventHub.hpp"
+#include "tengen/sessionChatInfo.hpp"
 #include "tengen/sessionGameInfo.hpp"
+#include "tengen/sessionNetworkInfo.hpp"
 
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <thread>
-#include <unordered_map>
 
 namespace tengen::app {
+
 class GameServer;
 
-//! Gets game stat delta and constructs a local representation of the game.
+//! Gets game state delta and constructs a local representation of the game.
 //! Listeners can subscribe to certain signals, get notification when happens.
 //! Listeners then check which signal and query the updated data from this NetworkSession.
 //! NetworkSession is the local source of truth about the game state, GUI is just dumb renderer of this state.
-class NetworkSession : public network::IClientHandler, public IGameSession, public IChatSession {
+class NetworkSession final : public IGameSession, public IChatSession, public INetworkSession, private network::IClientHandler {
 public:
 	NetworkSession();
 	~NetworkSession();
@@ -48,29 +52,30 @@ public: // IChatSession Interface
 	void chat(const std::string& message) override;
 	std::vector<ChatEntry> getChatSince(unsigned messageId) const override;
 
-public: // network::IClientHandler Interface
+public: // INetworkSession Interface
+	SessionNetworkInfo networkInfo() const override;
+
+private: // network::IClientHandler Interface
 	void onWelcome(std::optional<Player> player) override;
-	void onRejected(network::RejectReason reason) override;
 	void onGameStart(const GameConfig& config) override;
 	void onGameDelta(const GameDelta& delta) override;
 	void onGameEnd(const GameResult& result) override;
 	void onChatMessage(Player player, unsigned messageId, const std::string& message) override;
-	void onDisconnected() override;
+	void onDisconnected(network::DisconnectReason reason) override;
 
 private:
-	void stopLocalServer(); //!< Stop the hosted server off the GUI thread: it waits for slow clients.
+	void stopLocalServer();                                       //!< Stop the hosted server off the GUI thread: it waits for slow clients.
+	void resetState(const GameConfig& config, GameStatus status); //!< Forget the last game and chat. The network info has its own rules.
 
 private:
 	EventHub m_eventHub;
 	SessionGameInfo m_gameInfo{};
-
-	unsigned m_expectedMessageId{1u};                        //!< Next expected chat message id.
-	std::vector<ChatEntry> m_chatHistory{};                  //!< Chat history.
-	std::unordered_map<unsigned, ChatEntry> m_pendingChat{}; //!< Messages received out of order.
+	SessionChatInfo m_chatInfo{};
+	SessionNetworkInfo m_networkInfo{};
 
 	std::unique_ptr<GameServer> m_localServer;
-	std::thread m_serverStopper; //!< Stops the last hosted server.
-	mutable std::mutex m_stateMutex;
+	std::thread m_serverStopper;     //!< Stops the last hosted server.
+	mutable std::mutex m_stateMutex; //!< Guards the three infos.
 
 	network::Client m_network; //!< Last, so it goes first and no callback reaches the members above.
 };

@@ -67,8 +67,6 @@ public:
 
 	void onWelcome(std::optional<Player>) override {
 	}
-	void onRejected(network::RejectReason) override {
-	}
 	void onGameStart(const GameConfig&) override {
 	}
 	void onGameDelta(const GameDelta&) override {
@@ -77,7 +75,7 @@ public:
 	}
 	void onChatMessage(Player, unsigned, const std::string&) override {
 	}
-	void onDisconnected() override {
+	void onDisconnected(network::DisconnectReason) override {
 		if (++m_disconnects == 1) {
 			EXPECT_TRUE(m_client.connect("127.0.0.1"));
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -120,8 +118,6 @@ class ChatCounter : public network::IClientHandler {
 public:
 	void onWelcome(std::optional<Player>) override {
 	}
-	void onRejected(network::RejectReason) override {
-	}
 	void onGameStart(const GameConfig&) override {
 	}
 	void onGameDelta(const GameDelta&) override {
@@ -131,7 +127,7 @@ public:
 	void onChatMessage(Player, unsigned, const std::string&) override {
 		++chats;
 	}
-	void onDisconnected() override {
+	void onDisconnected(network::DisconnectReason) override {
 		chatsBeforeDisconnect = chats.load();
 		disconnected          = true;
 	}
