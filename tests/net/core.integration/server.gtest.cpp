@@ -31,7 +31,7 @@ public:
 	void onGameEnd(const GameResult&) override {
 	}
 
-	void onChatMessage(Player, unsigned, const std::string&) override {
+	void onChatMessage(const ChatMessage&) override {
 	}
 
 	void onDisconnected(network::DisconnectReason) override {

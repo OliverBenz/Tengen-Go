@@ -12,6 +12,7 @@ set(headers
     "${CMAKE_CURRENT_LIST_DIR}/include/model/gameConfig.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/include/model/gameDelta.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/include/model/gameResult.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/include/model/chatMessage.hpp"
 )
 set(sources
     "${CMAKE_CURRENT_LIST_DIR}/board.cpp"

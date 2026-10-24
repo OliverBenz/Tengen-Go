@@ -32,9 +32,9 @@ void ChatPresenter::onAppEvent(const app::AppSignal signal) {
 }
 
 void ChatPresenter::showNewMessages() {
-	for (const auto& entry: m_chat.getChatSince(m_lastChatMessageId)) {
-		m_chatWidget.appendMessage(std::format("{}: {}", toString(entry.player), entry.message));
-		m_lastChatMessageId = entry.messageId;
+	for (const auto& chat: m_chat.getChatSince(m_lastChatMessageId)) {
+		m_chatWidget.appendMessage(std::format("{}: {}", toString(chat.player), chat.text));
+		m_lastChatMessageId = chat.messageId;
 	}
 }
 

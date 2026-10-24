@@ -101,7 +101,7 @@ TEST(GameNetMessages, ServerToMessage) {
 	EXPECT_EQ(json::parse(network::toMessage(network::ServerGameEnd{GameResult{.winner = Player::White, .reason = EndReason::Resignation}})),
 	          json({{"type", "end"}, {"reason", "resignation"}, {"winner", "white"}}));
 
-	EXPECT_EQ(json::parse(network::toMessage(network::ServerChat{Player::White, 0u, "hi"})), json({{"type", "chat"}, {"player", "white"}, {"messageId", 0u}, {"message", "hi"}}));
+	EXPECT_EQ(json::parse(network::toMessage(network::ServerChat{{.messageId = 0u, .player = Player::White, .text = "hi"}})), json({{"type", "chat"}, {"player", "white"}, {"messageId", 0u}, {"message", "hi"}}));
 }
 
 TEST(GameNetMessages, ServerFromMessageValid) {
@@ -153,9 +153,9 @@ TEST(GameNetMessages, ServerFromMessageValid) {
 
 	const auto chat = parseAs<network::ServerChat>(R"({"type":"chat","player":"white","messageId":0,"message":"hello,world"})");
 	ASSERT_TRUE(chat.has_value());
-	EXPECT_EQ(chat->player, Player::White);
-	EXPECT_EQ(chat->messageId, 0u);
-	EXPECT_EQ(chat->message, "hello,world");
+	EXPECT_EQ(chat->chat.player, Player::White);
+	EXPECT_EQ(chat->chat.messageId, 0u);
+	EXPECT_EQ(chat->chat.text, "hello,world");
 }
 
 //! Newer peers may send more than we know. Fields a message does not need are ignored, not rejected.

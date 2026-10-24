@@ -81,8 +81,8 @@ void GameServer::onResign(const Player player) {
 }
 
 void GameServer::onChat(const Player player, const std::string& message) {
-	m_chatHistory.emplace_back(ChatEntry{player, message});
-	m_server.broadcast(network::ServerChat{player, static_cast<unsigned>(m_chatHistory.size()), message});
+	m_chatHistory.push_back(ChatMessage{.messageId = static_cast<unsigned>(m_chatHistory.size()) + 1u, .player = player, .text = message});
+	m_server.broadcast(network::ServerChat{m_chatHistory.back()});
 }
 
 void GameServer::onGameStart(const GameConfig& config) {

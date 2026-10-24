@@ -18,7 +18,7 @@ public:
 	void onGameStart(const GameConfig& config) override;
 	void onGameDelta(const GameDelta& delta) override;
 	void onGameEnd(const GameResult& result) override;
-	void onChatMessage(Player player, unsigned messageId, const std::string& message) override;
+	void onChatMessage(const ChatMessage& chat) override;
 	void onDisconnected(network::DisconnectReason reason) override;
 
 private:

@@ -239,9 +239,9 @@ static std::string toMessage(const ServerGameEnd& e) {
 static std::string toMessage(const ServerChat& e) {
 	json j;
 	j["type"]      = "chat";
-	j["player"]    = toName(PLAYER_NAMES, e.player);
-	j["messageId"] = e.messageId;
-	j["message"]   = e.message;
+	j["player"]    = toName(PLAYER_NAMES, e.chat.player);
+	j["messageId"] = e.chat.messageId;
+	j["message"]   = e.chat.text;
 	return j.dump();
 }
 std::string toMessage(const ServerEvent& event) {
@@ -403,8 +403,7 @@ std::optional<ServerEvent> fromServerMessage(const std::string& message) {
 			return {};
 		}
 
-		const auto chatMessage = j["message"].get<std::string>();
-		return ServerChat{*player, *messageId, std::move(chatMessage)};
+		return ServerChat{ChatMessage{.messageId = *messageId, .player = *player, .text = j["message"].get<std::string>()}};
 	}
 	return {};
 }

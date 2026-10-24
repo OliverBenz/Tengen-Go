@@ -61,8 +61,7 @@ namespace {
 //! Connects again from the first onDisconnected, and stays in it long enough for the server to welcome.
 class ReconnectingHandler : public network::IClientHandler {
 public:
-	explicit ReconnectingHandler(network::Client& client)
-	    : m_client(client) {
+	explicit ReconnectingHandler(network::Client& client) : m_client(client) {
 	}
 
 	void onWelcome(std::optional<Player>) override {
@@ -73,7 +72,7 @@ public:
 	}
 	void onGameEnd(const GameResult&) override {
 	}
-	void onChatMessage(Player, unsigned, const std::string&) override {
+	void onChatMessage(const ChatMessage&) override {
 	}
 	void onDisconnected(network::DisconnectReason) override {
 		if (++m_disconnects == 1) {
@@ -124,7 +123,7 @@ public:
 	}
 	void onGameEnd(const GameResult&) override {
 	}
-	void onChatMessage(Player, unsigned, const std::string&) override {
+	void onChatMessage(const ChatMessage&) override {
 		++chats;
 	}
 	void onDisconnected(network::DisconnectReason) override {
@@ -153,10 +152,10 @@ TEST(GameNet, StopSendsQueuedMessages) {
 	ASSERT_TRUE(waitFor([&] { return client.isConnected(); }));
 
 	for (unsigned i = 1u; i <= kMessages; ++i) {
-		ASSERT_TRUE(server.broadcast(network::ServerChat{Player::Black, i, "last words"}));
+		ASSERT_TRUE(server.broadcast(network::ServerChat{{.messageId = i, .player = Player::Black, .text = "last words"}}));
 	}
 	server.stop();
-	EXPECT_FALSE(server.broadcast(network::ServerChat{Player::Black, kMessages + 1u, "too late"}));
+	EXPECT_FALSE(server.broadcast(network::ServerChat{{.messageId = kMessages + 1u, .player = Player::Black, .text = "too late"}}));
 
 	ASSERT_TRUE(waitFor([&] { return handler.disconnected.load(); }));
 	EXPECT_EQ(handler.chatsBeforeDisconnect, kMessages);
@@ -169,7 +168,7 @@ TEST(GameNet, StartFailsOnTakenPort) {
 
 	network::Server second;
 	EXPECT_FALSE(second.start());
-	EXPECT_FALSE(second.broadcast(network::ServerChat{Player::Black, 1u, "nobody hears this"}));
+	EXPECT_FALSE(second.broadcast(network::ServerChat{{.messageId = 1u, .player = Player::Black, .text = "nobody hears this"}}));
 	second.stop();
 
 	network::Client client;
