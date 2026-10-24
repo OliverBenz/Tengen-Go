@@ -28,6 +28,14 @@ void MockClient::tryPlace(unsigned x, unsigned y) {
 	m_network.send(network::ClientPutStone{.c = {x, y}});
 }
 
+void MockClient::onWelcome(const std::optional<Player> player) {
+	std::cout << std::format("[Client] Welcomed as '{}'.\n", player ? toString(*player) : "observer");
+}
+
+void MockClient::onRejected(network::RejectReason) {
+	std::cout << "[Client] Rejected by the server.\n";
+}
+
 void MockClient::onGameStart(const GameConfig& config) {
 	std::cout << std::format("[Client] Received game start: board={}, komi={}\n", config.boardSize, config.rules.komi);
 }

@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 
 namespace tengen::network {
@@ -15,6 +16,8 @@ namespace tengen::network {
 class IClientHandler {
 public:
 	virtual ~IClientHandler()                                                                 = default;
+	virtual void onWelcome(std::optional<Player> player)                                      = 0; //!< The server took us in. Nullopt: we only watch.
+	virtual void onRejected(RejectReason reason)                                              = 0; //!< The server refused us. onDisconnected follows.
 	virtual void onGameStart(const GameConfig& config)                                        = 0; //!< The game started.
 	virtual void onGameDelta(const GameDelta& delta)                                          = 0; //!< One accepted move.
 	virtual void onGameEnd(const GameResult& result)                                          = 0; //!< The game ended. Right after the last delta.

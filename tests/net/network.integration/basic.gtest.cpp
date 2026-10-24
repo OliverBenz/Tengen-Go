@@ -61,9 +61,14 @@ namespace {
 //! Connects again from the first onDisconnected, and stays in it long enough for the server to welcome.
 class ReconnectingHandler : public network::IClientHandler {
 public:
-	explicit ReconnectingHandler(network::Client& client) : m_client(client) {
+	explicit ReconnectingHandler(network::Client& client)
+	    : m_client(client) {
 	}
 
+	void onWelcome(std::optional<Player>) override {
+	}
+	void onRejected(network::RejectReason) override {
+	}
 	void onGameStart(const GameConfig&) override {
 	}
 	void onGameDelta(const GameDelta&) override {
@@ -113,6 +118,10 @@ namespace {
 //! Counts the chat messages, and whether the server closed the connection after them.
 class ChatCounter : public network::IClientHandler {
 public:
+	void onWelcome(std::optional<Player>) override {
+	}
+	void onRejected(network::RejectReason) override {
+	}
 	void onGameStart(const GameConfig&) override {
 	}
 	void onGameDelta(const GameDelta&) override {

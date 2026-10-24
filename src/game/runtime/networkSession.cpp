@@ -161,6 +161,12 @@ std::vector<ChatEntry> NetworkSession::getChatSince(const unsigned messageId) co
 	return {it, m_chatHistory.end()};
 }
 
+void NetworkSession::onWelcome(std::optional<Player>) {
+}
+
+void NetworkSession::onRejected(network::RejectReason) {
+}
+
 void NetworkSession::onGameStart(const GameConfig& config) {
 	bool started = false;
 	{
