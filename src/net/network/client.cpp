@@ -145,10 +145,17 @@ void Client::Implementation::handleNetworkEvent(const ServerWelcome& event) {
 		close(DisconnectReason::ProtocolError);
 		return;
 	}
-	m_sessionId = event.sessionId;
+
+	m_sessionId = event.sessionId; // Before the handler, so isConnected() is true in onWelcome.
+	if (m_handler) {
+		m_handler->onWelcome(toPlayer(event.seat));
+	}
 }
 
-void Client::Implementation::handleNetworkEvent(const ServerReject&) {
+void Client::Implementation::handleNetworkEvent(const ServerReject& event) {
+	if (m_handler) {
+		m_handler->onRejected(event.reason);
+	}
 	close(DisconnectReason::Rejected);
 }
 
@@ -177,7 +184,8 @@ void Client::Implementation::handleNetworkEvent(const ServerChat& event) {
 }
 
 
-Client::Client() : m_pimpl(std::make_unique<Implementation>()) {
+Client::Client()
+    : m_pimpl(std::make_unique<Implementation>()) {
 }
 
 Client::~Client() = default;

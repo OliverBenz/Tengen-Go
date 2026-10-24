@@ -49,6 +49,8 @@ public: // IChatSession Interface
 	std::vector<ChatEntry> getChatSince(unsigned messageId) const override;
 
 public: // network::IClientHandler Interface
+	void onWelcome(std::optional<Player> player) override;
+	void onRejected(network::RejectReason reason) override;
 	void onGameStart(const GameConfig& config) override;
 	void onGameDelta(const GameDelta& delta) override;
 	void onGameEnd(const GameResult& result) override;

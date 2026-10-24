@@ -14,6 +14,8 @@ public:
 	void tryPlace(unsigned x, unsigned y);
 
 public:
+	void onWelcome(std::optional<Player> player) override;
+	void onRejected(network::RejectReason reason) override;
 	void onGameStart(const GameConfig& config) override;
 	void onGameDelta(const GameDelta& delta) override;
 	void onGameEnd(const GameResult& result) override;

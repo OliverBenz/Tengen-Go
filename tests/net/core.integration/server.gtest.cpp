@@ -14,6 +14,12 @@ namespace tengen::gtest {
 
 class TestClientHandler final : public network::IClientHandler {
 public:
+	void onWelcome(std::optional<Player>) override {
+	}
+
+	void onRejected(network::RejectReason) override {
+	}
+
 	void onGameStart(const GameConfig&) override {
 	}
 
@@ -58,7 +64,8 @@ private:
 
 class TestServerHandler final : public network::IServerHandler {
 public:
-	explicit TestServerHandler(network::Server& server) : m_server(server) {
+	explicit TestServerHandler(network::Server& server)
+	    : m_server(server) {
 	}
 
 	void onPlayerJoined(Player) override {
