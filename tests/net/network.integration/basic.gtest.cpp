@@ -144,7 +144,7 @@ TEST(GameNet, StopSendsQueuedMessages) {
 	constexpr unsigned kMessages = 100u;
 
 	network::Server server;
-	server.start();
+	ASSERT_TRUE(server.start());
 
 	ChatCounter handler;
 	network::Client client;
@@ -160,6 +160,22 @@ TEST(GameNet, StopSendsQueuedMessages) {
 
 	ASSERT_TRUE(waitFor([&] { return handler.disconnected.load(); }));
 	EXPECT_EQ(handler.chatsBeforeDisconnect, kMessages);
+}
+
+//! A second server on a taken port says so in start(), stays stopped, and leaves the first one working.
+TEST(GameNet, StartFailsOnTakenPort) {
+	network::Server first;
+	ASSERT_TRUE(first.start());
+
+	network::Server second;
+	EXPECT_FALSE(second.start());
+	EXPECT_FALSE(second.broadcast(network::ServerChat{Player::Black, 1u, "nobody hears this"}));
+	second.stop();
+
+	network::Client client;
+	ASSERT_TRUE(client.connect("127.0.0.1"));
+	EXPECT_TRUE(waitFor([&] { return client.isConnected(); }));
+	client.disconnect();
 }
 
 } // namespace tengen::gtest

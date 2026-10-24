@@ -16,7 +16,7 @@ class Server::Implementation {
 public:
 	explicit Implementation(std::uint16_t port);
 
-	void start();
+	bool start();
 	void stop();
 	bool registerHandler(IServerHandler* handler);
 	void setFirstSeat(Seat seat);
@@ -89,20 +89,26 @@ Server::Implementation::Implementation(std::uint16_t port)
               port) {
 }
 
-void Server::Implementation::start() {
+bool Server::Implementation::start() {
 	std::lock_guard<std::mutex> lifecycleLock(m_lifecycleMutex);
 	{
 		std::lock_guard<std::mutex> stateLock(m_stateMutex);
 		if (m_state != State::Created) {
 			assert(m_state == State::Running && "A stopped server can't start again.");
-			return;
+			return m_state == State::Running;
 		}
-		m_state = State::Running;
+		m_state = State::Running; // Before the network starts, so the first client's events are queued.
 	}
 
 	// Network runs on its own IO thread; serverLoop drains the queue on its own thread.
-	m_network.start();
+	if (!m_network.start()) {
+		// No port, no clients: stopped for good, like after stop(). Nothing was queued that needs handling.
+		std::lock_guard<std::mutex> stateLock(m_stateMutex);
+		m_state = State::Stopped;
+		return false;
+	}
 	m_serverThread = std::thread([this] { serverLoop(); });
+	return true;
 }
 
 void Server::Implementation::stop() {
@@ -342,8 +348,8 @@ Server::~Server() {
 	stop();
 }
 
-void Server::start() {
-	m_pimpl->start();
+bool Server::start() {
+	return m_pimpl->start();
 }
 
 void Server::stop() {
