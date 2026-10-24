@@ -22,10 +22,9 @@ static constexpr auto CLOSE_TIMEOUT = std::chrono::seconds(1); //!< How long sto
 
 class TcpServer::Implementation {
 public:
-	Implementation(std::uint16_t port);
+	Implementation(Callbacks callbacks, std::uint16_t port);
 
 	void start();
-	void connect(Callbacks callbacks);
 	void stop();
 
 	bool send(ConnectionId connectionId, const Message& msg);
@@ -51,7 +50,7 @@ private:
 	std::atomic<State> m_state{State::Created}; //!< Read on the IO thread.
 	std::mutex m_lifecycleMutex;                //!< start() and stop() run one at a time, so stop() always finds the thread start() made. Also makes a second stop() wait for the first.
 
-	Callbacks m_callbacks; //!< Callback functions to signal events.
+	const Callbacks m_callbacks; //!< Callback functions to signal events. Set once, so the IO thread can read them without a lock.
 
 	ConnectionId m_nextConnectionId{1u};                                         //!< Only used on the IO thread.
 	std::unordered_map<ConnectionId, std::shared_ptr<Connection>> m_connections; //!< Active connections.
@@ -60,7 +59,8 @@ private:
 };
 
 
-TcpServer::Implementation::Implementation(std::uint16_t port) : m_acceptor(m_ioContext) {
+TcpServer::Implementation::Implementation(Callbacks callbacks, std::uint16_t port)
+    : m_acceptor(m_ioContext), m_callbacks(std::move(callbacks)) {
 	// Do a manual open/bind/listen so we can stay in error_code land and avoid throws.
 	asio::error_code ec;
 	m_acceptor.open(asio::ip::tcp::v4(), ec);
@@ -98,10 +98,6 @@ void TcpServer::Implementation::start() {
 	m_workGuard.emplace(asio::make_work_guard(m_ioContext));
 	doAccept();
 	m_ioThread = std::thread([this]() { m_ioContext.run(); });
-}
-
-void TcpServer::Implementation::connect(Callbacks callbacks) {
-	m_callbacks = std::move(callbacks);
 }
 
 void TcpServer::Implementation::stop() {
@@ -218,7 +214,8 @@ bool TcpServer::Implementation::createConnection(asio::ip::tcp::socket socket, C
 }
 
 
-TcpServer::TcpServer(std::uint16_t port) : m_pimpl(std::make_unique<Implementation>(port)) {
+TcpServer::TcpServer(Callbacks callbacks, std::uint16_t port)
+    : m_pimpl(std::make_unique<Implementation>(std::move(callbacks), port)) {
 }
 
 TcpServer::~TcpServer() {
@@ -227,10 +224,6 @@ TcpServer::~TcpServer() {
 
 void TcpServer::start() {
 	m_pimpl->start();
-}
-
-void TcpServer::connect(Callbacks callbacks) {
-	m_pimpl->connect(callbacks);
 }
 
 void TcpServer::stop() {

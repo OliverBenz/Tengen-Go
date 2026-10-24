@@ -70,20 +70,23 @@ private:
 	std::thread m_serverThread;
 
 	SessionManager m_sessionManager;
-	core::TcpServer m_network;
 
 	IServerHandler* m_handler{nullptr};       //!< The class that will handle server events.
 	Seat m_firstSeat{Seat::Black};            //!< Seat handed out first while both are free.
 	SafeQueue<ServerQueueEvent> m_eventQueue; //!< Event queue between network threads and server thread.
+
+	core::TcpServer m_network; //!< Keep last: its callbacks use the members above, so it must be created after them and destroyed before them.
 };
 
-Server::Implementation::Implementation(std::uint16_t port) : m_network{port} {
-	// Wire up network callbacks but keep them thin: they only enqueue events.
-	core::TcpServer::Callbacks callbacks;
-	callbacks.onConnect    = [this](core::ConnectionId connectionId) { return onClientConnected(connectionId); };
-	callbacks.onMessage    = [this](core::ConnectionId connectionId, core::Message payload) { return onClientMessage(connectionId, std::move(payload)); };
-	callbacks.onDisconnect = [this](core::ConnectionId connectionId) { onClientDisconnected(connectionId); };
-	m_network.connect(callbacks);
+// Network callbacks are kept thin: they only enqueue events. None runs before start(), so capturing this is safe here.
+Server::Implementation::Implementation(std::uint16_t port)
+    : m_network(
+              core::TcpServer::Callbacks{
+                      .onConnect    = [this](core::ConnectionId connectionId) { onClientConnected(connectionId); },
+                      .onMessage    = [this](core::ConnectionId connectionId, core::Message payload) { onClientMessage(connectionId, std::move(payload)); },
+                      .onDisconnect = [this](core::ConnectionId connectionId) { onClientDisconnected(connectionId); },
+              },
+              port) {
 }
 
 void Server::Implementation::start() {
