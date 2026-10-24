@@ -18,7 +18,8 @@
 namespace tengen {
 namespace network::core {
 
-static constexpr auto CLOSE_TIMEOUT = std::chrono::seconds(1); //!< How long stop() lets clients take the messages still queued for them.
+static constexpr auto CLOSE_TIMEOUT      = std::chrono::seconds(1);        //!< How long stop() lets clients take the messages still queued for them.
+static constexpr auto ACCEPT_RETRY_DELAY = std::chrono::milliseconds(100); //!< Pause after a failed accept before the next try.
 
 class TcpServer::Implementation {
 public:
@@ -38,12 +39,15 @@ private:
 	};
 
 	void setupAcceptor(std::uint16_t port);
-	void doAccept();                                                                //!< Start async accept loop.
-	bool createConnection(asio::ip::tcp::socket socket, ConnectionId connectionId); //!< Create and add new connection to map.
+	void doAccept();    //!< Start async accept loop.
+	void retryAccept(); //!< Start the next accept after a pause.
+
+	std::shared_ptr<Connection> createConnection(asio::ip::tcp::socket socket, ConnectionId connectionId); //!< Create and add a new connection to the map. Null if that fails. Needs m_connectionsMutex.
 
 private:
-	asio::io_context m_ioContext{}; // Initialized. The acceptor uses it in the ctor initializer.
-	asio::ip::tcp::acceptor m_acceptor;
+	asio::io_context m_ioContext{};                     //!< Main context. Initialized: The acceptor uses it in the ctor initializer.
+	asio::ip::tcp::acceptor m_acceptor;                 //!< Accept tcp connections on the IO thread.
+	asio::steady_timer m_acceptRetryTimer{m_ioContext}; //!< Only used on the IO thread.
 	std::optional<asio::executor_work_guard<asio::io_context::executor_type>> m_workGuard;
 	bool m_acceptorReady{false};
 
@@ -172,18 +176,26 @@ void TcpServer::Implementation::disconnect(ConnectionId connectionId) {
 
 void TcpServer::Implementation::doAccept() {
 	m_acceptor.async_accept([this](asio::error_code ec, asio::ip::tcp::socket socket) {
-		if (!ec) {
+		if (ec) {
+			// A lasting error (e.g. out of file descriptors) would fail every try at once and spin the IO thread.
+			retryAccept();
+			return;
+		}
+
+		std::shared_ptr<Connection> connection;
+		{
 			// The state is checked under the lock: else stop() could close the connections before this one is added.
 			std::lock_guard<std::mutex> lock(m_connectionsMutex);
 			if (m_state != State::Running) {
 				return; // Turned away: the socket closes here.
 			}
+			connection = createConnection(std::move(socket), m_nextConnectionId++);
+		}
 
-			const auto connectionId = m_nextConnectionId++;
-			if (createConnection(std::move(socket), connectionId)) {
-				assert(m_connections.contains(connectionId));
-				m_connections.at(connectionId)->start();
-			}
+		// Started without the lock: onConnect may call send() or disconnect(), which take it.
+		// A close() from stop() can't get in before: it is posted to this thread, so it runs after this handler.
+		if (connection) {
+			connection->start();
 		}
 
 		if (m_state == State::Running) {
@@ -192,11 +204,16 @@ void TcpServer::Implementation::doAccept() {
 	});
 }
 
-bool TcpServer::Implementation::createConnection(asio::ip::tcp::socket socket, ConnectionId connectionId) {
-	if (m_connections.contains(connectionId)) {
-		return false;
-	}
+void TcpServer::Implementation::retryAccept() {
+	m_acceptRetryTimer.expires_after(ACCEPT_RETRY_DELAY);
+	m_acceptRetryTimer.async_wait([this](const asio::error_code& ec) {
+		if (!ec && m_state == State::Running) {
+			doAccept();
+		}
+	});
+}
 
+std::shared_ptr<Connection> TcpServer::Implementation::createConnection(asio::ip::tcp::socket socket, ConnectionId connectionId) {
 	Connection::Callbacks callbacks;
 	callbacks.onConnect = [this](Connection& connection) {
 		if (m_callbacks.onConnect) {
@@ -224,9 +241,9 @@ bool TcpServer::Implementation::createConnection(asio::ip::tcp::socket socket, C
 
 	try {
 		auto connection           = std::make_shared<Connection>(std::move(socket), connectionId, std::move(callbacks));
-		const auto [it, inserted] = m_connections.try_emplace(connectionId, std::move(connection));
-		return inserted;
-	} catch (...) { return false; }
+		const auto [it, inserted] = m_connections.try_emplace(connectionId, connection);
+		return inserted ? connection : nullptr; // A taken id only after the ids wrapped around. The socket closes with the connection.
+	} catch (...) { return nullptr; }
 }
 
 
