@@ -40,7 +40,7 @@ uint64_t ZobristHash<SIZE>::stone(Coord c, Player color) {
 
 template <std::size_t SIZE>
 void ZobristHash<SIZE>::initRandomTable() {
-	std::mt19937_64 rng(0xA5F3C7E2B1D94ULL); //!< Fixed seed for reproducibility
+	std::mt19937_64 rng(0xA5F3C7E2B1D94ULL); // NOLINT(bugprone-random-generator-seed): Fixed seed for reproducibility.
 	std::uniform_int_distribution<uint64_t> dist;
 
 	for (std::size_t x = 0; x < SIZE; ++x)

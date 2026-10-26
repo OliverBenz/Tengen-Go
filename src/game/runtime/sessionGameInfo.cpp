@@ -1,6 +1,8 @@
 #include "tengen/sessionGameInfo.hpp"
 #include "logging.hpp"
 
+#include <cassert>
+
 namespace tengen::app {
 
 void SessionGameInfo::reset(const GameConfig& config, const GameStatus status) {
@@ -32,7 +34,8 @@ bool SessionGameInfo::update(const GameDelta& delta) {
 	m_player = delta.nextPlayer;
 
 	if (delta.action == GameAction::Place) {
-		m_board.place(Coord{delta.coord->x, delta.coord->y}, toStone(delta.player));
+		assert(delta.coord); // isDeltaApplicable() rejects a place without one.
+		m_board.place(*delta.coord, toStone(delta.player));
 		for (const auto c: delta.captures) {
 			m_board.remove(c);
 		}

@@ -1,0 +1,4 @@
+# clang-tidy doesn't see that a failing ASSERT_* ends the test, so every checked optional looks unchecked.
+InheritParentConfig: true
+Checks: >
+  -bugprone-unchecked-optional-access

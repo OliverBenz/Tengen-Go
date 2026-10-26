@@ -16,7 +16,7 @@ namespace gtest {
 static constexpr float TOLERANCE_FRACTION = 0.1f; //!< Percentage of acceptable error relative to the contour bounding box / spacing.
 
 //! Runs the full pipeline on every image of the test set and verifies the detected board against the defined ground truth.
-static void runTest(std::string testSetName, unsigned imageCount) {
+static void runTest(const std::string& testSetName, unsigned imageCount) {
 	const auto TEST_PATH = std::filesystem::path(PATH_TEST_IMG) / testSetName;
 
 	// Get test images and ensure valid

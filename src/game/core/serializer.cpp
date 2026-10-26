@@ -8,7 +8,7 @@
 
 namespace tengen {
 
-static bool readDotBWBoard(std::filesystem::path testFile, Board& outBoard) {
+static bool readDotBWBoard(const std::filesystem::path& testFile, Board& outBoard) {
 	assert(testFile.extension().string() == ".txt"); // Our TXT testfiles must be stored as such.
 
 	std::ifstream file(testFile);
@@ -64,7 +64,7 @@ static bool readDotBWBoard(std::filesystem::path testFile, Board& outBoard) {
 	return true;
 }
 
-bool readBoard(std::filesystem::path testFile, Board& outBoard, SerializeFormat format) {
+bool readBoard(const std::filesystem::path& testFile, Board& outBoard, SerializeFormat format) {
 	switch (format) {
 	case SerializeFormat::dotBW:
 		return readDotBWBoard(testFile, outBoard);

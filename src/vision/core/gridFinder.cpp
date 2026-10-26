@@ -392,8 +392,8 @@ RectifiedBoard transformImage(const cv::Mat& originalImg, const BoardGeometry& g
 bool isValidGeometry(const BoardGeometry& g) {
 	const bool validH         = !g.H.empty(); // TODO: Other checks?
 	const bool validBoardSize = g.boardSize == 9 || g.boardSize == 13 || g.boardSize == 19;
-	const bool validIntersect = g.intersections.size() == g.boardSize * g.boardSize; // TODO: Check approx x,y alignment etc.
-	const bool validSpacing   = true;                                                // TODO:
+	const bool validIntersect = g.intersections.size() == std::size_t{g.boardSize} * g.boardSize; // TODO: Check approx x,y alignment etc.
+	const bool validSpacing   = true;                                                             // TODO:
 
 	return validH && validBoardSize && validIntersect && validSpacing;
 }

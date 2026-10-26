@@ -24,7 +24,8 @@ Radii chooseRadii(double spacing, const GeometryConfig& config) {
 
 std::vector<cv::Point> makeCircleOffsets(int radius) {
 	std::vector<cv::Point> offsets;
-	offsets.reserve(static_cast<std::size_t>((2 * radius + 1) * (2 * radius + 1)));
+	const auto diameter = 2 * static_cast<std::size_t>(radius) + 1;
+	offsets.reserve(diameter * diameter);
 	const int radiusSquared = radius * radius;
 	for (int deltaY = -radius; deltaY <= radius; ++deltaY) {
 		for (int deltaX = -radius; deltaX <= radius; ++deltaX) {

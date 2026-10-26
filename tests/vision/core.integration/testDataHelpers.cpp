@@ -119,8 +119,9 @@ static Coord rotateCoord(const Coord c, const unsigned quarterTurns, const unsig
 		return {last - c.x, last - c.y};
 	case 3u:
 		return {c.y, last - c.x};
+	default:
+		return c;
 	}
-	return c;
 }
 
 //! Stone states of a ground truth board seen from one of the four sides, laid out like StoneResult::stones.

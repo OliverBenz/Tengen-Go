@@ -205,7 +205,7 @@ void Server::Implementation::serverLoop() {
 		// The server thread must survive a throwing handler. The event is lost, the next one goes on.
 		try {
 			processEvent(event);
-		} catch (...) {}
+		} catch (...) {} // NOLINT(bugprone-empty-catch)
 	}
 }
 

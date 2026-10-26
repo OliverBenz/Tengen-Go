@@ -21,7 +21,7 @@ namespace gtest {
 static constexpr float TOLERANCE_FRACTION = 0.1f; //!< Percentage of acceptable error relative to the contour bounding box / spacing.
 
 //! 1) Given an input image, prepares the image based on the defined board corner coordinates, then tests the gridFinder step with this prepared image.
-static void runIdealTest(std::string testSetName, unsigned imageCount) {
+static void runIdealTest(const std::string& testSetName, unsigned imageCount) {
 	const auto TEST_PATH = std::filesystem::path(PATH_TEST_IMG) / testSetName;
 
 	// Load images file
@@ -64,7 +64,7 @@ static void runIdealTest(std::string testSetName, unsigned imageCount) {
 }
 
 //! 2) Given in input image, performs the boardFinder step, then tests the gridFinder step with the output of the boardFinder.
-static void runFullTest(std::string testSetName, unsigned imageCount) {
+static void runFullTest(const std::string& testSetName, unsigned imageCount) {
 	const auto TEST_PATH = std::filesystem::path(PATH_TEST_IMG) / testSetName;
 
 	// Load images file

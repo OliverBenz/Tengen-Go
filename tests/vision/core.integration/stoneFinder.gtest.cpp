@@ -23,7 +23,7 @@ namespace gtest {
 static constexpr float TOLERANCE_FRACTION = 0.1f; //!< Percentage of acceptable error relative to the contour bounding box.
 
 //! Given an input image, prepares an ideal board image based on the defined board corners, then tests the stone detection with this prepared image.
-static void runTest(std::string testSetName, unsigned imageCount) {
+static void runTest(const std::string& testSetName, unsigned imageCount) {
 	const auto TEST_PATH = std::filesystem::path(PATH_TEST_IMG) / testSetName;
 
 	// Get test images and ensure valid
@@ -85,7 +85,7 @@ static StoneState singleStoneOf(const StoneResult& result) {
 
 //! The setup images are already top-down views, so fall back to the unchanged image if no board contour is found.
 static WarpResult warpSetupImage(const cv::Mat& image) {
-	const WarpResult warpResult = warpToBoard(image);
+	WarpResult warpResult = warpToBoard(image);
 	if (isValidBoard(warpResult)) {
 		return warpResult;
 	}
