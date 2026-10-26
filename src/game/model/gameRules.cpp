@@ -4,7 +4,7 @@
 
 namespace tengen {
 
-GameRules fromRuleSet(RuleSet ruleSet) {
+GameRules fromRuleSet(RuleSet ruleSet) noexcept {
 	switch (ruleSet) {
 	case RuleSet::Japanese:
 		return {

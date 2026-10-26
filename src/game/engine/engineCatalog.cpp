@@ -64,7 +64,7 @@ static bool installed(const KataGoFiles& files) {
 
 //! GNU Go's config, as long as all of its files are there.
 static std::optional<GnuGoConfig> findGnuGo(const std::filesystem::path& engineRoot) {
-	const GnuGoFiles files = gnuGoFiles(engineRoot);
+	GnuGoFiles files = gnuGoFiles(engineRoot);
 	if (!installed(files)) {
 		return std::nullopt;
 	}
@@ -73,7 +73,7 @@ static std::optional<GnuGoConfig> findGnuGo(const std::filesystem::path& engineR
 
 //! KataGo's config, as long as all of its files are there.
 static std::optional<KataGoConfig> findKataGo(const std::filesystem::path& engineRoot) {
-	const KataGoFiles files = kataGoFiles(engineRoot);
+	KataGoFiles files = kataGoFiles(engineRoot);
 	if (!installed(files)) {
 		return std::nullopt;
 	}

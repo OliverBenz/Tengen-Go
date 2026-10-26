@@ -1,5 +1,7 @@
 #include "core/game.hpp"
 
+#include <cassert>
+
 namespace tengen {
 
 Game::Game(const GameConfig& config) : m_state{config} {
@@ -67,6 +69,7 @@ void Game::handleEvent(const PassEvent& event) {
 	} else {
 		m_eventHub.signal(GS_StateChange);
 		m_eventHub.signalDelta(delta);
+		assert(m_state.result()); // A game that is no longer active has ended.
 		m_eventHub.signalEnd(*m_state.result());
 	}
 }
@@ -85,6 +88,7 @@ void Game::handleEvent(const ResignEvent& event) {
 	        .captures   = {},
 	        .nextPlayer = opponent(event.player),
 	});
+	assert(m_state.result()); // A resignation ends the game.
 	m_eventHub.signalEnd(*m_state.result());
 }
 

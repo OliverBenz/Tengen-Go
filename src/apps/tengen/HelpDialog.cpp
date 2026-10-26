@@ -18,10 +18,13 @@ struct PageInfo {
 	std::string file;  //!< File name inside resources/help/.
 };
 
-const std::map<HelpPage, PageInfo> pages{
-        {HelpPage::Rules, {"Rules of Go", "rules.html"}},
-        {HelpPage::Engine, {"Bot Engines", "engine.html"}},
-};
+const PageInfo& pageInfo(const HelpPage page) {
+	static const std::map<HelpPage, PageInfo> pages{
+	        {HelpPage::Rules, {"Rules of Go", "rules.html"}},
+	        {HelpPage::Engine, {"Bot Engines", "engine.html"}},
+	};
+	return pages.at(page);
+}
 
 QString documentPath(const std::string& fileName) {
 	return QDir(QCoreApplication::applicationDirPath()).filePath(QString::fromStdString("resources/help/" + fileName));
@@ -31,7 +34,7 @@ QString documentPath(const std::string& fileName) {
 HelpDialog::HelpDialog(const HelpPage page, QWidget* parent)
     : QDialog(parent) {
 	// Get page information
-	const PageInfo& info = pages.at(page);
+	const PageInfo& info = pageInfo(page);
 
 	// Set page title
 	const QString title = QString::fromStdString(info.title);

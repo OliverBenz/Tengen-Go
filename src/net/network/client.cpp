@@ -123,7 +123,7 @@ void Client::Implementation::onDisconnect(const core::DisconnectReason reason) {
 		// The connection is over, but the IO thread must survive a throwing handler.
 		try {
 			m_handler->onDisconnected(ourReason);
-		} catch (...) {}
+		} catch (...) {} // NOLINT(bugprone-empty-catch)
 	}
 	// After the handler, which may still want the id. A new welcome can't come earlier: callbacks run one at a time.
 	m_sessionId = 0;

@@ -367,7 +367,7 @@ static std::optional<ServerEvent> fromServerEndMessage(const json& j) {
 		if (!winner) {
 			return {};
 		}
-		result.winner = *winner;
+		result.winner = winner;
 	}
 	return ServerGameEnd{result};
 }

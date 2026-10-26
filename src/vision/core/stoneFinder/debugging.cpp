@@ -51,7 +51,7 @@ bool isRuntimeDebugEnabled() {
 #pragma warning(push)
 #pragma warning(disable : 4996) // std::getenv is fine here: read once, not shared across threads.
 #endif
-	const char* debugEnv = std::getenv("GO_STONE_DEBUG");
+	const char* debugEnv = std::getenv("GO_STONE_DEBUG"); // NOLINT(concurrency-mt-unsafe)
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif

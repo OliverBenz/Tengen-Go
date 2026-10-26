@@ -28,6 +28,6 @@ struct GameRules {
 	float komi;
 	bool suicideLegal;
 };
-GameRules fromRuleSet(RuleSet ruleSet); //!< Get the game rules given some standard ruleset.
+GameRules fromRuleSet(RuleSet ruleSet) noexcept; //!< Get the game rules given some standard ruleset.
 
 } // namespace tengen

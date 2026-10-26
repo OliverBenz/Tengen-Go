@@ -18,6 +18,6 @@ enum class SerializeFormat { dotBW };
  *  \param [in]  format   The formt in which the board state is serialized in the given file.
  *  \returns     True on success.
  */
-bool readBoard(std::filesystem::path testFile, Board& outBoard, SerializeFormat format = SerializeFormat::dotBW);
+bool readBoard(const std::filesystem::path& testFile, Board& outBoard, SerializeFormat format = SerializeFormat::dotBW);
 
 } // namespace tengen

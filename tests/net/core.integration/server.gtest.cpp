@@ -40,16 +40,11 @@ public:
 		m_cv.notify_all();
 	}
 
-	bool waitForDelta(std::chrono::milliseconds timeout, GameDelta& out) {
+	//! Nullopt if no delta came in time, or the connection ended first.
+	std::optional<GameDelta> waitForDelta(std::chrono::milliseconds timeout) {
 		std::unique_lock<std::mutex> lock(m_mutex);
-		if (!m_cv.wait_for(lock, timeout, [&] { return m_lastDelta.has_value() || m_disconnected; })) {
-			return false;
-		}
-		if (!m_lastDelta.has_value()) {
-			return false;
-		}
-		out = *m_lastDelta;
-		return true;
+		m_cv.wait_for(lock, timeout, [&] { return m_lastDelta.has_value() || m_disconnected; });
+		return m_lastDelta;
 	}
 
 private:
@@ -131,17 +126,17 @@ TEST(Networking, ServerDeltaFromPutStone) {
 	ASSERT_TRUE(client1.send(network::ClientPutStone{1u, 2u}));
 
 	// Player 2 receives the delta
-	GameDelta delta{};
-	ASSERT_TRUE(handler2.waitForDelta(std::chrono::milliseconds(300), delta));
+	const auto delta = handler2.waitForDelta(std::chrono::milliseconds(300));
+	ASSERT_TRUE(delta.has_value());
 
-	EXPECT_EQ(delta.moveId, 1u);
-	EXPECT_EQ(delta.player, Player::Black);
-	EXPECT_EQ(delta.action, GameAction::Place);
-	ASSERT_TRUE(delta.coord.has_value());
-	EXPECT_EQ(delta.coord->x, 1u);
-	EXPECT_EQ(delta.coord->y, 2u);
-	EXPECT_EQ(delta.captures.size(), 0u);
-	EXPECT_EQ(delta.nextPlayer, Player::White);
+	EXPECT_EQ(delta->moveId, 1u);
+	EXPECT_EQ(delta->player, Player::Black);
+	EXPECT_EQ(delta->action, GameAction::Place);
+	ASSERT_TRUE(delta->coord.has_value());
+	EXPECT_EQ(delta->coord->x, 1u);
+	EXPECT_EQ(delta->coord->y, 2u);
+	EXPECT_EQ(delta->captures.size(), 0u);
+	EXPECT_EQ(delta->nextPlayer, Player::White);
 
 	client1.disconnect();
 	client2.disconnect();
