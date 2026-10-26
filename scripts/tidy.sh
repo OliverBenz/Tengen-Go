@@ -1,11 +1,18 @@
 #!/bin/bash
 # Runs clang-tidy with the repository's .clang-tidy over our own sources.
-#   ./tidy.sh            Check everything in src/ and tests/.
-#   ./tidy.sh src/net    Only check files below this path.
-# Uses the compile database of a configured build. Set BUILD_DIR to pick another one.
+#   ./tidy.sh                     Check everything in src/ and tests/.
+#   ./tidy.sh src/net             Only check files below this path.
+#   ./tidy.sh --strict [path]     Fail on any finding, for CI.
+# Uses the compile database of a configured build; it needs no build. Set BUILD_DIR to pick another one.
 
 set -euo pipefail
 cd "$(dirname "$0")/.."
+
+strict=()
+if [ "${1:-}" = "--strict" ]; then
+	strict=(-warnings-as-errors='*')
+	shift
+fi
 
 buildDir=${BUILD_DIR:-build/Linux64-Debug}
 filter=${1:-src|tests}
@@ -20,8 +27,9 @@ tidyDir="$buildDir/clang-tidy"
 mkdir -p "$tidyDir"
 sed 's/ -mno-direct-extern-access//g' "$buildDir/compile_commands.json" >"$tidyDir/compile_commands.json"
 
+clang-tidy --version
 # GCC-only warning flags are unknown to clang; compiler warnings aren't clang-tidy's business here.
-run-clang-tidy -p "$tidyDir" -quiet \
+run-clang-tidy -p "$tidyDir" -quiet "${strict[@]}" \
 	-extra-arg=-Wno-unknown-warning-option \
 	-extra-arg=-Wno-error \
 	"^$(pwd)/($filter)/"

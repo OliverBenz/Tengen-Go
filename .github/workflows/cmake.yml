@@ -38,6 +38,33 @@ jobs:
       run: |
         ctest --test-dir build --output-on-failure --parallel
 
+  # Static analysis with .clang-tidy. It only needs the compile database, so it configures but doesn't build.
+  Clang_Tidy:
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+
+    steps:
+    # clang brings clang-tidy and run-clang-tidy, which needs python.
+    - name: Install dependencies
+      run: |
+        pacman -Syu --noconfirm --needed \
+          git cmake ninja clang python opencv qt6-base qt6-multimedia
+
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Trust workspace
+      run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+    - name: Configure CMake
+      run: |
+        cmake -S . -B build -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DTENGEN_BUILD_TESTS=ON
+
+    - name: Clang-Tidy
+      run: |
+        BUILD_DIR=build scripts/tidy.sh --strict
+
   # Every file needs license and copyright information, see REUSE.toml.
   License_Check:
     runs-on: ubuntu-latest
