@@ -6,6 +6,7 @@ FetchContent_Declare(
   asio_upstream
   GIT_REPOSITORY https://github.com/chriskohlhoff/asio.git
   GIT_TAG        asio-1-36-0   # lock exact version (example tag)
+  GIT_SHALLOW    TRUE
 )
 FetchContent_MakeAvailable(asio_upstream)
 
