@@ -7,6 +7,7 @@
 #include <QImage>
 #include <QList>
 #include <QString>
+#include <cstdint>
 
 // Contains the resources for board styles, stone styles, sounds and the names of the game rules.
 namespace tengen::gui {
@@ -15,7 +16,7 @@ namespace boardStyle {
 inline constexpr QColor PLAIN_COLOUR{220, 179, 92}; //!< Board colour of the plain texture.
 
 //! Board backgrounds the application ships. Which file backs a texture stays inside the resources.
-enum class Texture {
+enum class Texture : std::uint8_t {
 	Plain, //!< No image: the board is filled with PLAIN_COLOUR.
 	HoneyWood,
 	LightWood,

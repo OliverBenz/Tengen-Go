@@ -4,6 +4,7 @@
 #include "model/board.hpp"
 
 #include <QWidget>
+#include <cstdint>
 
 #include <memory>
 
@@ -12,7 +13,11 @@ namespace tengen::gui {
 class BoardRenderer;
 
 struct BoardWidgetEvent {
-	enum class Type { Place, Pass, Resign };
+	enum class Type : std::uint8_t {
+		Place,
+		Pass,
+		Resign,
+	};
 
 	Type type{Type::Place};
 	Coord coord{0u, 0u};

@@ -28,7 +28,7 @@ struct BasicMessageHeader {
 // Local helpers to move integers to/from network byte order without relying on platform headers; safe enough for this starter implementation.
 // This is intentionally tiny and self-contained so we can swap the wire format later without touching the client/server logic.
 constexpr std::uint32_t byteswap_u32(std::uint32_t value) {
-	return ((value & 0x000000FFu) << 24) | ((value & 0x0000FF00u) << 8) | ((value & 0x00FF0000u) >> 8) | ((value & 0xFF000000u) >> 24);
+	return ((value & 0x000000FFu) << 24u) | ((value & 0x0000FF00u) << 8u) | ((value & 0x00FF0000u) >> 8u) | ((value & 0xFF000000u) >> 24u);
 }
 
 constexpr std::uint32_t to_network_u32(std::uint32_t value) {

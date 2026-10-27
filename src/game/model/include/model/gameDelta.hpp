@@ -3,13 +3,18 @@
 #include "model/coordinate.hpp"
 #include "model/player.hpp"
 
+#include <cstdint>
 #include <optional>
 #include <vector>
 
 namespace tengen {
 
 //! Type of move.
-enum class GameAction { Place, Pass, Resign };
+enum class GameAction : std::uint8_t {
+	Place,
+	Pass,
+	Resign,
+};
 
 //! Symbolises the game state change after one move.
 struct GameDelta {

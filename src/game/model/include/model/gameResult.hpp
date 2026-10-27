@@ -2,11 +2,12 @@
 
 #include "model/player.hpp"
 
+#include <cstdint>
 #include <optional>
 
 namespace tengen {
 
-enum class EndReason {
+enum class EndReason : std::uint8_t {
 	Resignation, //!< Player resigned.
 	Counting,    //!< Both players passed and the board was counted.
 	Timeout,     //!< Player ran out of time.
