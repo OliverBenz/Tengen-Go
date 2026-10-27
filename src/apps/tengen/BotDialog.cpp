@@ -19,7 +19,8 @@
 
 namespace tengen::gui {
 
-BotDialog::BotDialog(const engine::InstalledEngines& engines, QWidget* parent) : QDialog(parent) {
+BotDialog::BotDialog(const engine::InstalledEngines& engines, QWidget* parent)
+    : QDialog(parent) {
 	setWindowTitle("New Bot Game");
 
 	// Every engine shows, installed or not. One that is not installed cannot be picked, so the default

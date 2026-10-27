@@ -4,7 +4,8 @@
 
 namespace tengen {
 
-GamePosition::GamePosition(std::size_t boardSize) : board{boardSize} {
+GamePosition::GamePosition(std::size_t boardSize)
+    : board{boardSize} {
 }
 
 void GamePosition::play(Board nextBoard, const uint64_t nextHash) {

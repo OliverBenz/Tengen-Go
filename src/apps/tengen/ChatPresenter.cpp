@@ -10,7 +10,8 @@
 
 namespace tengen {
 
-ChatPresenter::ChatPresenter(app::IChatSession& chat, gui::ChatWidget& chatWidget) : m_chat(chat), m_chatWidget(chatWidget) {
+ChatPresenter::ChatPresenter(app::IChatSession& chat, gui::ChatWidget& chatWidget)
+    : m_chat(chat), m_chatWidget(chatWidget) {
 	QObject::connect(&m_chatWidget, &gui::ChatWidget::chatEvent, this, &ChatPresenter::onChatRequested);
 
 	m_chat.subscribe(this, app::AS_NewChat); // Subscribe before the first read

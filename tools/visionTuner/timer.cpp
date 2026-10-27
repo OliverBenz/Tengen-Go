@@ -2,7 +2,8 @@
 
 namespace tengen {
 
-Timer::Timer(unsigned ms, std::function<void()> callback) : m_period(std::move(ms)), m_callback(std::move(callback)) {
+Timer::Timer(unsigned ms, std::function<void()> callback)
+    : m_period(std::move(ms)), m_callback(std::move(callback)) {
 }
 
 Timer::~Timer() {

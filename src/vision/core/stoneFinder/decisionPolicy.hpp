@@ -6,7 +6,11 @@ namespace tengen::vision::core {
 
 class DecisionPolicy {
 public:
-	enum class RefinementPath { None, EmptyRescue, Standard };
+	enum class RefinementPath {
+		None,
+		EmptyRescue,
+		Standard,
+	};
 
 	explicit DecisionPolicy(const DecisionConfig& decisionConfig);
 

@@ -8,7 +8,8 @@
 
 namespace tengen {
 
-BoardPresenter::BoardPresenter(app::IGameSession& game, gui::BoardWidget& boardWidget) : m_game(game), m_boardWidget(boardWidget) {
+BoardPresenter::BoardPresenter(app::IGameSession& game, gui::BoardWidget& boardWidget)
+    : m_game(game), m_boardWidget(boardWidget) {
 	QObject::connect(&m_boardWidget, &gui::BoardWidget::boardEvent, this, &BoardPresenter::onBoardEvent);
 
 	// Subscribe before the first read: a change in between would otherwise go unseen.

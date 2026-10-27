@@ -12,7 +12,8 @@
 
 namespace tengen::gui {
 
-GameWidget::GameWidget(QWidget* parent) : QWidget(parent) {
+GameWidget::GameWidget(QWidget* parent)
+    : QWidget(parent) {
 	setWindowTitle("Go Game");
 	buildNetworkLayout();
 

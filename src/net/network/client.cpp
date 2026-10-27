@@ -178,7 +178,8 @@ void Client::Implementation::handleNetworkEvent(const ServerChat& event) {
 }
 
 
-Client::Client() : m_pimpl(std::make_unique<Implementation>()) {
+Client::Client()
+    : m_pimpl(std::make_unique<Implementation>()) {
 }
 
 Client::~Client() = default;

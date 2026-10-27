@@ -15,7 +15,8 @@
 
 namespace tengen::gui {
 
-MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
+MainWindow::MainWindow(QWidget* parent)
+    : QMainWindow(parent) {
 	// Setup Window
 	setWindowTitle("Tengen Go");
 	setAttribute(Qt::WA_QuitOnClose, true);

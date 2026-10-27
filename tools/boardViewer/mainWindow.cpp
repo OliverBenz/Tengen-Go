@@ -130,7 +130,8 @@ static cv::Mat buildOverlayImage(const cv::Mat& original, const std::filesystem:
 }
 
 
-MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
+MainWindow::MainWindow(QWidget* parent)
+    : QMainWindow(parent) {
 	setWindowTitle("Board Viewer");
 	buildLayout();
 

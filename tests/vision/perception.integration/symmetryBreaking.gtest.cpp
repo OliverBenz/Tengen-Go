@@ -18,10 +18,26 @@ namespace tengen::vision {
 namespace gtest {
 namespace {
 
-enum class D4 : unsigned char { Id, Rot90, Rot180, Rot270, FlipX, FlipY, Diag, AntiDiag };
+enum class D4 : unsigned char {
+	Id,
+	Rot90,
+	Rot180,
+	Rot270,
+	FlipX,
+	FlipY,
+	Diag,
+	AntiDiag
+};
 
 constexpr std::array<D4, 8> D4_GROUP = {
-        D4::Id, D4::Rot90, D4::Rot180, D4::Rot270, D4::FlipX, D4::FlipY, D4::Diag, D4::AntiDiag,
+        D4::Id,
+        D4::Rot90,
+        D4::Rot180,
+        D4::Rot270,
+        D4::FlipX,
+        D4::FlipY,
+        D4::Diag,
+        D4::AntiDiag,
 };
 
 struct DetectedStone {
@@ -154,7 +170,14 @@ std::filesystem::path setupImage(const std::string_view fileName) {
 
 TEST(Perception, Setup_SymmetryBreaking_D4Orbit) {
 	static constexpr std::array<std::string_view, 8> BLACK_CASES = {
-	        "C2_1.png", "C2_2.png", "C2_3.png", "C2_4.png", "E3_1.png", "E3_2.png", "E3_3.png", "E3_4.png",
+	        "C2_1.png",
+	        "C2_2.png",
+	        "C2_3.png",
+	        "C2_4.png",
+	        "E3_1.png",
+	        "E3_2.png",
+	        "E3_3.png",
+	        "E3_4.png",
 	};
 
 	for (const std::string_view fileName: BLACK_CASES) {

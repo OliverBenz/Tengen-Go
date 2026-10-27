@@ -190,11 +190,11 @@ static std::string toMessage(const ServerGameStart& e) {
 	j["type"]      = "start";
 	j["boardSize"] = e.config.boardSize;
 	j["rules"]     = {
-            {"scoring", toName(SCORING_NAMES, rules.scoringMethod)},
-            {"ko", toName(KO_NAMES, rules.koRule)},
-            {"komi", rules.komi},
-            {"suicide", rules.suicideLegal},
-    };
+	        {"scoring", toName(SCORING_NAMES, rules.scoringMethod)},
+	        {"ko", toName(KO_NAMES, rules.koRule)},
+	        {"komi", rules.komi},
+	        {"suicide", rules.suicideLegal},
+	};
 	return j.dump();
 }
 static std::string toMessage(const ServerGameDelta& e) {

@@ -12,7 +12,8 @@
 
 namespace tengen::vision {
 
-Vision::Vision(Source source) : m_source{source} {
+Vision::Vision(Source source)
+    : m_source{source} {
 }
 
 Vision::~Vision() {
@@ -89,7 +90,16 @@ bool Vision::setup(const Coord gaugeCoord) {
 	};
 
 	//! D_4 Group Elements.
-	enum class D4 : unsigned char { Id, Rot90, Rot180, Rot270, FlipX, FlipY, Diag, AntiDiag };
+	enum class D4 : unsigned char {
+		Id,
+		Rot90,
+		Rot180,
+		Rot270,
+		FlipX,
+		FlipY,
+		Diag,
+		AntiDiag
+	};
 	//! D_4 symmetry transformation on Coordinate.
 	const auto mapCoord = [boardSize](Coord c, D4 g) -> Coord {
 		switch (g) {
@@ -114,7 +124,14 @@ bool Vision::setup(const Coord gaugeCoord) {
 	};
 
 	constexpr std::array<D4, 8> group = {
-	        D4::Id, D4::Rot90, D4::Rot180, D4::Rot270, D4::FlipX, D4::FlipY, D4::Diag, D4::AntiDiag,
+	        D4::Id,
+	        D4::Rot90,
+	        D4::Rot180,
+	        D4::Rot270,
+	        D4::FlipX,
+	        D4::FlipY,
+	        D4::Diag,
+	        D4::AntiDiag,
 	};
 
 

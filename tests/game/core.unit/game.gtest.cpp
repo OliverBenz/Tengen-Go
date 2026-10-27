@@ -10,9 +10,11 @@ namespace {
 //! Collects what the Game signalled, and in which order.
 class StateRecorder : public IGameStateListener {
 public:
-	enum class Call { Start,
-	                  Delta,
-	                  End };
+	enum class Call {
+		Start,
+		Delta,
+		End
+	};
 
 	void onGameStart(const GameConfig& config) override {
 		calls.push_back(Call::Start);

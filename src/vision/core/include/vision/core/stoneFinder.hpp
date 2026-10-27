@@ -10,7 +10,11 @@
 namespace tengen::vision::core {
 
 //! Stone state at a single grid intersection.
-enum class StoneState { Empty, Black, White };
+enum class StoneState {
+	Empty,
+	Black,
+	White
+};
 
 //! Result of the stone detection stage.
 struct StoneResult {

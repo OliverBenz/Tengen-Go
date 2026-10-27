@@ -4,7 +4,8 @@
 
 namespace tengen {
 
-Board::Board(std::size_t size) : m_size(size), m_board(size * size, Stone::Empty) {
+Board::Board(std::size_t size)
+    : m_size(size), m_board(size * size, Stone::Empty) {
 }
 
 std::size_t Board::size() const {

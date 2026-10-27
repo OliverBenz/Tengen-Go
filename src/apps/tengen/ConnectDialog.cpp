@@ -9,7 +9,8 @@
 
 namespace tengen::gui {
 
-ConnectDialog::ConnectDialog(QWidget* parent) : QDialog(parent) {
+ConnectDialog::ConnectDialog(QWidget* parent)
+    : QDialog(parent) {
 	setWindowTitle("Connect to Server");
 
 	// IP label + input field
