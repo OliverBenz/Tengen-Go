@@ -2,6 +2,7 @@
 
 #include "model/board.hpp"
 
+#include <cstdint>
 #include <filesystem>
 
 namespace tengen {
@@ -9,7 +10,7 @@ namespace tengen {
 //! e.g 3x3 board  W . B
 //                 W B .
 //                 B . W
-enum class SerializeFormat { dotBW };
+enum class SerializeFormat : std::uint8_t { dotBW };
 
 
 /*! Read a board state from a single file.

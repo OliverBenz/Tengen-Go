@@ -1,22 +1,24 @@
 #pragma once
 
+#include <cstdint>
+
 namespace tengen {
 
 //! The supported standard rulesets for the game.
-enum class RuleSet {
+enum class RuleSet : std::uint8_t {
 	Japanese,
 	Chinese,
 	Korean
 };
 
 //! How we count the scoring at the end of the game.
-enum class Scoring {
+enum class Scoring : std::uint8_t {
 	Territory, //!< Surrounded empty points - captured prisoners.
 	Area       //!< Surrounded empty points + living stones on board.
 };
 
 //! The Ko rule we use.
-enum class Ko {
+enum class Ko : std::uint8_t {
 	Simple,      //!< Bans only immediately recapturing the stone just captured.
 	Situational, //!< Bans recreating a (board position, player-to-move) pair seen earlier in this game.
 	Positional   //!< Bans recreating a board position earlier seen in this game.

@@ -4,6 +4,7 @@
 #include "model/player.hpp"
 
 #include <cassert>
+#include <cstdint>
 #include <vector>
 
 namespace tengen {
@@ -11,7 +12,11 @@ namespace tengen {
 //! A physical go board of arbitrary size.
 class Board {
 public:
-	enum class Stone { Empty, Black, White };
+	enum class Stone : std::uint8_t {
+		Empty,
+		Black,
+		White,
+	};
 
 	explicit Board(std::size_t size);
 

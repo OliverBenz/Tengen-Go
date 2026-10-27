@@ -11,10 +11,6 @@ Checks: >
   -performance-enum-size,
   -clang-analyzer-optin.cplusplus.VirtualCall
 
-# Literal shifts like 1 << 3 are fine; signed variables in bitwise operations still get reported.
-CheckOptions:
-  bugprone-signed-bitwise.IgnorePositiveIntegerLiterals: true
-
 # Only report our own headers, not Qt, asio, OpenCV or anything under build/.
 HeaderFilterRegex: '.*/(src|tests)/.*'
 ExcludeHeaderFilterRegex: '.*/build/.*'

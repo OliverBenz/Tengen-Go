@@ -7,12 +7,12 @@ namespace tengen::app {
 //! Types of signals.
 enum AppSignal : uint64_t {
 	AS_None             = 0,
-	AS_BoardChange      = 1 << 0, //!< Board was modified (also sent on reset. Dont treat as move).
-	AS_PlayerChange     = 1 << 1, //!< Active player changed.
-	AS_StateChange      = 1 << 2, //!< Game state changed. Started or finished.
-	AS_StonePlaced      = 1 << 3, //!< A move put a stone on the board.
-	AS_ConnectionChange = 1 << 4, //!< Connecting, welcomed or ended.
-	AS_NewChat          = 1 << 5, //!< New chat message received.
+	AS_BoardChange      = 1ull << 0u, //!< Board was modified (also sent on reset. Dont treat as move).
+	AS_PlayerChange     = 1ull << 1u, //!< Active player changed.
+	AS_StateChange      = 1ull << 2u, //!< Game state changed. Started or finished.
+	AS_StonePlaced      = 1ull << 3u, //!< A move put a stone on the board.
+	AS_ConnectionChange = 1ull << 4u, //!< Connecting, welcomed or ended.
+	AS_NewChat          = 1ull << 5u, //!< New chat message received.
 };
 
 class IAppSignalListener {

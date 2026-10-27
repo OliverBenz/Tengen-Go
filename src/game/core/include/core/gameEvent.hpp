@@ -26,9 +26,9 @@ using GameEvent = std::variant<StartEvent, PutStoneEvent, PassEvent, ResignEvent
 //! Types of signals.
 enum GameSignal : std::uint64_t {
 	GS_None         = 0,
-	GS_BoardChange  = 1 << 0, //!< Board was modified.
-	GS_PlayerChange = 1 << 1, //!< Active player changed.
-	GS_StateChange  = 1 << 2, //!< Game state changed. Started or finished.
+	GS_BoardChange  = 1ull << 0u, //!< Board was modified.
+	GS_PlayerChange = 1ull << 1u, //!< Active player changed.
+	GS_StateChange  = 1ull << 2u, //!< Game state changed. Started or finished.
 };
 
 } // namespace tengen
