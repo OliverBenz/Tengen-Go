@@ -13,7 +13,6 @@ jobs:
     container: archlinux:base-devel
 
     steps:
-    # git must exist before checkout, otherwise submodules are skipped.
     - name: Install dependencies
       run: |
         pacman -Syu --noconfirm --needed \
@@ -38,7 +37,6 @@ jobs:
       run: |
         ctest --test-dir build --output-on-failure --parallel
 
-  # Static analysis with .clang-tidy. It only needs the compile database, so it configures but doesn't build.
   Clang_Tidy:
     runs-on: ubuntu-latest
     container: archlinux:base-devel
@@ -64,6 +62,19 @@ jobs:
     - name: Clang-Tidy
       run: |
         BUILD_DIR=build scripts/tidy.sh --strict
+
+  Format_Check:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install clang-format
+      run: pipx install clang-format==22.1.8
+
+    - name: Check formatting
+      run: |
+        CLANG_FORMAT="$(pipx environment --value PIPX_BIN_DIR)/clang-format" bash scripts/format.sh --check
 
   # Every file needs license and copyright information, see REUSE.toml.
   License_Check:
