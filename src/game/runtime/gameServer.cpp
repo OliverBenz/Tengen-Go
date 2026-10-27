@@ -12,7 +12,8 @@ static constexpr char LOG_REC_PUT[]    = "[GameServer] Received Event 'Put'    f
 static constexpr char LOG_REC_PASS[]   = "[GameServer] Received Event 'Pass'   from Player {}.";
 static constexpr char LOG_REC_RESIGN[] = "[GameServer] Received Event 'Resign' from Player {}.";
 
-GameServer::GameServer(const GameConfig& config, const Player firstPlayer) : m_game(config) {
+GameServer::GameServer(const GameConfig& config, const Player firstPlayer)
+    : m_game(config) {
 	m_server.setFirstSeat(firstPlayer == Player::Black ? network::Seat::Black : network::Seat::White);
 }
 

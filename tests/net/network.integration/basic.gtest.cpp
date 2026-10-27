@@ -61,7 +61,8 @@ namespace {
 //! Connects again from the first onDisconnected, and stays in it long enough for the server to welcome.
 class ReconnectingHandler : public network::IClientHandler {
 public:
-	explicit ReconnectingHandler(network::Client& client) : m_client(client) {
+	explicit ReconnectingHandler(network::Client& client)
+	    : m_client(client) {
 	}
 
 	void onWelcome(std::optional<Player>) override {

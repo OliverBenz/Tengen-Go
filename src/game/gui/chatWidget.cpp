@@ -9,7 +9,8 @@
 
 namespace tengen::gui {
 
-ChatWidget::ChatWidget(QWidget* parent) : QWidget(parent) {
+ChatWidget::ChatWidget(QWidget* parent)
+    : QWidget(parent) {
 	auto* layout = new QVBoxLayout(this);
 	layout->setContentsMargins(0, 0, 0, 0);
 

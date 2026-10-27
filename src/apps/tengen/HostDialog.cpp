@@ -10,7 +10,8 @@
 
 namespace tengen::gui {
 
-HostDialog::HostDialog(QWidget* parent) : QDialog(parent) {
+HostDialog::HostDialog(QWidget* parent)
+    : QDialog(parent) {
 	setWindowTitle("Host Server");
 
 	m_boardSize = new BoardSizeWidget(this);

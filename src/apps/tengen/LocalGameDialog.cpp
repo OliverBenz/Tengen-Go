@@ -9,7 +9,8 @@
 
 namespace tengen::gui {
 
-LocalGameDialog::LocalGameDialog(QWidget* parent) : QDialog(parent) {
+LocalGameDialog::LocalGameDialog(QWidget* parent)
+    : QDialog(parent) {
 	setWindowTitle("New Local Game");
 
 	m_boardSize = new BoardSizeWidget(this);

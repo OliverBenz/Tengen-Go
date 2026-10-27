@@ -82,7 +82,8 @@ void SubProcess::Pimpl::execChild(char* const argv[], const char* logFile) {
 	_exit(EXIT_FAILURE);
 }
 
-SubProcess::SubProcess() : m_pimpl{std::make_unique<SubProcess::Pimpl>()} {
+SubProcess::SubProcess()
+    : m_pimpl{std::make_unique<SubProcess::Pimpl>()} {
 }
 
 SubProcess::~SubProcess() {

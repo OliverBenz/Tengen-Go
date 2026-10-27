@@ -16,8 +16,8 @@ using Permutation = std::array<std::size_t, 4>;
 
 Permutation bestPermutation(const Corners& reference, const Corners& other) {
 	Permutation permutation{0u, 1u, 2u, 3u};
-	Permutation best  = permutation;
-	double bestTotal  = std::numeric_limits<double>::max();
+	Permutation best = permutation;
+	double bestTotal = std::numeric_limits<double>::max();
 	do {
 		double total = 0.0;
 		for (std::size_t i = 0u; i < reference.size(); ++i) {
@@ -136,7 +136,7 @@ Measurement measureImage(const std::filesystem::path& image, const std::optional
 	measurement.gridFill  = 0.5 * (fill.width / warped.imageB0.cols + fill.height / warped.imageB0.rows);
 
 	if (measurement.boardSize >= 2u) {
-		const double expected = boundingBoxMinDimension(transformCorners(truth->grid, geometry.H)) / static_cast<double>(measurement.boardSize - 1u);
+		const double expected    = boundingBoxMinDimension(transformCorners(truth->grid, geometry.H)) / static_cast<double>(measurement.boardSize - 1u);
 		measurement.spacingError = (expected > 0.0) ? (measurement.spacing - expected) / expected : 0.0;
 	}
 

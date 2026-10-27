@@ -103,7 +103,7 @@ void emitRuntimeDebug(const BoardGeometry& geometry, const std::vector<Features>
 	const bool hasEvaluations  = evaluations.size() == states.size();
 	const bool hasNeighborMeds = neighborMedianMap.size() == states.size();
 	const auto zForIndex       = [&](std::size_t index, const Features& feature) {
-        return hasEvaluations ? evaluations[index].z : (feature.deltaL - model.medianEmpty) / model.sigmaEmpty;
+		return hasEvaluations ? evaluations[index].z : (feature.deltaL - model.medianEmpty) / model.sigmaEmpty;
 	};
 	const auto rawStateForIndex = [&](std::size_t index) {
 		if (!hasEvaluations) {

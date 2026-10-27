@@ -8,7 +8,8 @@ static constexpr std::size_t slot(const Player toMove) {
 	return toMove == Player::Black ? 0u : 1u;
 }
 
-PositionHistory::PositionHistory(const Ko rule) : m_rule{rule} {
+PositionHistory::PositionHistory(const Ko rule)
+    : m_rule{rule} {
 }
 
 bool PositionHistory::allows(const uint64_t boardHash, const Player toMove) const {

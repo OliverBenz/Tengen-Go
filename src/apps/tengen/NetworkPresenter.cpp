@@ -25,7 +25,8 @@ static QString endText(const network::DisconnectReason reason) {
 	return {};
 }
 
-NetworkPresenter::NetworkPresenter(app::INetworkSession& session, gui::GameWidget& gameWidget) : m_session(session), m_gameWidget(gameWidget) {
+NetworkPresenter::NetworkPresenter(app::INetworkSession& session, gui::GameWidget& gameWidget)
+    : m_session(session), m_gameWidget(gameWidget) {
 	m_session.subscribe(this, app::AS_ConnectionChange);
 }
 
@@ -37,7 +38,6 @@ void NetworkPresenter::onAppEvent(const app::AppSignal signal) {
 	if (signal != app::AS_ConnectionChange) {
 		return;
 	}
-	// A copy per signal, so each ended connection shows one dialog, however late the GUI thread gets to it.
 	QMetaObject::invokeMethod(this, [this, info = m_session.networkInfo()] { showConnection(info); }, Qt::QueuedConnection);
 }
 

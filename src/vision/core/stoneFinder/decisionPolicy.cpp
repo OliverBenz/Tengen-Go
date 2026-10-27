@@ -4,7 +4,8 @@
 
 namespace tengen::vision::core {
 
-DecisionPolicy::DecisionPolicy(const DecisionConfig& decisionConfig) : decisionConfig_(decisionConfig) {
+DecisionPolicy::DecisionPolicy(const DecisionConfig& decisionConfig)
+    : decisionConfig_(decisionConfig) {
 }
 
 Eval DecisionPolicy::decide(const Features& feature, const SpatialContext& context, const Eval& evaluated, RejectionReason* outReason) const {

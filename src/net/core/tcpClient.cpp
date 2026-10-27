@@ -58,7 +58,8 @@ private:
 	std::vector<Message> m_pending;                      //!< Queued while connecting.
 };
 
-TcpClient::Implementation::Implementation(Callbacks callbacks) : m_workGuard(asio::make_work_guard(m_ioContext)), m_callbacks(std::move(callbacks)) {
+TcpClient::Implementation::Implementation(Callbacks callbacks)
+    : m_workGuard(asio::make_work_guard(m_ioContext)), m_callbacks(std::move(callbacks)) {
 	m_ioThread = std::thread([this] { m_ioContext.run(); });
 }
 
@@ -249,7 +250,8 @@ bool TcpClient::Implementation::isIoThread() const {
 }
 
 
-TcpClient::TcpClient(Callbacks callbacks) : m_pimpl(std::make_unique<Implementation>(std::move(callbacks))) {
+TcpClient::TcpClient(Callbacks callbacks)
+    : m_pimpl(std::make_unique<Implementation>(std::move(callbacks))) {
 }
 
 TcpClient::~TcpClient() = default;

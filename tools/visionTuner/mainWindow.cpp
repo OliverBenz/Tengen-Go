@@ -15,7 +15,8 @@
 
 namespace tengen {
 
-CvMatrixView::CvMatrixView(QWidget* parent) : QWidget(parent) {
+CvMatrixView::CvMatrixView(QWidget* parent)
+    : QWidget(parent) {
 }
 
 void CvMatrixView::setMat(const cv::Mat& mat) {
@@ -99,7 +100,8 @@ QImage CvMatrixView::matToQImage(const cv::Mat& mat) {
 	}
 }
 
-MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
+MainWindow::MainWindow(QWidget* parent)
+    : QMainWindow(parent) {
 	setWindowTitle("Vision Tuner");
 	buildLayout();
 }

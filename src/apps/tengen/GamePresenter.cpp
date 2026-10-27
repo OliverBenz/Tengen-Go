@@ -25,7 +25,8 @@ static QString gameStateText(const tengen::GameStatus status, const tengen::Play
 	}
 }
 
-GamePresenter::GamePresenter(app::IGameSession& game, gui::GameWidget& gameWidget) : m_game(game), m_gameWidget(gameWidget) {
+GamePresenter::GamePresenter(app::IGameSession& game, gui::GameWidget& gameWidget)
+    : m_game(game), m_gameWidget(gameWidget) {
 	QObject::connect(&m_gameWidget, &gui::GameWidget::passEvent, this, &GamePresenter::onPassRequested);
 	QObject::connect(&m_gameWidget, &gui::GameWidget::resignEvent, this, &GamePresenter::onResignRequested);
 

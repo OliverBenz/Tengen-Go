@@ -4,7 +4,8 @@
 
 namespace tengen::app {
 
-OpenSession::OpenSession(const GameConfig& config) : m_game(config) {
+OpenSession::OpenSession(const GameConfig& config)
+    : m_game(config) {
 	// The board takes no moves until the Game signals the start.
 	m_gameInfo.reset(config, GameStatus::Ready);
 

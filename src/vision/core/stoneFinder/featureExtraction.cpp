@@ -109,7 +109,14 @@ bool computeFeaturesAt(const SampleContext& context, const Offsets& offsets, con
 	int backgroundCount  = 0;
 	float backgroundMean = 0.0f;
 	const std::array<cv::Point, 8> directions{
-	        cv::Point(-1, -1), cv::Point(1, -1), cv::Point(-1, 1), cv::Point(1, 1), cv::Point(-1, 0), cv::Point(1, 0), cv::Point(0, -1), cv::Point(0, 1),
+	        cv::Point(-1, -1),
+	        cv::Point(1, -1),
+	        cv::Point(-1, 1),
+	        cv::Point(1, 1),
+	        cv::Point(-1, 0),
+	        cv::Point(1, 0),
+	        cv::Point(0, -1),
+	        cv::Point(0, 1),
 	};
 	for (const cv::Point& direction: directions) {
 		const int sampleX = centerX + direction.x * radii.bgOffset;

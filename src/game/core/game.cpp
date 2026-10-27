@@ -4,7 +4,8 @@
 
 namespace tengen {
 
-Game::Game(const GameConfig& config) : m_state{config} {
+Game::Game(const GameConfig& config)
+    : m_state{config} {
 }
 
 void Game::pushEvent(GameEvent event) {
