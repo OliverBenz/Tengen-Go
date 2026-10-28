@@ -170,7 +170,7 @@ bool Server::Implementation::queue(ServerQueueEvent event) {
 }
 
 void Server::Implementation::sendNow(const SessionId sessionId, const core::Message& message) {
-	if (const auto connectionId = m_sessionManager.getConnectionId(sessionId)) {
+	if (const auto connectionId = m_sessionManager.getConnectionId(sessionId); connectionId != core::ConnectionId::Empty) {
 		m_network.send(connectionId, message);
 	}
 }
@@ -239,7 +239,7 @@ void Server::Implementation::processClientConnect(const ServerQueueEvent& event)
 
 void Server::Implementation::processClientMessage(const ServerQueueEvent& event) {
 	const auto sessionId = m_sessionManager.getSessionId(event.connectionId);
-	if (!sessionId) {
+	if (sessionId == SessionId::Empty) {
 		return;
 	}
 
@@ -310,7 +310,7 @@ void Server::Implementation::handleNetworkEvent(const Player player, const Clien
 
 void Server::Implementation::processClientDisconnect(const ServerQueueEvent& event) {
 	const auto sessionId = m_sessionManager.getSessionId(event.connectionId);
-	if (!sessionId) {
+	if (sessionId == SessionId::Empty) {
 		return; // Should never happen
 	}
 
@@ -326,10 +326,10 @@ void Server::Implementation::processClientDisconnect(const ServerQueueEvent& eve
 Seat Server::Implementation::freeSeat() const {
 	const Seat secondSeat = m_firstSeat == Seat::Black ? Seat::White : Seat::Black;
 
-	if (!m_sessionManager.getConnectionIdBySeat(m_firstSeat)) {
+	if (m_sessionManager.getConnectionIdBySeat(m_firstSeat) == core::ConnectionId::Empty) {
 		return m_firstSeat;
 	}
-	if (!m_sessionManager.getConnectionIdBySeat(secondSeat)) {
+	if (m_sessionManager.getConnectionIdBySeat(secondSeat) == core::ConnectionId::Empty) {
 		return secondSeat;
 	}
 	return Seat::Observer;

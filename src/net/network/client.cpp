@@ -63,7 +63,7 @@ private:
 
 private:
 	IClientHandler* m_handler{nullptr};
-	std::atomic<SessionId> m_sessionId{0};                           //!< Set in callbacks, read by the owner.
+	std::atomic<SessionId> m_sessionId{SessionId::Empty};            //!< Set in callbacks, read by the owner.
 	DisconnectReason m_closeReason{DisconnectReason::ClosedLocally}; //!< Hands the reason from close() to onDisconnect().
 
 	core::TcpClient m_client; //!< Last, so it goes first and no callback reaches the members above.
@@ -94,7 +94,7 @@ void Client::Implementation::disconnect() {
 }
 
 bool Client::Implementation::isConnected() const {
-	return m_client.isConnected() && m_sessionId != 0;
+	return m_client.isConnected() && m_sessionId != SessionId::Empty;
 }
 
 bool Client::Implementation::send(const ClientEvent& event) {
@@ -125,8 +125,9 @@ void Client::Implementation::onDisconnect(const core::DisconnectReason reason) {
 			m_handler->onDisconnected(ourReason);
 		} catch (...) {} // NOLINT(bugprone-empty-catch)
 	}
+
 	// After the handler, which may still want the id. A new welcome can't come earlier: callbacks run one at a time.
-	m_sessionId = 0;
+	m_sessionId = SessionId::Empty;
 }
 
 void Client::Implementation::close(const DisconnectReason reason) {
@@ -137,8 +138,8 @@ void Client::Implementation::close(const DisconnectReason reason) {
 }
 
 void Client::Implementation::handleNetworkEvent(const ServerWelcome& event) {
-	// The server rejects other versions, and 0 means no session. Either way, the server is broken.
-	if (event.protocol != PROTOCOL_VERSION || event.sessionId == 0) {
+	// The server rejects other versions, and Empty means no session. Either way, the server is broken.
+	if (event.protocol != PROTOCOL_VERSION || event.sessionId == SessionId::Empty) {
 		close(DisconnectReason::ProtocolError);
 		return;
 	}

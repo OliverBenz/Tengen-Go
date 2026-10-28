@@ -4,6 +4,7 @@
 #include <gtest/gtest.h>
 #include <iostream>
 #include <optional>
+#include <type_traits>
 
 namespace tengen::gtest {
 
@@ -64,7 +65,7 @@ void MockClient::onChatMessage(const ChatMessage& chat) {
 }
 
 void MockClient::onDisconnected(network::DisconnectReason) {
-	std::cout << std::format("[Client] Client {} disconnected.\n", m_network.sessionId());
+	std::cout << std::format("[Client] Client {} disconnected.\n", static_cast<std::underlying_type_t<network::SessionId>>(m_network.sessionId()));
 }
 
 } // namespace tengen::gtest

@@ -9,8 +9,12 @@
 namespace tengen {
 namespace network::core {
 
-using ConnectionId = std::uint32_t; //!< Identifies a connection on network layer.
-using Message      = std::string;   //!< Message type.
+//! Identifies a connection on network layer. (enum class for strict typing and well defined empty)
+enum class ConnectionId : std::uint32_t {
+	Empty = 0, //!< No connection. Never handed out.
+};
+
+using Message = std::string; //!< Message type.
 
 inline constexpr std::size_t MAX_PLAYERS    = 2;
 inline constexpr std::uint16_t DEFAULT_PORT = 12345;

@@ -92,10 +92,10 @@ namespace {
 
 //! Wait until the server welcomed the client, up to a second.
 bool waitForWelcome(const network::Client& client) {
-	for (int i = 0; i < 100 && client.sessionId() == 0u; ++i) {
+	for (int i = 0; i < 100 && client.sessionId() == network::SessionId::Empty; ++i) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
-	return client.sessionId() != 0u;
+	return client.sessionId() != network::SessionId::Empty;
 }
 
 } // namespace

@@ -18,9 +18,9 @@ enum class ServerQueueEventType {
 
 struct ServerQueueEvent {
 	ServerQueueEventType type{};
-	core::ConnectionId connectionId{}; //!< Network connection id.
-	SessionId sessionId{};             //!< Receiver of a Send.
-	core::Message payload{};           //!< Message received, or to send. E.g. {"type":"put","x":3,"y":4}.
+	core::ConnectionId connectionId{core::ConnectionId::Empty}; //!< Network connection id.
+	SessionId sessionId{SessionId::Empty};                      //!< Receiver of a Send.
+	core::Message payload{};                                    //!< Message received, or to send. E.g. {"type":"put","x":3,"y":4}.
 };
 
 } // namespace tengen::network

@@ -46,13 +46,13 @@ TEST(GameNet, ConnectAgainAfterServerClosed) {
 	{
 		MockServer server;
 		ASSERT_TRUE(client.connect("127.0.0.1"));
-		ASSERT_TRUE(waitFor([&] { return client.sessionId() != 0u; }));
+		ASSERT_TRUE(waitFor([&] { return client.sessionId() != network::SessionId::Empty; }));
 	} // The server stops and closes the connection.
 	ASSERT_TRUE(waitFor([&] { return !client.isConnected(); }));
 
 	MockServer server;
 	ASSERT_TRUE(client.connect("127.0.0.1"));
-	EXPECT_TRUE(waitFor([&] { return client.sessionId() != 0u; }));
+	EXPECT_TRUE(waitFor([&] { return client.sessionId() != network::SessionId::Empty; }));
 	client.disconnect();
 }
 
@@ -104,7 +104,7 @@ TEST(GameNet, ConnectAgainFromOnDisconnected) {
 
 	client.disconnect();
 	EXPECT_EQ(handler.disconnects(), 1);
-	EXPECT_TRUE(waitFor([&] { return client.sessionId() != 0u; }));
+	EXPECT_TRUE(waitFor([&] { return client.sessionId() != network::SessionId::Empty; }));
 
 	client.disconnect();
 	EXPECT_EQ(handler.disconnects(), 2);

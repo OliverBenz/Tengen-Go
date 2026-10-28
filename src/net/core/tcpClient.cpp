@@ -12,7 +12,7 @@
 namespace tengen {
 namespace network::core {
 
-static constexpr ConnectionId CONNECTION_ID = 1u; //!< One connection at a time, so the id doesn't matter.
+static constexpr ConnectionId CONNECTION_ID{1u}; //!< One connection at a time, so the id doesn't matter.
 
 class TcpClient::Implementation {
 public:
