@@ -232,10 +232,21 @@ TEST(GameNetMessages, RejectsNumbersThatDontFit) {
 	serverRejects(R"({"type":"chat","player":"white","messageId":4294967297,"message":"hi"})");
 }
 
-//! A board the game cannot be played on never reaches the session.
-//! TODO: Disabled until the start message checks isSupportedBoardSize().
-TEST(GameNetMessages, DISABLED_ServerRejectsUnsupportedBoardSize) {
-	EXPECT_FALSE(network::fromServerMessage(R"({"type":"start","boardSize":7,"rules":{"scoring":"area","ko":"simple","komi":7.5,"suicide":true}})").has_value());
+//! A board the game cannot be played on never reaches the session, whatever the platform's size_t.
+TEST(GameNetMessages, ServerRejectsUnsupportedBoardSize) {
+	const auto start = [](const std::string& boardSize) {
+		return network::fromServerMessage(R"({"type":"start","boardSize":)" + boardSize + R"(,"rules":{"scoring":"area","ko":"simple","komi":7.5,"suicide":true}})");
+	};
+
+	EXPECT_TRUE(start("9").has_value());
+	EXPECT_TRUE(start("13").has_value());
+	EXPECT_TRUE(start("19").has_value());
+
+	EXPECT_FALSE(start("0").has_value());
+	EXPECT_FALSE(start("7").has_value());
+	EXPECT_FALSE(start("4000000000").has_value()); // Would allocate a huge board.
+	EXPECT_FALSE(start("4294967305").has_value()); // 2^32 + 9: cut to 32 bits, it would pass as 9.
+	EXPECT_FALSE(start("-9").has_value());
 }
 
 //! Every enum value survives the wire. Catches a value added to the model but missing from the wire names.
