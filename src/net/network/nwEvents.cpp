@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <limits>
 #include <nlohmann/json.hpp>
+#include <type_traits>
 
 namespace tengen::network {
 
@@ -173,7 +174,7 @@ static std::string toMessage(const ServerWelcome& e) {
 	json j;
 	j["type"]      = "welcome";
 	j["protocol"]  = e.protocol;
-	j["sessionId"] = e.sessionId;
+	j["sessionId"] = static_cast<std::underlying_type_t<SessionId>>(e.sessionId);
 	j["seat"]      = toName(SEAT_NAMES, e.seat);
 	return j.dump();
 }
@@ -253,12 +254,12 @@ static std::optional<ServerEvent> fromServerWelcomeMessage(const json& j) {
 		return {};
 	}
 	const auto protocol  = readUnsigned<ProtocolVersion>(j, "protocol");
-	const auto sessionId = readUnsigned<SessionId>(j, "sessionId");
+	const auto sessionId = readUnsigned<std::underlying_type_t<SessionId>>(j, "sessionId");
 	const auto seat      = fromName(SEAT_NAMES, j["seat"].get_ref<const std::string&>());
 	if (!protocol || !sessionId || !seat) {
 		return {};
 	}
-	return ServerWelcome{.protocol = *protocol, .sessionId = *sessionId, .seat = *seat};
+	return ServerWelcome{.protocol = *protocol, .sessionId = SessionId{*sessionId}, .seat = *seat};
 }
 
 static std::optional<ServerEvent> fromServerRejectMessage(const json& j) {

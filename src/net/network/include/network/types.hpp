@@ -7,7 +7,11 @@
 
 namespace tengen::network {
 
-using SessionId       = std::uint32_t;
+//! Identifies a client on the application layer. (enum class for strict typing and well defined empty)
+enum class SessionId : std::uint32_t {
+	Empty = 0, //!< No session: before the welcome, or after it ended. Never handed out.
+};
+
 using ProtocolVersion = std::uint32_t;
 
 //! Version of the wire protocol.

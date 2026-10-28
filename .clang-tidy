@@ -1,6 +1,8 @@
 # Bugs first: widen the checks once these are clean.
-# Off: swappable parameters flags every two parameters of one type, enum size gains nothing,
-# and VirtualCall only fires inside asio, where the header filter can't hide it.
+# Off:
+#   swappable parameters flags every two parameters of one type, enum size gains nothing,
+#   VirtualCall only fires inside asio, where the header filter can't hide it,
+#   EnumCastOutOfRange rejects our id types (SessionId, ConnectionId), whose values are any number but Empty.
 Checks: >
   -*,
   bugprone-*,
@@ -9,7 +11,8 @@ Checks: >
   performance-*,
   -bugprone-easily-swappable-parameters,
   -performance-enum-size,
-  -clang-analyzer-optin.cplusplus.VirtualCall
+  -clang-analyzer-optin.cplusplus.VirtualCall,
+  -clang-analyzer-optin.core.EnumCastOutOfRange
 
 # Only report our own headers, not Qt, asio, OpenCV or anything under build/.
 HeaderFilterRegex: '.*/(src|tests)/.*'

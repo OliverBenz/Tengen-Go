@@ -76,7 +76,7 @@ std::optional<T> roundTrip(const T& event) {
 TEST(GameNetMessages, ServerToMessage) {
 	using nlohmann::json;
 
-	EXPECT_EQ(json::parse(network::toMessage(network::ServerWelcome{1u, 2u, network::Seat::Black})), json({{"type", "welcome"}, {"protocol", 1u}, {"sessionId", 2u}, {"seat", "black"}}));
+	EXPECT_EQ(json::parse(network::toMessage(network::ServerWelcome{1u, network::SessionId{2u}, network::Seat::Black})), json({{"type", "welcome"}, {"protocol", 1u}, {"sessionId", 2u}, {"seat", "black"}}));
 
 	const GameRules rules{.scoringMethod = Scoring::Area, .koRule = Ko::Situational, .komi = 7.5f, .suicideLegal = true};
 	EXPECT_EQ(json::parse(network::toMessage(network::ServerGameStart{GameConfig{.boardSize = 19u, .rules = rules}})),
@@ -108,7 +108,7 @@ TEST(GameNetMessages, ServerFromMessageValid) {
 	const auto welcome = parseAs<network::ServerWelcome>(R"({"type":"welcome","protocol":1,"sessionId":42,"seat":"white"})");
 	ASSERT_TRUE(welcome.has_value());
 	EXPECT_EQ(welcome->protocol, 1u);
-	EXPECT_EQ(welcome->sessionId, 42u);
+	EXPECT_EQ(welcome->sessionId, network::SessionId{42u});
 	EXPECT_EQ(welcome->seat, network::Seat::White);
 
 	const auto start = parseAs<network::ServerGameStart>(R"({"type":"start","boardSize":13,"rules":{"scoring":"territory","ko":"simple","komi":6.5,"suicide":false}})");

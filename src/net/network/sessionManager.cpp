@@ -1,10 +1,9 @@
 #include "sessionManager.hpp"
 
 #include <cassert>
+#include <type_traits>
 
 namespace tengen::network {
-
-static SessionId nextSessionId{1};
 
 SessionId SessionManager::add(core::ConnectionId connectionId) {
 	const auto existing = m_connectionToSession.find(connectionId);
@@ -41,7 +40,7 @@ void SessionManager::remove(SessionId sessionId) {
 SessionId SessionManager::getSessionId(core::ConnectionId connectionId) const {
 	const auto it = m_connectionToSession.find(connectionId);
 	if (it == m_connectionToSession.end()) {
-		return 0;
+		return SessionId::Empty;
 	}
 	return it->second;
 }
@@ -49,7 +48,7 @@ SessionId SessionManager::getSessionId(core::ConnectionId connectionId) const {
 core::ConnectionId SessionManager::getConnectionId(SessionId sessionId) const {
 	const auto it = m_sessions.find(sessionId);
 	if (it == m_sessions.end()) {
-		return 0;
+		return core::ConnectionId::Empty;
 	}
 	return it->second.connectionId;
 }
@@ -62,7 +61,7 @@ core::ConnectionId SessionManager::getConnectionIdBySeat(Seat seat) const {
 			return context.connectionId;
 		}
 	}
-	return 0;
+	return core::ConnectionId::Empty;
 }
 
 Seat SessionManager::getSeat(SessionId sessionId) const {
@@ -96,22 +95,24 @@ void SessionManager::forEachSession(const std::function<void(const SessionContex
 }
 
 SessionId SessionManager::generateSessionId() const {
-	SessionId candidate = nextSessionId;
-	if (candidate == 0) {
+	static std::underlying_type_t<SessionId> nextSessionId{1};
+
+	auto candidate = nextSessionId;
+	if (SessionId{candidate} == SessionId::Empty) {
 		candidate = 1;
 	}
-	while (m_sessions.find(candidate) != m_sessions.end()) {
+	while (m_sessions.contains(SessionId{candidate})) {
 		++candidate;
-		if (candidate == 0) {
+		if (SessionId{candidate} == SessionId::Empty) {
 			++candidate;
 		}
 	}
 
 	nextSessionId = candidate + 1;
-	if (nextSessionId == 0) {
+	if (SessionId{nextSessionId} == SessionId::Empty) {
 		nextSessionId = 1;
 	}
-	return candidate;
+	return SessionId{candidate};
 }
 
 
