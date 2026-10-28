@@ -273,8 +273,8 @@ static std::optional<ServerEvent> fromServerRejectMessage(const json& j) {
 }
 
 static std::optional<ServerEvent> fromServerStartMessage(const json& j) {
-	const auto boardSize = readUnsigned<std::size_t>(j, "boardSize");
-	if (!boardSize || !j.contains("rules") || !j["rules"].is_object()) {
+	const auto boardSize = readUnsigned<unsigned>(j, "boardSize");
+	if (!boardSize || !isSupportedBoardSize(*boardSize) || !j.contains("rules") || !j["rules"].is_object()) {
 		return {};
 	}
 
