@@ -21,15 +21,20 @@ GameServer::~GameServer() {
 	stop();
 }
 
-void GameServer::start() {
+bool GameServer::start() {
 	if (!m_server.registerHandler(this)) {
 		Logger().Log(Logging::LogLevel::Warning, "[GameServer] Server handler already registered. Start ignored.");
-		return;
+		return false;
 	}
 	m_game.subscribeState(this);
 
 	m_gameThread = std::thread([this] { m_game.run(); }); // Start message loop but don't send the game start event yet.
-	m_server.start();
+	if (!m_server.start()) {
+		Logger().Log(Logging::LogLevel::Error, "[GameServer] Network listener failed to start.");
+		stop();
+		return false;
+	}
+	return true;
 }
 
 void GameServer::stop() {
@@ -82,8 +87,12 @@ void GameServer::onResign(const Player player) {
 }
 
 void GameServer::onChat(const Player player, const std::string& message) {
-	m_chatHistory.push_back(ChatMessage{.messageId = static_cast<unsigned>(m_chatHistory.size()) + 1u, .player = player, .text = message});
-	m_server.broadcast(network::ServerChat{m_chatHistory.back()});
+	ChatMessage chat{.messageId = static_cast<unsigned>(m_chatHistory.size()) + 1u, .player = player, .text = message};
+	if (!m_server.broadcast(network::ServerChat{chat})) {
+		Logger().Log(Logging::LogLevel::Warning, std::format("[GameServer] Chat from player {} dropped (too long or server stopping).", toString(player)));
+		return;
+	}
+	m_chatHistory.push_back(std::move(chat));
 }
 
 void GameServer::onGameStart(const GameConfig& config) {
