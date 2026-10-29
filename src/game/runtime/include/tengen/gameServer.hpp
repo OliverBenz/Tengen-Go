@@ -24,7 +24,7 @@ public:
 	GameServer(const GameConfig& config, Player firstPlayer);
 	~GameServer();
 
-	void start(); //!< Boot the game loop, the network listener and the server event loop.
+	bool start(); //!< Boot the game loop, the network listener and the server event loop.
 	void stop();  //!< Signal shutdown to the server loop and stop the network listener.
 
 public: // IServerHandler Interface

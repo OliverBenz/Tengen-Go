@@ -65,6 +65,10 @@ bool NetworkSession::host(const GameConfig& config, const Player hostColour) {
 		Logger().Log(Logging::LogLevel::Error, std::format("[NetworkSession] Cannot host the game: {}", e.what()));
 		return false;
 	}
+	if (!m_localServer->start()) {
+		m_localServer.reset();
+		return false;
+	}
 
 	resetState(config, GameStatus::Ready);
 	{
@@ -75,7 +79,6 @@ bool NetworkSession::host(const GameConfig& config, const Player hostColour) {
 	m_eventHub.signal(AS_ConnectionChange);
 
 	// We connect first, so we take the seat the server hands to its first player.
-	m_localServer->start();
 	m_network.connect("127.0.0.1");
 
 	m_eventHub.signal(AS_BoardChange);
