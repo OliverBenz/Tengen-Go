@@ -154,7 +154,8 @@ bool Server::Implementation::broadcast(const ServerEvent& event) {
 }
 
 bool Server::Implementation::queueToSend(ServerQueueEvent event) {
-	if (event.payload.empty()) {
+	// Connection::send would drop an oversized message silently; refuse it here so the caller knows.
+	if (event.payload.empty() || event.payload.size() > core::MAX_PAYLOAD_BYTES) {
 		return false;
 	}
 	return queue(std::move(event));
