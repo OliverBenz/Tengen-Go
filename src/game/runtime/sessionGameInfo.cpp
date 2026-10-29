@@ -1,6 +1,7 @@
 #include "tengen/sessionGameInfo.hpp"
 #include "logging.hpp"
 
+#include <algorithm>
 #include <cassert>
 
 namespace tengen::app {
@@ -71,13 +72,13 @@ std::optional<GameResult> SessionGameInfo::getResult() const {
 }
 
 bool SessionGameInfo::isDeltaApplicable(const GameDelta& delta) const {
-	// No gamestate updates before game is active (received game configuration).
+	// Check the game status
 	if (m_status != GameStatus::Active) {
 		Logger().Log(Logging::LogLevel::Error, "Received game update before game is active.");
 		return false;
 	}
 
-	// Game delta for the proper move.
+	// Check the move order
 	if (delta.moveId <= m_moveId) {
 		Logger().Log(Logging::LogLevel::Error, "Game delta sent to client twice.");
 		return false;
@@ -88,10 +89,20 @@ bool SessionGameInfo::isDeltaApplicable(const GameDelta& delta) const {
 		return false;
 	}
 
-	// We cannot place without a coordinate.
-	if (delta.action == GameAction::Place && !delta.coord) {
-		Logger().Log(Logging::LogLevel::Error, "Game delta missing place coordinate.");
-		return false;
+	// Check place action is valid
+	if (delta.action == GameAction::Place) {
+		if (!delta.coord) {
+			Logger().Log(Logging::LogLevel::Error, "Game delta missing place coordinate.");
+			return false;
+		}
+
+		// Board does not check coordinates: every one from the wire has to be on it.
+		const auto size    = m_board.size();
+		const auto onBoard = [size](const Coord c) { return c.x < size && c.y < size; };
+		if (!onBoard(*delta.coord) || !std::ranges::all_of(delta.captures, onBoard)) {
+			Logger().Log(Logging::LogLevel::Error, "Game delta coordinate outside the board.");
+			return false;
+		}
 	}
 
 	return true;
