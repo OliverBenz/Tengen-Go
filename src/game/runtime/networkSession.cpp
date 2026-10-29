@@ -97,13 +97,9 @@ void NetworkSession::stopLocalServer() {
 }
 
 void NetworkSession::disconnect() {
+	// onDisconnected() resets the state.
 	m_network.disconnect();
 	stopLocalServer();
-	resetState(PLACEHOLDER_CONFIG, GameStatus::Idle);
-
-	m_eventHub.signal(AS_BoardChange);
-	m_eventHub.signal(AS_PlayerChange);
-	m_eventHub.signal(AS_StateChange);
 }
 
 void NetworkSession::shutdown() {
