@@ -34,11 +34,10 @@ NetworkPresenter::~NetworkPresenter() {
 	m_session.unsubscribe(this);
 }
 
-void NetworkPresenter::onAppEvent(const app::AppSignal signal) {
-	if (signal != app::AS_ConnectionChange) {
-		return;
+void NetworkPresenter::onAppEvent(const app::AppSignalMask mask) {
+	if (mask & app::AS_ConnectionChange) {
+		QMetaObject::invokeMethod(this, [this, info = m_session.networkInfo()] { showConnection(info); }, Qt::QueuedConnection);
 	}
-	QMetaObject::invokeMethod(this, [this, info = m_session.networkInfo()] { showConnection(info); }, Qt::QueuedConnection);
 }
 
 void NetworkPresenter::showConnection(const app::SessionNetworkInfo& info) {

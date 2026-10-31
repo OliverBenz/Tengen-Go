@@ -26,8 +26,8 @@ void ChatPresenter::onChatRequested(const std::string& message) {
 	m_chat.chat(message);
 }
 
-void ChatPresenter::onAppEvent(const app::AppSignal signal) {
-	if (signal == app::AS_NewChat) {
+void ChatPresenter::onAppEvent(const app::AppSignalMask mask) {
+	if (mask & app::AS_NewChat) {
 		QMetaObject::invokeMethod(this, [this]() { showNewMessages(); }, Qt::QueuedConnection);
 	}
 }

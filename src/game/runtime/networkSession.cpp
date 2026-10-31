@@ -25,7 +25,7 @@ NetworkSession::~NetworkSession() {
 	}
 }
 
-void NetworkSession::subscribe(IAppSignalListener* listener, uint64_t signalMask) {
+void NetworkSession::subscribe(IAppSignalListener* listener, AppSignalMask signalMask) {
 	m_eventHub.subscribe(listener, signalMask);
 }
 
@@ -129,10 +129,7 @@ void NetworkSession::onConnecting() {
 		std::lock_guard<std::mutex> lock(m_stateMutex);
 		m_networkInfo.setConnecting();
 	}
-	m_eventHub.signal(AS_BoardChange);
-	m_eventHub.signal(AS_PlayerChange);
-	m_eventHub.signal(AS_StateChange);
-	m_eventHub.signal(AS_ConnectionChange);
+	m_eventHub.signal(AS_BoardChange | AS_PlayerChange | AS_StateChange | AS_ConnectionChange);
 }
 void NetworkSession::onWelcome(const std::optional<Player> player) {
 	{
@@ -151,9 +148,7 @@ void NetworkSession::onGameStart(const GameConfig& config) {
 	if (!started) {
 		return;
 	}
-	m_eventHub.signal(AS_BoardChange);
-	m_eventHub.signal(AS_PlayerChange);
-	m_eventHub.signal(AS_StateChange);
+	m_eventHub.signal(AS_BoardChange | AS_PlayerChange | AS_StateChange);
 }
 void NetworkSession::onGameDelta(const GameDelta& delta) {
 	bool applied = false;
@@ -168,9 +163,7 @@ void NetworkSession::onGameDelta(const GameDelta& delta) {
 
 	switch (delta.action) {
 	case GameAction::Place:
-		m_eventHub.signal(AS_BoardChange);
-		m_eventHub.signal(AS_PlayerChange);
-		m_eventHub.signal(AS_StonePlaced);
+		m_eventHub.signal(AS_BoardChange | AS_PlayerChange | AS_StonePlaced);
 		break;
 	case GameAction::Pass:
 		m_eventHub.signal(AS_PlayerChange);
@@ -206,10 +199,7 @@ void NetworkSession::onDisconnected(const network::DisconnectReason reason) {
 		std::lock_guard<std::mutex> lock(m_stateMutex);
 		m_networkInfo.setIdle(reason);
 	}
-	m_eventHub.signal(AS_BoardChange);
-	m_eventHub.signal(AS_PlayerChange);
-	m_eventHub.signal(AS_StateChange);
-	m_eventHub.signal(AS_ConnectionChange);
+	m_eventHub.signal(AS_BoardChange | AS_PlayerChange | AS_StateChange | AS_ConnectionChange);
 }
 
 } // namespace tengen::app

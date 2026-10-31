@@ -11,13 +11,13 @@ namespace tengen::app {
 class EventHub {
 	struct SignalListenerEntry {
 		IAppSignalListener* listener; //!< Pointer to the listener.
-		uint64_t signalMask;          //!< What events the listener cares about.
+		AppSignalMask signalMask;     //!< What events the listener cares about.
 	};
 
 public:
-	void subscribe(IAppSignalListener* listener, uint64_t signalMask);
+	void subscribe(IAppSignalListener* listener, AppSignalMask signalMask);
 	void unsubscribe(IAppSignalListener* listener);
-	void signal(AppSignal signal); //!< Signal a game event.
+	void signal(AppSignalMask mask); //!< Signal one or more game events in a single call.
 
 private:
 	std::mutex m_listenerMutex;

@@ -22,20 +22,21 @@ BoardPresenter::~BoardPresenter() {
 	m_game.unsubscribe(this);
 }
 
-void BoardPresenter::onAppEvent(const app::AppSignal signal) {
-	switch (signal) {
-	case app::AS_BoardChange:
-		QMetaObject::invokeMethod(this, [this]() { showBoard(); }, Qt::QueuedConnection);
-		return;
-	case app::AS_PlayerChange:
-		QMetaObject::invokeMethod(this, [this]() { showCurrentPlayer(); }, Qt::QueuedConnection);
-		return;
-	case app::AS_StonePlaced:
-		QMetaObject::invokeMethod(this, [this]() { playStonePlaceSound(); }, Qt::QueuedConnection);
-		return;
-	default:
-		return;
-	}
+void BoardPresenter::onAppEvent(const app::AppSignalMask mask) {
+	QMetaObject::invokeMethod(
+	        this,
+	        [this, mask]() {
+		        if (mask & app::AS_BoardChange) {
+			        showBoard();
+		        }
+		        if (mask & app::AS_PlayerChange) {
+			        showCurrentPlayer();
+		        }
+		        if (mask & app::AS_StonePlaced) {
+			        playStonePlaceSound();
+		        }
+	        },
+	        Qt::QueuedConnection);
 }
 
 void BoardPresenter::showBoard() {

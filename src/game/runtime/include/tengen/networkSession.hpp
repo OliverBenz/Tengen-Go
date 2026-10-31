@@ -35,7 +35,7 @@ public:
 	void disconnect();
 
 public: // IAppSignalSource Interface
-	void subscribe(IAppSignalListener* listener, uint64_t signalMask) override;
+	void subscribe(IAppSignalListener* listener, AppSignalMask signalMask) override;
 	void unsubscribe(IAppSignalListener* listener) override;
 
 public: // IGameSession Interface
