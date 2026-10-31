@@ -2,18 +2,22 @@
 
 Images used by the board widget. The build copies this folder to `resources/` next to the executable, and they are loaded from there at runtime.
 
-| File               | Used for                                     |
-| ------------------ | -------------------------------------------- |
-| `anime_black.png`  | Black stone                                  |
-| `anime_white.png`  | White stone                                  |
-| `anime_shadow.png` | Stone shadow (not drawn yet)                 |
-| `anime_*.svg`      | Vector sources of the stone PNGs             |
-| `board_textures/`  | Board backgrounds selectable in the Settings |
-| `audio/`           | Stone placement sounds                       |
+| Folder    | Used for                                     |
+| --------- | -------------------------------------------- |
+| `stones/` | Stone images                                 |
+| `boards/` | Board backgrounds selectable in the Settings |
+| `audio/`  | Stone placement sounds                       |
 
 ## Stones
 
-The stones are the "Anime" theme of [OGS](https://online-go.com), taken from its board library [online-go/goban][goban].
+The stones in `stones/` are the "Anime" theme of [OGS](https://online-go.com), taken from its board library [online-go/goban][goban].
+
+| File               | Used for                         |
+| ------------------ | -------------------------------- |
+| `anime_black.png`  | Black stone                      |
+| `anime_white.png`  | White stone                      |
+| `anime_shadow.png` | Stone shadow (not drawn yet)     |
+| `anime_*.svg`      | Vector sources of the stone PNGs |
 
 | File               | Source                                | License                              | Modified                        | Accessed   |
 | ------------------ | ------------------------------------- | ------------------------------------ | ------------------------------- | ---------- |
@@ -48,7 +52,7 @@ The sounds in `audio/` were recorded by the author of this project and are relea
 
 ## Board textures
 
-The textures listed in `TEXTURES` in [`resources.cpp`](../resources.cpp) show up in **Settings → Style**, under their display name.
+The textures in `boards/` that are listed in `TEXTURES` in [`resources.cpp`](../resources.cpp) show up in **Settings → Style**, under their display name.
 The code refers to them by the `BoardTexture` enum; that table is the only place that knows their files.
 The plain texture has no file: the board is drawn in a plain colour.
 
@@ -71,7 +75,7 @@ The plain texture has no file: the board is drawn in a plain colour.
 
 ### Adding a texture
 
-- **Register:** Add a value to `BoardTexture` in [`resources.hpp`](../include/gui/resources.hpp) and a row with its display name and file to `TEXTURES` in [`resources.cpp`](../resources.cpp). The row order is the order in the settings.
+- **Register:** Put the file in `boards/`. Add a value to `BoardTexture` in [`resources.hpp`](../include/gui/resources.hpp) and a row with its display name and file to `TEXTURES` in [`resources.cpp`](../resources.cpp). The row order is the order in the settings.
 
 - **Format:** Any format Qt can read. JPEG keeps photos small; PNG of the same image is several times larger.
 - **Which file:** Texture sites ship PBR sets with several maps. Only the colour map is needed (named _Color_, _Albedo_, _Diffuse_ or _BaseColor_).
