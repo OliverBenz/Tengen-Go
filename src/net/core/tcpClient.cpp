@@ -82,34 +82,41 @@ bool TcpClient::Implementation::connect(std::string host, const std::uint16_t po
 
 	// After a running callback, so the last connection's end is reported first.
 	std::lock_guard<std::recursive_mutex> callbackLock(m_callbackMutex);
-	std::lock_guard<std::mutex> lock(m_mutex);
-	if (m_state != State::Idle) {
-		return false;
-	}
+	{
+		std::lock_guard<std::mutex> lock(m_mutex);
+		if (m_state != State::Idle) {
+			return false;
+		}
 
-	m_state    = State::Connecting;
-	m_resolver = std::make_shared<asio::ip::tcp::resolver>(m_ioContext);
-	m_socket   = std::make_shared<asio::ip::tcp::socket>(m_ioContext);
-	if (firstMessage) {
-		m_pending.push_back(std::move(*firstMessage)); // Same lock as the state, so nothing gets ahead of it.
-	}
+		m_state    = State::Connecting;
+		m_resolver = std::make_shared<asio::ip::tcp::resolver>(m_ioContext);
+		m_socket   = std::make_shared<asio::ip::tcp::socket>(m_ioContext);
+		if (firstMessage) {
+			m_pending.push_back(std::move(*firstMessage)); // Same lock as the state, so nothing gets ahead of it.
+		}
 
-	// From here on, the resolver and socket belong to the IO thread. The handlers keep them alive.
-	asio::post(m_ioContext, [this, resolver = m_resolver, socket = m_socket, host = std::move(host), port] {
-		resolver->async_resolve(host, std::to_string(port), [this, resolver, socket](const asio::error_code& ec, const asio::ip::tcp::resolver::results_type& endpoints) {
-			if (ec) {
-				onConnectFailed(socket);
-				return;
-			}
-			asio::async_connect(*socket, endpoints, [this, socket](const asio::error_code& connectEc, const asio::ip::tcp::endpoint&) {
-				if (connectEc) {
+		// From here on, the resolver and socket belong to the IO thread. The handlers keep them alive.
+		asio::post(m_ioContext, [this, resolver = m_resolver, socket = m_socket, host = std::move(host), port] {
+			resolver->async_resolve(host, std::to_string(port), [this, resolver, socket](const asio::error_code& ec, const asio::ip::tcp::resolver::results_type& endpoints) {
+				if (ec) {
 					onConnectFailed(socket);
 					return;
 				}
-				onConnected(socket);
+				asio::async_connect(*socket, endpoints, [this, socket](const asio::error_code& connectEc, const asio::ip::tcp::endpoint&) {
+					if (connectEc) {
+						onConnectFailed(socket);
+						return;
+					}
+					onConnected(socket);
+				});
 			});
 		});
-	});
+	}
+
+	// Under the callback lock, so no callback of this attempt gets ahead of it.
+	if (m_callbacks.onConnecting) {
+		m_callbacks.onConnecting();
+	}
 	return true;
 }
 

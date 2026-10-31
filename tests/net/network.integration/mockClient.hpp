@@ -14,6 +14,7 @@ public:
 	void tryPlace(unsigned x, unsigned y);
 
 public:
+	void onConnecting() override;
 	void onWelcome(std::optional<Player> player) override;
 	void onGameStart(const GameConfig& config) override;
 	void onGameDelta(const GameDelta& delta) override;

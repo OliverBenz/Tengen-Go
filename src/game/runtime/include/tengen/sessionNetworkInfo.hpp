@@ -17,9 +17,9 @@ enum class ConnectionPhase : std::uint8_t {
 //! The connection as a session knows it: what the server told us about ourselves, and how the connection ended.
 class SessionNetworkInfo {
 public:
-	void connecting();                             //!< A new attempt. Forgets the last one.
-	void update(std::optional<Player> player);     //!< Welcomed as this player. Nullopt: we only watch.
-	void update(network::DisconnectReason reason); //!< Ended. The reason stays until the next attempt.
+	void setConnecting();                            //!< A new attempt. Forgets the last one.
+	void setConnected(std::optional<Player> player); //!< Welcomed as this player. Nullopt: we only watch.
+	void setIdle(network::DisconnectReason reason);  //!< Ended. The reason stays until the next attempt.
 
 	ConnectionPhase getPhase() const;
 	std::optional<Player> getLocalPlayer() const;                  //!< Our colour while connected. Nullopt: not welcomed, or we only watch.

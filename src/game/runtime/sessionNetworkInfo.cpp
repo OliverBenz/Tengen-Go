@@ -2,18 +2,18 @@
 
 namespace tengen::app {
 
-void SessionNetworkInfo::connecting() {
+void SessionNetworkInfo::setConnecting() {
 	m_phase = ConnectionPhase::Connecting;
 	m_localPlayer.reset();
 	m_endReason.reset();
 }
 
-void SessionNetworkInfo::update(const std::optional<Player> player) {
+void SessionNetworkInfo::setConnected(const std::optional<Player> player) {
 	m_phase       = ConnectionPhase::Connected;
 	m_localPlayer = player;
 }
 
-void SessionNetworkInfo::update(const network::DisconnectReason reason) {
+void SessionNetworkInfo::setIdle(const network::DisconnectReason reason) {
 	m_phase = ConnectionPhase::Idle;
 	m_localPlayer.reset();
 	m_endReason = reason;

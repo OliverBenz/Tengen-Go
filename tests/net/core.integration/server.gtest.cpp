@@ -14,6 +14,9 @@ namespace tengen::gtest {
 
 class TestClientHandler final : public network::IClientHandler {
 public:
+	void onConnecting() override {
+	}
+
 	void onWelcome(std::optional<Player>) override {
 	}
 
