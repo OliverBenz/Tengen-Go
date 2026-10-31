@@ -19,7 +19,7 @@ public:
 	NetworkPresenter(app::INetworkSession& session, gui::GameWidget& gameWidget);
 	~NetworkPresenter() override;
 
-	void onAppEvent(app::AppSignal signal) override; //!< Signalled by session thread. Offload work to GUI thread.
+	void onAppEvent(app::AppSignalMask mask) override; //!< Signalled by session thread. Offload work to GUI thread.
 
 private:
 	void showConnection(const app::SessionNetworkInfo& info); //!< GUI thread only.

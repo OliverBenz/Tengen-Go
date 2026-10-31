@@ -15,7 +15,7 @@ public:
 	BoardPresenter(app::IGameSession& game, gui::BoardWidget& boardWidget);
 	~BoardPresenter() override;
 
-	void onAppEvent(app::AppSignal signal) override; //!< Signalled by session thread. Offload work to GUI thread.
+	void onAppEvent(app::AppSignalMask mask) override; //!< Signalled by session thread. Offload work to GUI thread.
 
 private slots:
 	void onBoardEvent(const gui::BoardWidgetEvent& event);

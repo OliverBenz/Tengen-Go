@@ -48,14 +48,9 @@ void GamePresenter::addChatWindow(app::IChatSession& chat) {
 	m_gameWidget.setChatEnabled(true);
 }
 
-void GamePresenter::onAppEvent(const app::AppSignal signal) {
-	switch (signal) {
-	case app::AS_PlayerChange:
-	case app::AS_StateChange:
+void GamePresenter::onAppEvent(const app::AppSignalMask mask) {
+	if (mask & (app::AS_PlayerChange | app::AS_StateChange)) {
 		QMetaObject::invokeMethod(this, [this]() { showStatus(); }, Qt::QueuedConnection);
-		return;
-	default:
-		return;
 	}
 }
 

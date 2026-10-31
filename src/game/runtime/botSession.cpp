@@ -75,7 +75,7 @@ void BotSession::shutdown() {
 	m_game.unsubscribeState(this);
 }
 
-void BotSession::subscribe(IAppSignalListener* listener, uint64_t signalMask) {
+void BotSession::subscribe(IAppSignalListener* listener, AppSignalMask signalMask) {
 	m_eventHub.subscribe(listener, signalMask);
 }
 
@@ -96,9 +96,7 @@ void BotSession::onGameStart(const GameConfig& config) {
 		return;
 	}
 
-	m_eventHub.signal(AS_BoardChange);
-	m_eventHub.signal(AS_PlayerChange);
-	m_eventHub.signal(AS_StateChange);
+	m_eventHub.signal(AS_BoardChange | AS_PlayerChange | AS_StateChange);
 
 	// The bot opens the game when it plays black.
 	if (m_botColour == nextPlayer) {
@@ -130,9 +128,7 @@ void BotSession::onGameDelta(const GameDelta& delta) {
 
 	switch (delta.action) {
 	case GameAction::Place:
-		m_eventHub.signal(AS_BoardChange);
-		m_eventHub.signal(AS_PlayerChange);
-		m_eventHub.signal(AS_StonePlaced);
+		m_eventHub.signal(AS_BoardChange | AS_PlayerChange | AS_StonePlaced);
 		break;
 	case GameAction::Pass:
 		m_eventHub.signal(AS_PlayerChange);

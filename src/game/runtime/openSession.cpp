@@ -50,7 +50,7 @@ void OpenSession::shutdown() {
 	m_game.unsubscribeState(this);
 }
 
-void OpenSession::subscribe(IAppSignalListener* listener, uint64_t signalMask) {
+void OpenSession::subscribe(IAppSignalListener* listener, AppSignalMask signalMask) {
 	m_eventHub.subscribe(listener, signalMask);
 }
 
@@ -69,9 +69,7 @@ void OpenSession::onGameStart(const GameConfig& config) {
 		return;
 	}
 
-	m_eventHub.signal(AS_BoardChange);
-	m_eventHub.signal(AS_PlayerChange);
-	m_eventHub.signal(AS_StateChange);
+	m_eventHub.signal(AS_BoardChange | AS_PlayerChange | AS_StateChange);
 }
 
 void OpenSession::onGameDelta(const GameDelta& delta) {
@@ -87,9 +85,7 @@ void OpenSession::onGameDelta(const GameDelta& delta) {
 
 	switch (delta.action) {
 	case GameAction::Place:
-		m_eventHub.signal(AS_BoardChange);
-		m_eventHub.signal(AS_PlayerChange);
-		m_eventHub.signal(AS_StonePlaced);
+		m_eventHub.signal(AS_BoardChange | AS_PlayerChange | AS_StonePlaced);
 		break;
 	case GameAction::Pass:
 		m_eventHub.signal(AS_PlayerChange);

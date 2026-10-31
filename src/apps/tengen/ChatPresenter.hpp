@@ -17,7 +17,7 @@ public:
 	ChatPresenter(app::IChatSession& chat, gui::ChatWidget& chatWidget);
 	~ChatPresenter() override;
 
-	void onAppEvent(app::AppSignal signal) override; //!< Signalled by session thread. Offload work to GUI thread.
+	void onAppEvent(app::AppSignalMask mask) override; //!< Signalled by session thread. Offload work to GUI thread.
 
 private slots:
 	void onChatRequested(const std::string& message);

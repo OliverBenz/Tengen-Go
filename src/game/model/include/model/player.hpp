@@ -50,7 +50,7 @@ inline std::string toString(const Skill s) {
 	const auto v = static_cast<int8_t>(s);
 	return v < danOffset
 	               ? std::to_string(danOffset - v) + "k"
-	               : std::to_string(v - danOffset + 1) + "d";
+				   : std::to_string(v - danOffset + 1) + "d";
 }
 
 } // namespace tengen

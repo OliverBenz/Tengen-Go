@@ -4,7 +4,7 @@
 
 namespace tengen::app {
 
-void EventHub::subscribe(IAppSignalListener* listener, uint64_t signalMask) {
+void EventHub::subscribe(IAppSignalListener* listener, AppSignalMask signalMask) {
 	std::lock_guard<std::mutex> lock(m_listenerMutex);
 
 	m_signalListeners.push_back({listener, signalMask});
@@ -18,12 +18,12 @@ void EventHub::unsubscribe(IAppSignalListener* listener) {
 	        m_signalListeners.end());
 }
 
-void EventHub::signal(AppSignal signal) {
+void EventHub::signal(AppSignalMask mask) {
 	std::lock_guard<std::mutex> lock(m_listenerMutex);
 
 	for (const auto& [listener, signalMask]: m_signalListeners) {
-		if (signalMask & signal) {
-			listener->onAppEvent(signal);
+		if (const auto subscribed = signalMask & mask) {
+			listener->onAppEvent(subscribed);
 		}
 	}
 }

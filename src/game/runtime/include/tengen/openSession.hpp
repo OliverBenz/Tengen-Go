@@ -30,7 +30,7 @@ public: // IGameSession Interface
 	void shutdown() override;
 
 public: // IAppSignalSource Interface
-	void subscribe(app::IAppSignalListener* listener, uint64_t mask) override;
+	void subscribe(app::IAppSignalListener* listener, AppSignalMask mask) override;
 	void unsubscribe(app::IAppSignalListener* listener) override;
 
 public: // IGameStateListener Interface

@@ -21,7 +21,7 @@ public:
 
 	void addChatWindow(app::IChatSession& chat);
 
-	void onAppEvent(app::AppSignal signal) override; //!< Signalled by session thread. Offload work to GUI thread.
+	void onAppEvent(app::AppSignalMask mask) override; //!< Signalled by session thread. Offload work to GUI thread.
 
 private slots:
 	void onPassRequested();   //!< Handle pass event from Board Widget.
