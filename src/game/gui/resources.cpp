@@ -34,7 +34,7 @@ namespace {
 struct TextureFile {
 	Texture texture;
 	const char* name; //!< Display name, translated on use.
-	const char* file; //!< File in the board_textures folder. Null for the plain board.
+	const char* file; //!< File in the boards folder. Null for the plain board.
 };
 
 // Display order of the style settings.
@@ -76,7 +76,7 @@ QImage loadTexture(const Texture texture) {
 	if (!file) {
 		return {};
 	}
-	const QImage image = readImage(QStringLiteral("board_textures/") + QString::fromLatin1(file));
+	const QImage image = readImage(QStringLiteral("boards/") + QString::fromLatin1(file));
 
 	// The board is square: use the center of the image rather than stretching it.
 	const int side = std::min(image.width(), image.height());
@@ -88,7 +88,7 @@ QImage loadTexture(const Texture texture) {
 namespace stoneStyle {
 
 QImage loadTexture(const Player player) {
-	return toFastFormat(readImage(player == Player::Black ? QStringLiteral("anime_black.png") : QStringLiteral("anime_white.png")));
+	return toFastFormat(readImage(player == Player::Black ? QStringLiteral("stones/anime_black.png") : QStringLiteral("stones/anime_white.png")));
 }
 
 } // namespace stoneStyle
