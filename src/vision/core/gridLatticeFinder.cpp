@@ -448,10 +448,10 @@ static bool selectGridByLatticeFit(const std::vector<double>& centersSorted, con
 		const bool selectCurrent =
 		        betterObjective ||
 		        (equalObjective &&
-		         (betterInliers ||
-		          (equalInliers &&
-		           (betterSpan || (equalSpan && (betterGapRms || (equalGapRms && (betterRms || (equalRms && (betterSpacingDev ||
-		                                                                                                     (equalSpacingDev && preferLeftWindow)))))))))));
+				 (betterInliers ||
+				  (equalInliers &&
+				   (betterSpan || (equalSpan && (betterGapRms || (equalGapRms && (betterRms || (equalRms && (betterSpacingDev ||
+				                                                                                             (equalSpacingDev && preferLeftWindow)))))))))));
 
 		if (selectCurrent) {
 			bestForN            = bestForWindow;

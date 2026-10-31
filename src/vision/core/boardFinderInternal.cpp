@@ -132,20 +132,20 @@ std::vector<cv::Point2f> orderCorners(const std::vector<cv::Point2f>& quad) {
 
 	const auto idxMinSum =
 	        static_cast<int>(std::min_element(quad.begin(), quad.end(),
-	                                          [](const cv::Point2f& left, const cv::Point2f& right) { return (left.x + left.y) < (right.x + right.y); }) -
-	                         quad.begin());
+			                                  [](const cv::Point2f& left, const cv::Point2f& right) { return (left.x + left.y) < (right.x + right.y); }) -
+			                 quad.begin());
 	const auto idxMinDiff =
 	        static_cast<int>(std::min_element(quad.begin(), quad.end(),
-	                                          [](const cv::Point2f& left, const cv::Point2f& right) { return (left.x - left.y) < (right.x - right.y); }) -
-	                         quad.begin());
+			                                  [](const cv::Point2f& left, const cv::Point2f& right) { return (left.x - left.y) < (right.x - right.y); }) -
+			                 quad.begin());
 	const auto idxMaxSum =
 	        static_cast<int>(std::max_element(quad.begin(), quad.end(),
-	                                          [](const cv::Point2f& left, const cv::Point2f& right) { return (left.x + left.y) < (right.x + right.y); }) -
-	                         quad.begin());
+			                                  [](const cv::Point2f& left, const cv::Point2f& right) { return (left.x + left.y) < (right.x + right.y); }) -
+			                 quad.begin());
 	const auto idxMaxDiff =
 	        static_cast<int>(std::max_element(quad.begin(), quad.end(),
-	                                          [](const cv::Point2f& left, const cv::Point2f& right) { return (left.x - left.y) < (right.x - right.y); }) -
-	                         quad.begin());
+			                                  [](const cv::Point2f& left, const cv::Point2f& right) { return (left.x - left.y) < (right.x - right.y); }) -
+			                 quad.begin());
 
 	const bool unique = idxMinSum != idxMinDiff && idxMinSum != idxMaxSum && idxMinSum != idxMaxDiff && idxMinDiff != idxMaxSum && idxMinDiff != idxMaxDiff &&
 	                    idxMaxSum != idxMaxDiff;
