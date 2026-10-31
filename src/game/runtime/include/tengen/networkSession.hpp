@@ -65,8 +65,8 @@ private: // network::IClientHandler Interface
 	void onDisconnected(network::DisconnectReason reason) override;
 
 private:
-	void stopLocalServer();                                       //!< Stop the hosted server off the GUI thread: it waits for slow clients.
-	void resetState(const GameConfig& config, GameStatus status); //!< Forget the last game and chat. The network info has its own rules.
+	void stopLocalServer();             //!< Stop the hosted server off the GUI thread: it waits for slow clients.
+	void resetState(GameStatus status); //!< Forget the last game and chat. The network info has its own rules.
 
 private:
 	EventHub m_eventHub;

@@ -12,8 +12,6 @@
 
 namespace tengen::app {
 
-//! Shown until the host's config arrives with the game start.
-static const GameConfig PLACEHOLDER_CONFIG{9u, fromRuleSet(RuleSet::Japanese)};
 
 NetworkSession::NetworkSession() {
 	m_network.registerHandler(this);
@@ -82,9 +80,11 @@ void NetworkSession::shutdown() {
 	disconnect();
 }
 
-void NetworkSession::resetState(const GameConfig& config, const GameStatus status) {
+void NetworkSession::resetState(const GameStatus status) {
+	static const GameConfig PLACEHOLDER_CONFIG{9u, fromRuleSet(RuleSet::Japanese)};
+
 	std::lock_guard<std::mutex> lock(m_stateMutex);
-	m_gameInfo.reset(config, status);
+	m_gameInfo.reset(PLACEHOLDER_CONFIG, status);
 	m_chatInfo.reset();
 }
 
@@ -124,7 +124,7 @@ SessionNetworkInfo NetworkSession::networkInfo() const {
 }
 
 void NetworkSession::onConnecting() {
-	resetState(PLACEHOLDER_CONFIG, GameStatus::Ready);
+	resetState(GameStatus::Ready);
 	{
 		std::lock_guard<std::mutex> lock(m_stateMutex);
 		m_networkInfo.setConnecting();
@@ -194,7 +194,7 @@ void NetworkSession::onChatMessage(const ChatMessage& chat) {
 	}
 }
 void NetworkSession::onDisconnected(const network::DisconnectReason reason) {
-	resetState(PLACEHOLDER_CONFIG, GameStatus::Idle);
+	resetState(GameStatus::Idle);
 	{
 		std::lock_guard<std::mutex> lock(m_stateMutex);
 		m_networkInfo.setIdle(reason);
