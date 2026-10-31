@@ -29,6 +29,10 @@ void MockClient::tryPlace(unsigned x, unsigned y) {
 	m_network.send(network::ClientPutStone{.c = {x, y}});
 }
 
+void MockClient::onConnecting() {
+	std::cout << "[Client] Connecting.\n";
+}
+
 void MockClient::onWelcome(const std::optional<Player> player) {
 	std::cout << std::format("[Client] Welcomed as '{}'.\n", player ? toString(*player) : "observer");
 }

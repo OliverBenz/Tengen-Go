@@ -35,19 +35,8 @@ void NetworkSession::unsubscribe(IAppSignalListener* listener) {
 
 
 void NetworkSession::connect(const std::string& hostIp) {
-	resetState(PLACEHOLDER_CONFIG, GameStatus::Ready);
-	{
-		std::lock_guard<std::mutex> lock(m_stateMutex);
-		m_networkInfo.connecting();
-	}
-	// Before connecting: the welcome or the end may come at once, and must not be reported a second time by us.
-	m_eventHub.signal(AS_ConnectionChange);
-	stopLocalServer();
+	disconnect();
 	m_network.connect(hostIp);
-
-	m_eventHub.signal(AS_BoardChange);
-	m_eventHub.signal(AS_PlayerChange);
-	m_eventHub.signal(AS_StateChange);
 }
 
 bool NetworkSession::host(const GameConfig& config, const Player hostColour) {
@@ -70,21 +59,8 @@ bool NetworkSession::host(const GameConfig& config, const Player hostColour) {
 		return false;
 	}
 
-	resetState(config, GameStatus::Ready);
-	{
-		std::lock_guard<std::mutex> lock(m_stateMutex);
-		m_networkInfo.connecting();
-	}
-	// Before connecting: the welcome or the end may come at once, and must not be reported a second time by us.
-	m_eventHub.signal(AS_ConnectionChange);
-
 	// We connect first, so we take the seat the server hands to its first player.
 	m_network.connect("127.0.0.1");
-
-	m_eventHub.signal(AS_BoardChange);
-	m_eventHub.signal(AS_PlayerChange);
-	m_eventHub.signal(AS_StateChange);
-
 	return true;
 }
 
@@ -103,9 +79,7 @@ void NetworkSession::disconnect() {
 }
 
 void NetworkSession::shutdown() {
-	stopLocalServer();
-	m_network.disconnect();
-	resetState(PLACEHOLDER_CONFIG, GameStatus::Idle);
+	disconnect();
 }
 
 void NetworkSession::resetState(const GameConfig& config, const GameStatus status) {
@@ -149,10 +123,21 @@ SessionNetworkInfo NetworkSession::networkInfo() const {
 	return m_networkInfo;
 }
 
+void NetworkSession::onConnecting() {
+	resetState(PLACEHOLDER_CONFIG, GameStatus::Ready);
+	{
+		std::lock_guard<std::mutex> lock(m_stateMutex);
+		m_networkInfo.setConnecting();
+	}
+	m_eventHub.signal(AS_BoardChange);
+	m_eventHub.signal(AS_PlayerChange);
+	m_eventHub.signal(AS_StateChange);
+	m_eventHub.signal(AS_ConnectionChange);
+}
 void NetworkSession::onWelcome(const std::optional<Player> player) {
 	{
 		std::lock_guard<std::mutex> lock(m_stateMutex);
-		m_networkInfo.update(player);
+		m_networkInfo.setConnected(player);
 	}
 	m_eventHub.signal(AS_ConnectionChange);
 }
@@ -219,7 +204,7 @@ void NetworkSession::onDisconnected(const network::DisconnectReason reason) {
 	resetState(PLACEHOLDER_CONFIG, GameStatus::Idle);
 	{
 		std::lock_guard<std::mutex> lock(m_stateMutex);
-		m_networkInfo.update(reason);
+		m_networkInfo.setIdle(reason);
 	}
 	m_eventHub.signal(AS_BoardChange);
 	m_eventHub.signal(AS_PlayerChange);

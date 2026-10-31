@@ -65,6 +65,8 @@ public:
 	    : m_client(client) {
 	}
 
+	void onConnecting() override {
+	}
 	void onWelcome(std::optional<Player>) override {
 	}
 	void onGameStart(const GameConfig&) override {
@@ -116,6 +118,8 @@ namespace {
 //! Counts the chat messages, and whether the server closed the connection after them.
 class ChatCounter : public network::IClientHandler {
 public:
+	void onConnecting() override {
+	}
 	void onWelcome(std::optional<Player>) override {
 	}
 	void onGameStart(const GameConfig&) override {

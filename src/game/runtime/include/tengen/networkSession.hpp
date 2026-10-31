@@ -56,6 +56,7 @@ public: // INetworkSession Interface
 	SessionNetworkInfo networkInfo() const override;
 
 private: // network::IClientHandler Interface
+	void onConnecting() override;
 	void onWelcome(std::optional<Player> player) override;
 	void onGameStart(const GameConfig& config) override;
 	void onGameDelta(const GameDelta& delta) override;

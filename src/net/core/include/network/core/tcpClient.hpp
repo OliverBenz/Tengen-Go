@@ -20,11 +20,12 @@ enum class DisconnectReason : std::uint8_t {
 
 //! TCP client with its own IO thread, like TcpServer.
 //! No call waits on the network, and all are safe from any thread. connect() and disconnect() wait for a running callback.
-//! Callbacks run one at a time on the IO thread; only onDisconnect(Requested) runs on the thread calling disconnect().
+//! Callbacks run one at a time on the IO thread; only onConnecting and onDisconnect(Requested) run on the thread calling connect() and disconnect().
 //! Never destroy the client from a callback.
 class TcpClient {
 public:
 	struct Callbacks {
+		std::function<void()> onConnecting; //!< connect() started an attempt. Before connect() returns, and before any other callback of it.
 		std::function<void(const Message&)> onMessage;
 		std::function<void(DisconnectReason)> onDisconnect; //!< Once per successful connect(). Not when the client is destroyed.
 	};

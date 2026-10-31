@@ -21,11 +21,12 @@ enum class DisconnectReason : std::uint8_t {
 };
 
 //! Gets the game from the server as model data.
-//! Calls come one at a time on the client's IO thread. Only onDisconnected after your own disconnect() comes on your thread.
+//! Calls come one at a time on the client's IO thread. Only onConnecting and onDisconnected after your own connect() and disconnect() come on your thread.
 //! Keep handlers short, and never wait in one for the thread that connects, disconnects or destroys the client: both would hang.
 class IClientHandler {
 public:
 	virtual ~IClientHandler()                            = default;
+	virtual void onConnecting()                          = 0; //!< connect() started an attempt. Before connect() returns.
 	virtual void onWelcome(std::optional<Player> player) = 0; //!< The server took us in. Nullopt: we only watch.
 	virtual void onGameStart(const GameConfig& config)   = 0; //!< The game started.
 	virtual void onGameDelta(const GameDelta& delta)     = 0; //!< One accepted move.

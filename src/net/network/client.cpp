@@ -47,6 +47,7 @@ public:
 
 private:
 	// TcpClient callbacks, one at a time.
+	void onConnecting();
 	void onMessage(const core::Message& message);
 	void onDisconnect(core::DisconnectReason reason); //!< The only place that tells the handler a connection ended.
 
@@ -71,6 +72,7 @@ private:
 
 Client::Implementation::Implementation()
     : m_client(core::TcpClient::Callbacks{
+              .onConnecting = [this] { onConnecting(); },
               .onMessage    = [this](const core::Message& message) { onMessage(message); },
               .onDisconnect = [this](const core::DisconnectReason reason) { onDisconnect(reason); },
       }) {
@@ -103,6 +105,12 @@ bool Client::Implementation::send(const ClientEvent& event) {
 
 SessionId Client::Implementation::sessionId() const {
 	return m_sessionId;
+}
+
+void Client::Implementation::onConnecting() {
+	if (m_handler) {
+		m_handler->onConnecting();
+	}
 }
 
 void Client::Implementation::onMessage(const core::Message& message) {
