@@ -54,13 +54,13 @@ void MainWindow::buildLayout() {
 	connect(actConnectToServer, &QAction::triggered, this, &MainWindow::openConnectDialog);
 	connect(actHostServer, &QAction::triggered, this, &MainWindow::openHostDialog);
 
-	auto* tools                   = menuBar()->addMenu(tr("&Tools"));
-	auto* actImportBoardImage     = new QAction("&Import Board Image", this);
-	auto* actStartCameraDetection = new QAction("&Start Camera Detection", this);
-	auto* actCalibrateDetection   = new QAction("&Calibrate Detection", this);
-	tools->addAction(actImportBoardImage);
-	tools->addAction(actStartCameraDetection);
-	tools->addAction(actCalibrateDetection);
+	// auto* tools                   = menuBar()->addMenu(tr("&Tools"));
+	// auto* actImportBoardImage     = new QAction("&Import Board Image", this);
+	// auto* actStartCameraDetection = new QAction("&Start Camera Detection", this);
+	// auto* actCalibrateDetection   = new QAction("&Calibrate Detection", this);
+	// tools->addAction(actImportBoardImage);
+	// tools->addAction(actStartCameraDetection);
+	// tools->addAction(actCalibrateDetection);
 
 	auto* settings = menuBar()->addMenu(tr("&Settings"));
 	auto* actStyle = new QAction("&Style", this);
