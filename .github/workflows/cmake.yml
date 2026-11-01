@@ -1,6 +1,11 @@
 name: CMake
 
-on: [push, pull_request]
+# Tag pushes run these checks through release.yml instead.
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_call:
 
 env:
   BUILD_TYPE: Debug
