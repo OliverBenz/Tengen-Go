@@ -98,9 +98,9 @@ def find_config(root: Path, file_name: str) -> Path:
     return matches[0].parent
 
 
-def open_url(url: str):
+def open_url(url: str, headers: dict[str, str] | None = None):
     """Open a URL. GitHub rejects requests without a User-Agent."""
-    request = urllib.request.Request(url, headers={"User-Agent": "tengen-setup"})
+    request = urllib.request.Request(url, headers={"User-Agent": "tengen-setup", **(headers or {})})
     return urllib.request.urlopen(request)
 
 
@@ -170,7 +170,10 @@ def install_qt(deps_dir: Path, version: str, arch: str) -> Path:
 
 def find_opencv_asset(version: str) -> tuple[str, str]:
     """Look up name and URL of the official Windows package, instead of guessing the name."""
-    with open_url(f"https://api.github.com/repos/opencv/opencv/releases/tags/{version}") as response:
+    # CI runners share IPs and quickly hit the anonymous API rate limit, a token lifts it.
+    token = os.environ.get("GITHUB_TOKEN")
+    headers = {"Authorization": f"Bearer {token}"} if token else None
+    with open_url(f"https://api.github.com/repos/opencv/opencv/releases/tags/{version}", headers) as response:
         assets = json.load(response)["assets"]
 
     asset = next((a for a in assets if a["name"].endswith("-windows.exe")), None)

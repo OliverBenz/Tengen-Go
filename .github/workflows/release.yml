@@ -1,0 +1,159 @@
+name: Release
+
+# Pushing a tag like v0.5.0-alpha builds both packages and publishes them as a GitHub release.
+# A suffix after the version (-alpha, -rc1, ...) marks the release as a pre-release.
+# A manual run builds and uploads the packages without publishing them.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # Tag must match the version in CMakeLists.txt, so a package never carries a different version than its name.
+  Version_Check:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - id: version
+      run: |
+        cmakeVersion="$(sed -nE '/^project\(/,/\)/ s/^\s*VERSION ([0-9.]+).*/\1/p' CMakeLists.txt)"
+        if [ "$GITHUB_REF_TYPE" != tag ]; then
+          echo "version=$cmakeVersion-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        tag="${GITHUB_REF_NAME#v}"
+        if [ "${tag%%-*}" != "$cmakeVersion" ]; then
+          echo "::error::Tag $GITHUB_REF_NAME does not match project version $cmakeVersion in CMakeLists.txt."
+          exit 1
+        fi
+        echo "version=$tag" >> "$GITHUB_OUTPUT"
+
+  Checks:
+    uses: ./.github/workflows/cmake.yml
+
+  Linux_x64:
+    needs: Version_Check
+    runs-on: ubuntu-latest
+    # Same Arch container as cmake.yml: OpenCV 5 is only packaged there.
+    container: archlinux:base-devel
+    env:
+      PACKAGE: tengen-${{ needs.Version_Check.outputs.version }}-linux-x64
+
+    steps:
+    - name: Install dependencies
+      run: |
+        pacman -Syu --noconfirm --needed \
+          git cmake ninja opencv qt6-base qt6-multimedia
+
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Trust workspace
+      run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+    - name: Configure CMake
+      run: cmake --preset Linux64-Release -DTENGEN_BUILD_TESTS=OFF -DTENGEN_BUILD_TOOLS=OFF
+
+    - name: Build
+      run: cmake --build --preset Linux64-Release --parallel
+
+    - name: Install
+      run: cmake --install build/Linux64-Release --prefix "$PACKAGE"
+
+    - name: Package
+      run: tar -czf "$PACKAGE.tar.gz" "$PACKAGE"
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: linux-x64
+        path: ${{ env.PACKAGE }}.tar.gz
+        if-no-files-found: error
+
+  Windows_x64:
+    needs: Version_Check
+    # windows-2025 ships Visual Studio 2026, the Win64 preset needs the 2022 generator.
+    runs-on: windows-2022
+    env:
+      PACKAGE: tengen-${{ needs.Version_Check.outputs.version }}-windows-x64
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      run: python scripts/win/1_setup_deps.py
+
+    - name: Configure CMake
+      run: cmake --preset Win64 -DTENGEN_BUILD_TESTS=OFF -DTENGEN_BUILD_TOOLS=OFF
+
+    - name: Build
+      run: cmake --build --preset Win64-Release --parallel
+
+    - name: Install
+      run: cmake --install build/Win64 --config Release --prefix "$env:PACKAGE"
+
+    # tengen.exe doesn't start without these, so never publish a package that misses them.
+    - name: Check package
+      run: |
+        foreach ($pattern in 'tengen.exe', 'Qt6Core.dll', 'Qt6Multimedia.dll', 'plugins\platforms\qwindows.dll') {
+          if (-not (Test-Path "$env:PACKAGE\$pattern")) {
+            Write-Output "::error::$pattern is missing from the package."
+            exit 1
+          }
+        }
+
+    - name: Package
+      run: 7z a "$env:PACKAGE.zip" "$env:PACKAGE"
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: windows-x64
+        path: ${{ env.PACKAGE }}.zip
+        if-no-files-found: error
+
+  Publish:
+    needs: [Version_Check, Checks, Linux_x64, Windows_x64]
+    # Only tag pushes publish, a manual run started from a tag doesn't.
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - uses: actions/download-artifact@v4
+      with:
+        path: packages
+        merge-multiple: true
+
+    - name: Create release
+      env:
+        GH_TOKEN: ${{ github.token }}
+        GH_REPO: ${{ github.repository }}
+      run: |
+        cd packages
+        sha256sum -- * > SHA256SUMS.txt
+
+        prerelease=""
+        case "$GITHUB_REF_NAME" in *-*) prerelease="--prerelease" ;; esac
+
+        gh release create "$GITHUB_REF_NAME" ./* \
+          --title "Tengen ${{ needs.Version_Check.outputs.version }}" \
+          --generate-notes \
+          --verify-tag \
+          $prerelease

@@ -135,6 +135,7 @@ KataGo imitates a human of the rank you pick in the bot dialog, from 20k to 3d.
 ## Documentation
 
 - [Compilation](docs/Compilation.md): installing dependencies and building
+- [Release](docs/Release.md): publishing a release through a version tag
 - [Core](docs/Core.md): core rules and logic overview
 - [GUI](docs/GUI.md): GUI architecture and rendering notes
 - [Networking](docs/Networking.md): higher-level networking notes
