@@ -31,3 +31,8 @@ cmake --preset Win64 && cmake --build --preset Win64-Debug
 ```
 
 `--deps-dir` (or the `TENGEN_DEPS_DIR` environment variable) installs somewhere else, `--help` lists all options.
+
+### clangd
+
+The Visual Studio generator can't write `compile_commands.json` for clangd.
+Run [`scripts/win/2_configure-clangd.ps1`](../scripts/win/2_configure-clangd.ps1) instead: it configures the `Win64-Ninja` preset (MSVC + Ninja) from an x64 VS developer shell and copies the file to the project root.
