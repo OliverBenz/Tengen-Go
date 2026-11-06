@@ -30,7 +30,7 @@ public:
 	virtual void onWelcome(std::optional<Player> player) = 0; //!< The server took us in. Nullopt: we only watch.
 	virtual void onGameStart(const GameConfig& config)   = 0; //!< The game started.
 	virtual void onGameDelta(const GameDelta& delta)     = 0; //!< One accepted move.
-	virtual void onGameEnd(const GameResult& result)     = 0; //!< The game ended. Right after the last delta.
+	virtual void onGameEnd(const GameResult& result)     = 0; //!< The game ended. Right after the last delta, or on its own for a resignation.
 	virtual void onChatMessage(const ChatMessage& chat)  = 0; //!< A player said something.
 	virtual void onDisconnected(DisconnectReason reason) = 0; //!< The connection ended, or could not be made.
 };

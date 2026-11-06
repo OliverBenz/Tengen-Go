@@ -41,6 +41,12 @@ GameConfig config() {
 	return GameConfig{.boardSize = 9u, .rules = fromRuleSet(RuleSet::Japanese)};
 }
 
+//! Where the move put its stone. Empty if it placed none.
+std::optional<Coord> placed(const GameDelta& delta) {
+	const auto* place = std::get_if<Place>(&delta.move.action);
+	return place ? std::optional{place->coord} : std::nullopt;
+}
+
 //! Runs the game on its own thread, handles every event pushed so far, then stops it.
 void runToEnd(Game& game) {
 	std::thread gameThread([&] { game.run(); });
@@ -85,25 +91,27 @@ TEST(Game, BoardUpdate) {
 
 	// White takes the ko.
 	const auto& take = recorder.deltas[7];
-	EXPECT_EQ(take.player, Player::White);
+	EXPECT_EQ(take.move.player, Player::White);
 	ASSERT_EQ(take.captures.size(), 1u);
 	EXPECT_EQ(take.captures[0].x, 1u);
 	EXPECT_EQ(take.captures[0].y, 2u);
 
 	// The refused retake left black to move, so black's move elsewhere is the next delta.
 	const auto& elsewhere = recorder.deltas[8];
-	EXPECT_EQ(elsewhere.moveId, 9u);
-	EXPECT_EQ(elsewhere.player, Player::Black);
-	ASSERT_TRUE(elsewhere.coord.has_value());
-	EXPECT_EQ(elsewhere.coord->x, 5u);
-	EXPECT_EQ(elsewhere.coord->y, 5u);
+	EXPECT_EQ(elsewhere.move.moveId, 9u);
+	EXPECT_EQ(elsewhere.move.player, Player::Black);
+	const auto elsewhereAt = placed(elsewhere);
+	ASSERT_TRUE(elsewhereAt.has_value());
+	EXPECT_EQ(elsewhereAt->x, 5u);
+	EXPECT_EQ(elsewhereAt->y, 5u);
 
 	// After the exchange black may take back.
 	const auto& retake = recorder.deltas[10];
-	EXPECT_EQ(retake.player, Player::Black);
-	ASSERT_TRUE(retake.coord.has_value());
-	EXPECT_EQ(retake.coord->x, 1u);
-	EXPECT_EQ(retake.coord->y, 2u);
+	EXPECT_EQ(retake.move.player, Player::Black);
+	const auto retakeAt = placed(retake);
+	ASSERT_TRUE(retakeAt.has_value());
+	EXPECT_EQ(retakeAt->x, 1u);
+	EXPECT_EQ(retakeAt->y, 2u);
 	ASSERT_EQ(retake.captures.size(), 1u);
 	EXPECT_EQ(retake.captures[0].x, 1u);
 	EXPECT_EQ(retake.captures[0].y, 1u);
@@ -148,10 +156,11 @@ TEST(Game, RejectsEventsBeforeStart) {
 	ASSERT_EQ(recorder.calls, (std::vector<Call>{Call::Start, Call::Delta}));
 	ASSERT_EQ(recorder.deltas.size(), 1u);
 
-	EXPECT_EQ(recorder.deltas[0].moveId, 1u);
-	ASSERT_TRUE(recorder.deltas[0].coord.has_value());
-	EXPECT_EQ(recorder.deltas[0].coord->x, 4u);
-	EXPECT_EQ(recorder.deltas[0].coord->y, 4u);
+	EXPECT_EQ(recorder.deltas[0].move.moveId, 1u);
+	const auto at = placed(recorder.deltas[0]);
+	ASSERT_TRUE(at.has_value());
+	EXPECT_EQ(at->x, 4u);
+	EXPECT_EQ(at->y, 4u);
 }
 
 TEST(Game, RejectsEventsOutOfTurn) {
@@ -168,17 +177,17 @@ TEST(Game, RejectsEventsOutOfTurn) {
 	game.unsubscribeState(&recorder);
 
 	ASSERT_EQ(recorder.deltas.size(), 2u);
-	EXPECT_EQ(recorder.deltas[0].player, Player::Black);
-	EXPECT_EQ(recorder.deltas[0].nextPlayer, Player::White);
-	ASSERT_TRUE(recorder.deltas[0].coord.has_value());
-	EXPECT_EQ(recorder.deltas[0].coord->x, 3u);
-	EXPECT_EQ(recorder.deltas[0].coord->y, 3u);
+	EXPECT_EQ(recorder.deltas[0].move.player, Player::Black);
+	const auto blackAt = placed(recorder.deltas[0]);
+	ASSERT_TRUE(blackAt.has_value());
+	EXPECT_EQ(blackAt->x, 3u);
+	EXPECT_EQ(blackAt->y, 3u);
 
-	EXPECT_EQ(recorder.deltas[1].player, Player::White);
-	EXPECT_EQ(recorder.deltas[1].nextPlayer, Player::Black);
-	ASSERT_TRUE(recorder.deltas[1].coord.has_value());
-	EXPECT_EQ(recorder.deltas[1].coord->x, 4u);
-	EXPECT_EQ(recorder.deltas[1].coord->y, 4u);
+	EXPECT_EQ(recorder.deltas[1].move.player, Player::White);
+	const auto whiteAt = placed(recorder.deltas[1]);
+	ASSERT_TRUE(whiteAt.has_value());
+	EXPECT_EQ(whiteAt->x, 4u);
+	EXPECT_EQ(whiteAt->y, 4u);
 }
 
 TEST(Game, SignalsEndAfterTwoPasses) {
@@ -198,7 +207,7 @@ TEST(Game, SignalsEndAfterTwoPasses) {
 	ASSERT_EQ(recorder.deltas.size(), 2u);
 	ASSERT_EQ(recorder.results.size(), 1u);
 
-	EXPECT_EQ(recorder.deltas[1].action, GameAction::Pass);
+	EXPECT_TRUE(std::holds_alternative<Pass>(recorder.deltas[1].move.action));
 	EXPECT_FALSE(recorder.results[0].winner.has_value());
 	EXPECT_EQ(recorder.results[0].reason, EndReason::Counting);
 }
@@ -214,13 +223,10 @@ TEST(Game, SignalsEndAfterResignOutOfTurn) {
 	runToEnd(game);
 	game.unsubscribeState(&recorder);
 
-	ASSERT_EQ(recorder.calls, (std::vector<Call>{Call::Start, Call::Delta, Call::Delta, Call::End}));
-	ASSERT_EQ(recorder.deltas.size(), 2u);
+	// A resignation is no move: only the end follows.
+	ASSERT_EQ(recorder.calls, (std::vector<Call>{Call::Start, Call::Delta, Call::End}));
 	ASSERT_EQ(recorder.results.size(), 1u);
 
-	EXPECT_EQ(recorder.deltas[1].action, GameAction::Resign);
-	EXPECT_EQ(recorder.deltas[1].player, Player::Black);
-	EXPECT_EQ(recorder.deltas[1].nextPlayer, Player::White);
 	EXPECT_EQ(recorder.results[0].winner, Player::White);
 	EXPECT_EQ(recorder.results[0].reason, EndReason::Resignation);
 }

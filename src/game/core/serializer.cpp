@@ -1,4 +1,5 @@
 #include "core/serializer.hpp"
+#include "model/gameUpdates.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -22,12 +23,13 @@ static bool readDotBWBoard(const std::filesystem::path& testFile, Board& outBoar
 	std::getline(file, line);
 	line.erase(std::remove_if(line.begin(), line.end(), ::isspace), line.end());
 
-	if (!(line.size() == 9 || line.size() == 13 || line.size() == 19)) {
-		std::cerr << "[Serializer] Invalid board size: " << line.size() << '\n';
+	const auto size = static_cast<unsigned>(line.size());
+	if (!isSupportedBoardSize(size)) {
+		std::cerr << "[Serializer] Invalid board size: " << size << '\n';
 		return false;
 	}
 
-	Board board(line.size());
+	Board board(size);
 	unsigned y = 0u; //!< Board y coordinate.
 	do {
 		line.erase(std::remove_if(line.begin(), line.end(), ::isspace), line.end());

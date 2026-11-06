@@ -13,7 +13,7 @@ class GnuGo : public GtpEngine {
 public:
 	explicit GnuGo(GnuGoConfig config);
 
-	void start(unsigned boardSize, const GameRules& rules, tengen::Player botColour) override;
+	void start(const GameConfig& gameConfig, tengen::Player botColour) override;
 
 	//! GNU Go's command-line options for the ko, scoring and suicide rules. Komi goes over GTP.
 	static std::vector<std::string> ruleArguments(const GameRules& rules);

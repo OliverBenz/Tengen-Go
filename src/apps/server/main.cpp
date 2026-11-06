@@ -1,5 +1,5 @@
-#include "model/gameConfig.hpp"
 #include "model/gameRules.hpp"
+#include "model/gameUpdates.hpp"
 #include "tengen/gameServer.hpp"
 
 #include <iostream>

@@ -83,15 +83,10 @@ void OpenSession::onGameDelta(const GameDelta& delta) {
 		return;
 	}
 
-	switch (delta.action) {
-	case GameAction::Place:
+	if (std::holds_alternative<Place>(delta.move.action)) {
 		m_eventHub.signal(AS_BoardChange | AS_PlayerChange | AS_StonePlaced);
-		break;
-	case GameAction::Pass:
+	} else {
 		m_eventHub.signal(AS_PlayerChange);
-		break;
-	case GameAction::Resign:
-		break;
 	}
 }
 

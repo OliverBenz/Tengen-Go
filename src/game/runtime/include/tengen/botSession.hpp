@@ -3,7 +3,7 @@
 #include "core/IGameStateListener.hpp"
 #include "core/game.hpp"
 #include "engine/gtpEngine.hpp"
-#include "model/gameConfig.hpp"
+#include "model/gameUpdates.hpp"
 #include "tengen/IGameSession.hpp"
 #include "tengen/eventHub.hpp"
 #include "tengen/sessionGameInfo.hpp"

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "model/gameConfig.hpp"
+#include "model/gameUpdates.hpp"
 #include "network/client.hpp"
 #include "tengen/IAppSignal.hpp"
 #include "tengen/IChatSession.hpp"

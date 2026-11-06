@@ -40,12 +40,8 @@ void Game::handleEvent(const PutStoneEvent& event) {
 	m_eventHub.signal(GS_BoardChange);
 	m_eventHub.signal(GS_PlayerChange);
 	m_eventHub.signalDelta(GameDelta{
-	        .moveId     = m_state.position().moveId,
-	        .action     = GameAction::Place,
-	        .player     = event.player,
-	        .coord      = event.c,
-	        .captures   = *captures,
-	        .nextPlayer = m_state.position().currentPlayer,
+	        .move     = {.moveId = m_state.position().moveId, .player = event.player, .action = Place{event.c}},
+	        .captures = *captures,
 	});
 }
 
@@ -55,12 +51,8 @@ void Game::handleEvent(const PassEvent& event) {
 	}
 
 	const GameDelta delta{
-	        .moveId     = m_state.position().moveId,
-	        .action     = GameAction::Pass,
-	        .player     = event.player,
-	        .coord      = std::nullopt,
-	        .captures   = {},
-	        .nextPlayer = m_state.position().currentPlayer,
+	        .move     = {.moveId = m_state.position().moveId, .player = event.player, .action = Pass{}},
+	        .captures = {},
 	};
 
 	// Second consecutive passes can end the game.
@@ -80,15 +72,8 @@ void Game::handleEvent(const ResignEvent& event) {
 		return;
 	}
 
+	// A resignation is no move: the result alone tells who resigned.
 	m_eventHub.signal(GS_StateChange);
-	m_eventHub.signalDelta(GameDelta{
-	        .moveId     = m_state.position().moveId + 1,
-	        .action     = GameAction::Resign,
-	        .player     = event.player,
-	        .coord      = std::nullopt,
-	        .captures   = {},
-	        .nextPlayer = opponent(event.player),
-	});
 	assert(m_state.result()); // A resignation ends the game.
 	m_eventHub.signalEnd(*m_state.result());
 }

@@ -2,7 +2,7 @@
 
 #include "GamePresenter.hpp"
 #include "engine/engineCatalog.hpp"
-#include "model/gameConfig.hpp"
+#include "model/gameUpdates.hpp"
 #include "tengen/botSession.hpp"
 #include "tengen/networkSession.hpp"
 #include "tengen/openSession.hpp"

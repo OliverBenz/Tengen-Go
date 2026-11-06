@@ -70,12 +70,8 @@ public:
 
 	void onPlace(const Player player, const Coord c) override {
 		m_server.broadcast(network::ServerGameDelta{GameDelta{
-		        .moveId     = ++m_turn,
-		        .action     = GameAction::Place,
-		        .player     = player,
-		        .coord      = c,
-		        .captures   = {},
-		        .nextPlayer = opponent(player),
+		        .move     = {.moveId = ++m_turn, .player = player, .action = Place{c}},
+		        .captures = {},
 		}});
 	}
 
@@ -132,14 +128,13 @@ TEST(Networking, ServerDeltaFromPutStone) {
 	const auto delta = handler2.waitForDelta(std::chrono::milliseconds(300));
 	ASSERT_TRUE(delta.has_value());
 
-	EXPECT_EQ(delta->moveId, 1u);
-	EXPECT_EQ(delta->player, Player::Black);
-	EXPECT_EQ(delta->action, GameAction::Place);
-	ASSERT_TRUE(delta->coord.has_value());
-	EXPECT_EQ(delta->coord->x, 1u);
-	EXPECT_EQ(delta->coord->y, 2u);
+	EXPECT_EQ(delta->move.moveId, 1u);
+	EXPECT_EQ(delta->move.player, Player::Black);
+	const auto* place = std::get_if<Place>(&delta->move.action);
+	ASSERT_NE(place, nullptr);
+	EXPECT_EQ(place->coord.x, 1u);
+	EXPECT_EQ(place->coord.y, 2u);
 	EXPECT_EQ(delta->captures.size(), 0u);
-	EXPECT_EQ(delta->nextPlayer, Player::White);
 
 	client1.disconnect();
 	client2.disconnect();
