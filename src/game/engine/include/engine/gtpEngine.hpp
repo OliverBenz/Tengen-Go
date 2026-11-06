@@ -39,7 +39,6 @@ public:
 	// Answer immediately on the calling thread. Only send while the engine is not thinking.
 	bool place(tengen::Coord pos);
 	bool pass();
-	bool resign();
 
 	void genmove(); //!< Returns at once; answers with onMoveGenerated().
 
