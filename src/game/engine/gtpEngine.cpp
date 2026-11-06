@@ -27,7 +27,6 @@ public:
 
 	bool place(tengen::Coord pos);
 	bool pass();
-	bool resign();
 
 	void genmove();
 
@@ -112,11 +111,6 @@ bool GtpEngine::Implementation::place(const tengen::Coord pos) {
 bool GtpEngine::Implementation::pass() {
 	std::string response;
 	return sendCommand(gtp::pass(opponent(m_botColour)), response);
-}
-
-bool GtpEngine::Implementation::resign() {
-	// GTP has no command for the opponent resigning. The game is simply over.
-	return true;
 }
 
 void GtpEngine::Implementation::genmove() {
@@ -244,10 +238,6 @@ bool GtpEngine::place(const tengen::Coord pos) {
 
 bool GtpEngine::pass() {
 	return m_pimpl->pass();
-}
-
-bool GtpEngine::resign() {
-	return m_pimpl->resign();
 }
 
 void GtpEngine::genmove() {
