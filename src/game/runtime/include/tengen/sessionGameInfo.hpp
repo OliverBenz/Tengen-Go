@@ -1,10 +1,8 @@
 #pragma once
 
 #include "model/board.hpp"
-#include "model/gameConfig.hpp"
-#include "model/gameDelta.hpp"
-#include "model/gameResult.hpp"
 #include "model/gameStatus.hpp"
+#include "model/gameUpdates.hpp"
 #include "model/player.hpp"
 #include <optional>
 

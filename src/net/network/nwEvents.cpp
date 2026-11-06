@@ -23,11 +23,6 @@ constexpr std::array PLAYER_NAMES{
         WireName<Player>{Player::Black, "black"},
         WireName<Player>{Player::White, "white"},
 };
-constexpr std::array ACTION_NAMES{
-        WireName<GameAction>{GameAction::Place, "place"},
-        WireName<GameAction>{GameAction::Pass, "pass"},
-        WireName<GameAction>{GameAction::Resign, "resign"},
-};
 constexpr std::array SCORING_NAMES{
         WireName<Scoring>{Scoring::Territory, "territory"},
         WireName<Scoring>{Scoring::Area, "area"},
@@ -199,30 +194,26 @@ static std::string toMessage(const ServerGameStart& e) {
 	return j.dump();
 }
 static std::string toMessage(const ServerGameDelta& e) {
-	const auto& delta = e.delta;
+	const auto& move = e.delta.move;
 
 	json j;
 	j["type"]   = "delta";
-	j["moveId"] = delta.moveId;
-	j["action"] = toName(ACTION_NAMES, delta.action);
-	j["player"] = toName(PLAYER_NAMES, delta.player);
-	j["next"]   = toName(PLAYER_NAMES, delta.nextPlayer);
+	j["moveId"] = move.moveId;
+	j["player"] = toName(PLAYER_NAMES, move.player);
 
-	// For Place moves we require a coord; otherwise the message is invalid.
-	if (delta.action == GameAction::Place) {
-		if (!delta.coord.has_value()) {
-			assert(false && "ServerGameDelta::Place requires coord");
-			return {};
-		}
-		j["x"] = delta.coord->x;
-		j["y"] = delta.coord->y;
-		if (!delta.captures.empty()) {
+	if (const auto* place = std::get_if<Place>(&move.action)) {
+		j["action"] = "place";
+		j["x"]      = place->coord.x;
+		j["y"]      = place->coord.y;
+		if (!e.delta.captures.empty()) {
 			auto caps = json::array();
-			for (const auto& cap: delta.captures) {
+			for (const auto& cap: e.delta.captures) {
 				caps.push_back({cap.x, cap.y});
 			}
 			j["captures"] = std::move(caps);
 		}
+	} else {
+		j["action"] = "pass";
 	}
 
 	return j.dump();
@@ -297,34 +288,26 @@ static std::optional<ServerEvent> fromServerStartMessage(const json& j) {
 }
 
 static std::optional<ServerEvent> fromServerDeltaMessage(const json& j) {
-	if (!j.contains("action") || !j["action"].is_string() || !j.contains("player") || !j["player"].is_string() || !j.contains("next") || !j["next"].is_string()) {
+	if (!j.contains("action") || !j["action"].is_string() || !j.contains("player") || !j["player"].is_string()) {
 		return {};
 	}
 
 	const auto moveId = readUnsigned<unsigned>(j, "moveId");
-	const auto action = fromName(ACTION_NAMES, j["action"].get_ref<const std::string&>());
 	const auto player = fromName(PLAYER_NAMES, j["player"].get_ref<const std::string&>());
-	const auto next   = fromName(PLAYER_NAMES, j["next"].get_ref<const std::string&>());
-	if (!moveId || !action || !player || !next) {
+	if (!moveId || !player) {
 		return {};
 	}
 
-	GameDelta delta{
-	        .moveId     = *moveId,
-	        .action     = *action,
-	        .player     = *player,
-	        .coord      = std::nullopt,
-	        .captures   = {},
-	        .nextPlayer = *next,
-	};
+	GameDelta delta{.move = {.moveId = *moveId, .player = *player, .action = Pass{}}, .captures = {}};
 
-	if (delta.action == GameAction::Place) {
+	const auto& action = j["action"].get_ref<const std::string&>();
+	if (action == "place") {
 		const auto x = readUnsigned<unsigned>(j, "x");
 		const auto y = readUnsigned<unsigned>(j, "y");
 		if (!x || !y) {
 			return {};
 		}
-		delta.coord = Coord{.x = *x, .y = *y};
+		delta.move.action = Place{Coord{.x = *x, .y = *y}};
 		if (j.contains("captures")) {
 			if (!j["captures"].is_array()) {
 				return {};
@@ -341,10 +324,12 @@ static std::optional<ServerEvent> fromServerDeltaMessage(const json& j) {
 				delta.captures.push_back(Coord{.x = *capX, .y = *capY});
 			}
 		}
-	} else {
+	} else if (action == "pass") {
 		if (j.contains("x") || j.contains("y") || j.contains("captures")) {
 			return {};
 		}
+	} else {
+		return {};
 	}
 
 	return ServerGameDelta{delta};

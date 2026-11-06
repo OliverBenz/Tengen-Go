@@ -3,7 +3,7 @@
 #include "core/IGameStateListener.hpp"
 #include "core/game.hpp"
 #include "model/chatMessage.hpp"
-#include "model/gameConfig.hpp"
+#include "model/gameUpdates.hpp"
 #include "model/player.hpp"
 #include "network/server.hpp"
 

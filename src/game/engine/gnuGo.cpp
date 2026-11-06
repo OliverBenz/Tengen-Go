@@ -26,17 +26,17 @@ GnuGo::GnuGo(GnuGoConfig config)
     : m_config(std::move(config)) {
 }
 
-void GnuGo::start(const unsigned boardSize, const GameRules& rules, const tengen::Player botColour) {
+void GnuGo::start(const GameConfig& gameConfig, const tengen::Player botColour) {
 	const int level              = std::clamp(m_config.level, GnuGoConfig::weakestLevel, GnuGoConfig::strongestLevel);
 	const std::string executable = m_config.files.executable.string();
 
 	std::vector<std::string> argv{executable, "--mode", "gtp", "--level", std::to_string(level)};
 
 	// GNU Go takes the rules on its command line
-	const std::vector<std::string> rulesArgv = ruleArguments(rules);
+	const std::vector<std::string> rulesArgv = ruleArguments(gameConfig.rules);
 	argv.insert(argv.end(), rulesArgv.begin(), rulesArgv.end());
 
-	launch({.argv = std::move(argv), .requiredFiles = {executable}, .logFile = "gnugo.log", .setupCommands = {}}, boardSize, rules, botColour);
+	launch({.argv = std::move(argv), .requiredFiles = {executable}, .logFile = "gnugo.log", .setupCommands = {}}, gameConfig, botColour);
 }
 
 std::vector<std::string> GnuGo::ruleArguments(const GameRules& rules) {

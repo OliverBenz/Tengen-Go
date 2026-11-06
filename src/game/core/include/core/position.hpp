@@ -15,7 +15,7 @@ struct GamePosition {
 	unsigned moveId{0};                  //!< Move number of game.
 
 public:
-	explicit GamePosition(std::size_t boardSize);
+	explicit GamePosition(unsigned boardSize);
 
 	void play(Board nextBoard, uint64_t nextHash); //!< Current player made a move that left this board.
 	void pass();                                   //!< Current player passes his turn.

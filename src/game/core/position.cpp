@@ -4,7 +4,7 @@
 
 namespace tengen {
 
-GamePosition::GamePosition(std::size_t boardSize)
+GamePosition::GamePosition(unsigned boardSize)
     : board{boardSize} {
 }
 

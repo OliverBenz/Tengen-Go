@@ -42,21 +42,11 @@ void MockClient::onGameStart(const GameConfig& config) {
 }
 
 void MockClient::onGameDelta(const GameDelta& delta) {
-	const auto player = toString(delta.player);
-	switch (delta.action) {
-	case GameAction::Place:
-		if (delta.coord.has_value()) {
-			std::cout << std::format("[Client] Received board update from '{}' at ({}, {}).\n", player, delta.coord->x, delta.coord->y);
-		} else {
-			std::cout << std::format("[Client] Received board update from '{}'.\n", player);
-		}
-		break;
-	case GameAction::Pass:
+	const auto player = toString(delta.move.player);
+	if (const auto* place = std::get_if<Place>(&delta.move.action)) {
+		std::cout << std::format("[Client] Received board update from '{}' at ({}, {}).\n", player, place->coord.x, place->coord.y);
+	} else {
 		std::cout << std::format("[Client] Received pass from '{}'.\n", player);
-		break;
-	case GameAction::Resign:
-		std::cout << std::format("[Client] Received resign from '{}'\n", player);
-		break;
 	}
 }
 

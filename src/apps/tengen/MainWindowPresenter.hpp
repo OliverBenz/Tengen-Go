@@ -4,7 +4,7 @@
 #include "MainWindow.hpp"
 #include "NetworkPresenter.hpp"
 #include "engine/engineCatalog.hpp"
-#include "model/gameConfig.hpp"
+#include "model/gameUpdates.hpp"
 #include "tengen/IGameSession.hpp"
 
 #include <QObject>

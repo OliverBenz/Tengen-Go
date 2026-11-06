@@ -1,8 +1,6 @@
 #pragma once
 
-#include "model/gameConfig.hpp"
-#include "model/gameDelta.hpp"
-#include "model/gameResult.hpp"
+#include "model/gameUpdates.hpp"
 
 namespace tengen {
 
@@ -13,7 +11,7 @@ public:
 	virtual ~IGameStateListener()                      = default;
 	virtual void onGameStart(const GameConfig& config) = 0; //!< Once, when the game started. Before any delta.
 	virtual void onGameDelta(const GameDelta& delta)   = 0; //!< Once per accepted move.
-	virtual void onGameEnd(const GameResult& result)   = 0; //!< Once, right after the delta of the move that ended the game.
+	virtual void onGameEnd(const GameResult& result)   = 0; //!< Once, right after the delta of the second pass, or on its own for a resignation.
 };
 
 } // namespace tengen
