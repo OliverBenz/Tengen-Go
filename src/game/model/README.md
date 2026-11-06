@@ -12,3 +12,6 @@ If we ever add chat between spectators, we should decide whether this library de
 At the time of writing, I think a simple subdirectory `model/room` in the public include directory would be enough.
 
 Keep these ideas in mind when you add something to the model library.
+
+## Data UML
+![Data UML](docs/data_uml.svg)
