@@ -1,14 +1,14 @@
 #pragma once
 
+#include "eventHub.hpp"
 #include "model/gameUpdates.hpp"
 #include "network/client.hpp"
+#include "sessionChatInfo.hpp"
+#include "sessionGameInfo.hpp"
 #include "tengen/IAppSignal.hpp"
 #include "tengen/IChatSession.hpp"
 #include "tengen/IGameSession.hpp"
 #include "tengen/INetworkSession.hpp"
-#include "tengen/eventHub.hpp"
-#include "tengen/sessionChatInfo.hpp"
-#include "tengen/sessionGameInfo.hpp"
 #include "tengen/sessionNetworkInfo.hpp"
 
 #include <memory>

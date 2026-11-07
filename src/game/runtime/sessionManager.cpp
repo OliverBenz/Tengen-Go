@@ -1,8 +1,8 @@
 #include "tengen/sessionManager.hpp"
 
-#include "tengen/botSession.hpp"
-#include "tengen/networkSession.hpp"
-#include "tengen/openSession.hpp"
+#include "botSession.hpp"
+#include "networkSession.hpp"
+#include "openSession.hpp"
 
 #include <cassert>
 

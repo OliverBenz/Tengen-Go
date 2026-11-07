@@ -1,4 +1,4 @@
-#include "tengen/sessionChatInfo.hpp"
+#include "sessionChatInfo.hpp"
 
 #include <algorithm>
 

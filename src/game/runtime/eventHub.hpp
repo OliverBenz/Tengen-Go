@@ -1,6 +1,6 @@
 #pragma once
 
-#include "IAppSignal.hpp"
+#include "tengen/IAppSignal.hpp"
 
 #include <mutex>
 #include <vector>

@@ -1,4 +1,4 @@
-#include "tengen/sessionGameInfo.hpp"
+#include "sessionGameInfo.hpp"
 #include "logging.hpp"
 
 #include <algorithm>
