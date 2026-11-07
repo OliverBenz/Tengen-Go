@@ -3,13 +3,11 @@
 #include "GamePresenter.hpp"
 #include "engine/engineCatalog.hpp"
 #include "model/gameUpdates.hpp"
-#include "tengen/botSession.hpp"
-#include "tengen/networkSession.hpp"
-#include "tengen/openSession.hpp"
 
 #include <QCoreApplication>
 #include <QObject>
 #include <QStandardPaths>
+#include <cassert>
 #include <filesystem>
 #include <memory>
 #include <vector>
@@ -32,9 +30,27 @@ MainWindowPresenter::MainWindowPresenter(gui::MainWindow& mainWindow)
 MainWindowPresenter::~MainWindowPresenter() = default;
 
 void MainWindowPresenter::startOpenPlay(const GameConfig& config) {
+	resetPresenters();
 	showLocalPlayers();
-	m_gameSession   = std::make_unique<app::OpenSession>(config);
-	m_gamePresenter = std::make_unique<GamePresenter>(*m_gameSession, m_mainWindow.gameWidget());
+	m_sessions.startOpen(config);
+	createPresenters();
+}
+
+void MainWindowPresenter::createPresenters() {
+	assert(m_sessions.game()); // Only right after a session started.
+
+	m_gamePresenter = std::make_unique<GamePresenter>(*m_sessions.game(), m_mainWindow.gameWidget());
+	if (auto* chat = m_sessions.chat()) {
+		m_gamePresenter->addChatWindow(*chat);
+	}
+	if (auto* network = m_sessions.network()) {
+		m_networkPresenter = std::make_unique<NetworkPresenter>(*network, m_mainWindow.gameWidget());
+	}
+}
+
+void MainWindowPresenter::resetPresenters() {
+	m_gamePresenter.reset();
+	m_networkPresenter.reset();
 }
 
 void MainWindowPresenter::showLocalPlayers() {
@@ -46,7 +62,6 @@ void MainWindowPresenter::showPlayers(const Player ownColour, const QString& opp
 }
 
 void MainWindowPresenter::onNewLocalGameRequested(const GameConfig& config) {
-	onShutdownRequested();
 	startOpenPlay(config);
 }
 
@@ -62,55 +77,34 @@ void MainWindowPresenter::onBotDialogRequested() {
 }
 
 void MainWindowPresenter::onNewBotGameRequested(const GameConfig& config, const engine::EngineConfig& engineConfig, const bool humanPlaysBlack) {
-	onShutdownRequested();
-
+	resetPresenters();
 	showPlayers(humanPlaysBlack ? Player::Black : Player::White, tr("Bot"));
-	m_gameSession   = std::make_unique<app::BotSession>(config, engine::makeEngine(engineConfig), humanPlaysBlack);
-	m_gamePresenter = std::make_unique<GamePresenter>(*m_gameSession, m_mainWindow.gameWidget());
+	m_sessions.startBot(config, engineConfig, humanPlaysBlack);
+	createPresenters();
 }
 
 void MainWindowPresenter::onConnectRequested(const QString& hostIp) {
-	onShutdownRequested();
-
+	resetPresenters();
 	showLocalPlayers(); // Until the welcome tells us our colour.
-
-	auto session       = std::make_unique<app::NetworkSession>();
-	m_networkPresenter = std::make_unique<NetworkPresenter>(*session, m_mainWindow.gameWidget());
-	session->connect(hostIp.toStdString());
-
-	auto& game      = static_cast<app::IGameSession&>(*session);
-	auto& chat      = static_cast<app::IChatSession&>(*session);
-	m_gamePresenter = std::make_unique<GamePresenter>(game, m_mainWindow.gameWidget());
-	m_gamePresenter->addChatWindow(chat);
-	m_gameSession = std::move(session);
+	m_sessions.startNetwork();
+	createPresenters(); // Before connecting, so they miss nothing the host sends.
+	m_sessions.connect(hostIp.toStdString());
 }
 
 void MainWindowPresenter::onHostRequested(const GameConfig& config, const Player hostColour) {
-	onShutdownRequested();
+	resetPresenters();
 	showPlayers(hostColour, tr("Opponent"));
-
-	auto session       = std::make_unique<app::NetworkSession>();
-	m_networkPresenter = std::make_unique<NetworkPresenter>(*session, m_mainWindow.gameWidget());
-	if (!session->host(config, hostColour)) {
+	m_sessions.startNetwork();
+	createPresenters(); // Before hosting, so they miss nothing the host sends.
+	if (!m_sessions.host(config, hostColour)) {
 		// TODO: Signal to the user that host failed.
-		m_networkPresenter.reset();
-		return;
+		onShutdownRequested();
 	}
-
-	auto& game      = static_cast<app::IGameSession&>(*session);
-	auto& chat      = static_cast<app::IChatSession&>(*session);
-	m_gamePresenter = std::make_unique<GamePresenter>(game, m_mainWindow.gameWidget());
-	m_gamePresenter->addChatWindow(chat);
-	m_gameSession = std::move(session);
 }
 
 void MainWindowPresenter::onShutdownRequested() {
-	if (m_gameSession) {
-		m_gamePresenter    = nullptr; // Destroy before m_game
-		m_networkPresenter = nullptr;
-		m_gameSession->shutdown();
-		m_gameSession.reset();
-	}
+	resetPresenters();
+	m_sessions.shutdown();
 }
 
 } // namespace tengen
