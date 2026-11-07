@@ -1,4 +1,4 @@
-#include "tengen/networkSession.hpp"
+#include "networkSession.hpp"
 
 #include "logging.hpp"
 #include "model/gameUpdates.hpp"

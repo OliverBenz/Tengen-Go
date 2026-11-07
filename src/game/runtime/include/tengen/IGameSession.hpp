@@ -20,5 +20,4 @@ public:
 	virtual void shutdown()                       = 0;
 };
 
-
 } // namespace tengen::app

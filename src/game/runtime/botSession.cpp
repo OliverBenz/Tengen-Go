@@ -1,4 +1,4 @@
-#include "tengen/botSession.hpp"
+#include "botSession.hpp"
 
 #include "core/gameEvent.hpp"
 #include "logging.hpp"
