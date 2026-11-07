@@ -38,8 +38,8 @@ Group findGroup(const Board& board, const Coord start) {
 	const auto size   = board.size();
 	const auto index  = [size](const Coord c) { return c.y * size + c.x; };
 
-	std::vector<bool> inGroup(size * size, false);
-	std::vector<bool> isLiberty(size * size, false);
+	std::vector<bool> inGroup(static_cast<std::size_t>(size) * size, false);
+	std::vector<bool> isLiberty(static_cast<std::size_t>(size) * size, false);
 
 	Group group;
 	std::vector<Coord> pending{start};

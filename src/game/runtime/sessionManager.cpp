@@ -8,11 +8,8 @@
 
 namespace tengen::app {
 
-SessionManager::SessionManager() = default;
-
-SessionManager::~SessionManager() {
-	shutdown();
-}
+SessionManager::SessionManager()  = default;
+SessionManager::~SessionManager() = default;
 
 void SessionManager::startOpen(const GameConfig& config) {
 	shutdown();

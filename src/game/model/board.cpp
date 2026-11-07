@@ -5,7 +5,7 @@
 namespace tengen {
 
 Board::Board(unsigned size)
-    : m_size(size), m_board(size * size, Stone::Empty) {
+    : m_size(size), m_board(static_cast<std::size_t>(size) * size, Stone::Empty) {
 }
 
 unsigned Board::size() const {
