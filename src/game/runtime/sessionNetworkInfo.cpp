@@ -1,34 +1,26 @@
-#include "tengen/sessionNetworkInfo.hpp"
+#include "sessionNetworkInfo.hpp"
 
 namespace tengen::app {
 
 void SessionNetworkInfo::setConnecting() {
-	m_phase = ConnectionPhase::Connecting;
-	m_localPlayer.reset();
-	m_endReason.reset();
+	m_state.phase = ConnectionPhase::Connecting;
+	m_state.localPlayer.reset();
+	m_state.endReason.reset();
 }
 
 void SessionNetworkInfo::setConnected(const std::optional<Player> player) {
-	m_phase       = ConnectionPhase::Connected;
-	m_localPlayer = player;
+	m_state.phase       = ConnectionPhase::Connected;
+	m_state.localPlayer = player;
 }
 
 void SessionNetworkInfo::setIdle(const network::DisconnectReason reason) {
-	m_phase = ConnectionPhase::Idle;
-	m_localPlayer.reset();
-	m_endReason = reason;
+	m_state.phase = ConnectionPhase::Idle;
+	m_state.localPlayer.reset();
+	m_state.endReason = reason;
 }
 
-ConnectionPhase SessionNetworkInfo::getPhase() const {
-	return m_phase;
-}
-
-std::optional<Player> SessionNetworkInfo::getLocalPlayer() const {
-	return m_localPlayer;
-}
-
-std::optional<network::DisconnectReason> SessionNetworkInfo::getEndReason() const {
-	return m_endReason;
+const ConnectionState& SessionNetworkInfo::state() const {
+	return m_state;
 }
 
 } // namespace tengen::app

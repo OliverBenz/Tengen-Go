@@ -9,7 +9,6 @@ set(headers
 	"${CMAKE_CURRENT_LIST_DIR}/include/tengen/IGameSession.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/tengen/IChatSession.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/tengen/INetworkSession.hpp"
-	"${CMAKE_CURRENT_LIST_DIR}/include/tengen/sessionNetworkInfo.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/tengen/gameServer.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/botSession.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/networkSession.hpp"
@@ -17,6 +16,7 @@ set(headers
 	"${CMAKE_CURRENT_LIST_DIR}/eventHub.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/sessionGameInfo.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/sessionChatInfo.hpp"
+	"${CMAKE_CURRENT_LIST_DIR}/sessionNetworkInfo.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/logging.hpp"
 )
 

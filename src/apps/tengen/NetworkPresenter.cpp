@@ -36,23 +36,23 @@ NetworkPresenter::~NetworkPresenter() {
 
 void NetworkPresenter::onAppEvent(const app::AppSignalMask mask) {
 	if (mask & app::AS_ConnectionChange) {
-		QMetaObject::invokeMethod(this, [this, info = m_session.networkInfo()] { showConnection(info); }, Qt::QueuedConnection);
+		QMetaObject::invokeMethod(this, [this, state = m_session.connection()] { showConnection(state); }, Qt::QueuedConnection);
 	}
 }
 
-void NetworkPresenter::showConnection(const app::SessionNetworkInfo& info) {
-	switch (info.getPhase()) {
+void NetworkPresenter::showConnection(const app::ConnectionState& state) {
+	switch (state.phase) {
 	case app::ConnectionPhase::Connecting:
 		return;
 	case app::ConnectionPhase::Connected:
-		if (const auto player = info.getLocalPlayer()) {
+		if (const auto player = state.localPlayer) {
 			m_gameWidget.setPlayers(tr("You"), tr("Opponent"), *player);
 		} else {
 			m_gameWidget.setPlayers(tr("White"), tr("Black"), Player::White); // We only watch: name both sides by colour.
 		}
 		return;
 	case app::ConnectionPhase::Idle:
-		if (const auto reason = info.getEndReason(); reason && *reason != network::DisconnectReason::ClosedLocally) {
+		if (const auto reason = state.endReason; reason && *reason != network::DisconnectReason::ClosedLocally) {
 			QMessageBox::warning(m_gameWidget.window(), tr("Disconnected"), endText(*reason));
 		}
 		return;
