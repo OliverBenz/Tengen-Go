@@ -22,7 +22,7 @@ public:
 	void onAppEvent(app::AppSignalMask mask) override; //!< Signalled by session thread. Offload work to GUI thread.
 
 private:
-	void showConnection(const app::SessionNetworkInfo& info); //!< GUI thread only.
+	void showConnection(const app::ConnectionState& state); //!< GUI thread only.
 
 private:
 	app::INetworkSession& m_session;

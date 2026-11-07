@@ -9,7 +9,7 @@
 namespace tengen {
 
 //! \throws std::invalid_argument if there is no hash for the board size.
-static std::unique_ptr<IZobristHash> makeHasher(const std::size_t boardSize) {
+static std::unique_ptr<IZobristHash> makeHasher(const unsigned boardSize) {
 	switch (boardSize) {
 	case 9u:
 		return std::make_unique<ZobristHash<9u>>();

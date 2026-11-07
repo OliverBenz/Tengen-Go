@@ -1,15 +1,15 @@
 #pragma once
 
-#include "model/gameConfig.hpp"
+#include "eventHub.hpp"
+#include "model/gameUpdates.hpp"
 #include "network/client.hpp"
+#include "sessionChatInfo.hpp"
+#include "sessionGameInfo.hpp"
+#include "sessionNetworkInfo.hpp"
 #include "tengen/IAppSignal.hpp"
 #include "tengen/IChatSession.hpp"
 #include "tengen/IGameSession.hpp"
 #include "tengen/INetworkSession.hpp"
-#include "tengen/eventHub.hpp"
-#include "tengen/sessionChatInfo.hpp"
-#include "tengen/sessionGameInfo.hpp"
-#include "tengen/sessionNetworkInfo.hpp"
 
 #include <memory>
 #include <mutex>
@@ -53,7 +53,7 @@ public: // IChatSession Interface
 	std::vector<ChatMessage> getChatSince(unsigned messageId) const override;
 
 public: // INetworkSession Interface
-	SessionNetworkInfo networkInfo() const override;
+	ConnectionState connection() const override;
 
 private: // network::IClientHandler Interface
 	void onConnecting() override;

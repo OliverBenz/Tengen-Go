@@ -26,7 +26,7 @@ BoardWidgetEvent BoardWidgetEvent::resign() {
 
 
 BoardWidget::BoardWidget(QWidget* parent)
-    : QWidget(parent), m_board(9u), m_boardRenderer{std::make_unique<BoardRenderer>(static_cast<unsigned>(m_board.size()))} {
+    : QWidget(parent), m_board(9u), m_boardRenderer{std::make_unique<BoardRenderer>(m_board.size())} {
 	setFocusPolicy(Qt::StrongFocus); // Required to get key events.
 	setMouseTracking(true);
 }
@@ -41,7 +41,7 @@ void BoardWidget::setBoard(const Board& board) {
 	const auto oldSize = m_board.size();
 	m_board            = board;
 	if (m_board.size() != oldSize) {
-		m_boardRenderer->setNodes(static_cast<unsigned>(m_board.size())); // The pixel size only changes on resize.
+		m_boardRenderer->setNodes(m_board.size()); // The pixel size only changes on resize.
 	}
 	update();
 }

@@ -2,10 +2,10 @@
 
 #include "core/IGameStateListener.hpp"
 #include "core/game.hpp"
-#include "model/gameConfig.hpp"
+#include "eventHub.hpp"
+#include "model/gameUpdates.hpp"
+#include "sessionGameInfo.hpp"
 #include "tengen/IGameSession.hpp"
-#include "tengen/eventHub.hpp"
-#include "tengen/sessionGameInfo.hpp"
 
 #include <mutex>
 #include <thread>

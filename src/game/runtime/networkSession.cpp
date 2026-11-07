@@ -1,9 +1,7 @@
-#include "tengen/networkSession.hpp"
+#include "networkSession.hpp"
 
 #include "logging.hpp"
-#include "model/gameConfig.hpp"
-#include "model/gameDelta.hpp"
-#include "model/gameResult.hpp"
+#include "model/gameUpdates.hpp"
 #include "tengen/gameServer.hpp"
 
 #include <cassert>
@@ -118,9 +116,9 @@ std::vector<ChatMessage> NetworkSession::getChatSince(const unsigned messageId) 
 	std::lock_guard<std::mutex> lock(m_stateMutex);
 	return m_chatInfo.getSince(messageId);
 }
-SessionNetworkInfo NetworkSession::networkInfo() const {
+ConnectionState NetworkSession::connection() const {
 	std::lock_guard<std::mutex> lock(m_stateMutex);
-	return m_networkInfo;
+	return m_networkInfo.state();
 }
 
 void NetworkSession::onConnecting() {
@@ -161,15 +159,10 @@ void NetworkSession::onGameDelta(const GameDelta& delta) {
 		return;
 	}
 
-	switch (delta.action) {
-	case GameAction::Place:
+	if (std::holds_alternative<Place>(delta.move.action)) {
 		m_eventHub.signal(AS_BoardChange | AS_PlayerChange | AS_StonePlaced);
-		break;
-	case GameAction::Pass:
+	} else {
 		m_eventHub.signal(AS_PlayerChange);
-		break;
-	case GameAction::Resign:
-		break;
 	}
 }
 void NetworkSession::onGameEnd(const GameResult& result) {

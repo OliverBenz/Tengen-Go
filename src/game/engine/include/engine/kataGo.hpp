@@ -12,7 +12,7 @@ class KataGo : public GtpEngine {
 public:
 	explicit KataGo(KataGoConfig config);
 
-	void start(unsigned boardSize, const GameRules& rules, tengen::Player botColour) override;
+	void start(const GameConfig& gameConfig, tengen::Player botColour) override;
 
 	static std::string setRulesCommand(const GameRules& rules); //!< KataGo's kata-set-rules command for the ko, scoring and suicide rules. Komi goes over GTP.
 	static bool acceptsKomi(float komi);                        //!< KataGo only plays whole or half point komi.

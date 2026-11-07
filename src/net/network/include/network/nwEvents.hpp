@@ -2,9 +2,7 @@
 
 #include "model/chatMessage.hpp"
 #include "model/coordinate.hpp"
-#include "model/gameConfig.hpp"
-#include "model/gameDelta.hpp"
-#include "model/gameResult.hpp"
+#include "model/gameUpdates.hpp"
 #include "model/player.hpp"
 #include "network/types.hpp"
 
@@ -53,7 +51,7 @@ struct ServerGameDelta {
 	GameDelta delta;
 };
 
-//! The game ended. Comes right after the delta of the last move.
+//! The game ended. Comes right after the delta of the second pass, or on its own for a resignation.
 struct ServerGameEnd {
 	GameResult result;
 };

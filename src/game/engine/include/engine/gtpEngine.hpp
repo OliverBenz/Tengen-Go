@@ -2,7 +2,7 @@
 
 #include "engine/IEngineListener.hpp"
 #include "model/coordinate.hpp"
-#include "model/gameRules.hpp"
+#include "model/gameUpdates.hpp"
 #include "model/player.hpp"
 
 #include <memory>
@@ -29,7 +29,7 @@ public:
 
 	//! Bring the engine up and set the game up. Answers with EngineListener.
 	//! Every engine takes the rules its own way, so each one picks out of them what it can follow.
-	virtual void start(unsigned boardSize, const GameRules& rules, tengen::Player botColour) = 0;
+	virtual void start(const GameConfig& gameConfig, tengen::Player botColour) = 0;
 
 	//! No listener callbacks once this returns.
 	//! \note Never call from a callback.
@@ -39,7 +39,6 @@ public:
 	// Answer immediately on the calling thread. Only send while the engine is not thinking.
 	bool place(tengen::Coord pos);
 	bool pass();
-	bool resign();
 
 	void genmove(); //!< Returns at once; answers with onMoveGenerated().
 
@@ -54,7 +53,7 @@ protected:
 		std::vector<std::string> setupCommands; //!< The engine's own GTP commands for the game, e.g. its rules. Sent after clear_board.
 	};
 
-	void launch(Launch command, unsigned boardSize, const GameRules& rules, tengen::Player botColour); //!< What every start() comes down to.
+	void launch(Launch command, const GameConfig& gameConfig, tengen::Player botColour); //!< What every start() comes down to.
 
 private:
 	class Implementation;

@@ -1,4 +1,4 @@
-#include "tengen/botSession.hpp"
+#include "botSession.hpp"
 
 #include "core/gameEvent.hpp"
 #include "logging.hpp"
@@ -16,7 +16,7 @@ BotSession::BotSession(const GameConfig& config, std::unique_ptr<engine::GtpEngi
 
 	// Bringing the engine up costs seconds, so it answers on its own thread like any other request.
 	m_engine->registerListener(this);
-	m_engine->start(static_cast<unsigned>(config.boardSize), config.rules, m_botColour);
+	m_engine->start(config, m_botColour);
 }
 
 BotSession::~BotSession() {
@@ -114,11 +114,7 @@ void BotSession::onGameDelta(const GameDelta& delta) {
 
 		// Hand the turn over while the game info is still held.
 		if (applied) {
-			if (delta.action == GameAction::Resign) {
-				m_status = Status::Finished;
-			} else {
-				m_status = delta.nextPlayer == m_botColour ? Status::BotMove : Status::PlayerMove;
-			}
+			m_status = m_gameInfo.getPlayer() == m_botColour ? Status::BotMove : Status::PlayerMove;
 		}
 	}
 
@@ -126,20 +122,15 @@ void BotSession::onGameDelta(const GameDelta& delta) {
 		return;
 	}
 
-	switch (delta.action) {
-	case GameAction::Place:
+	if (std::holds_alternative<Place>(delta.move.action)) {
 		m_eventHub.signal(AS_BoardChange | AS_PlayerChange | AS_StonePlaced);
-		break;
-	case GameAction::Pass:
+	} else {
 		m_eventHub.signal(AS_PlayerChange);
-		break;
-	case GameAction::Resign:
-		break;
 	}
 
 	// The Game accepted the move, so it is part of the truth now: mirror it into the engine.
 	// The bot's own moves are skipped; the engine already played them when it generated them.
-	if (delta.player != m_botColour) {
+	if (delta.move.player != m_botColour) {
 		relayPlayerMove(delta);
 	}
 
@@ -151,24 +142,8 @@ void BotSession::onGameDelta(const GameDelta& delta) {
 void BotSession::relayPlayerMove(const GameDelta& delta) {
 	// 'play' does not run a search, so the round trip is short enough to keep on the game thread.
 	// Doing it here also keeps the engine's board in the order the Game accepted the moves in.
-	bool relayed = true;
-
-	switch (delta.action) {
-	case GameAction::Place:
-		assert(delta.coord);
-		if (!delta.coord) {
-			Logger().Log(Logging::LogLevel::Warning, "[BotSession] Game delta missing place coordinate; engine not updated.");
-			return;
-		}
-		relayed = m_engine->place(*delta.coord);
-		break;
-	case GameAction::Pass:
-		relayed = m_engine->pass();
-		break;
-	case GameAction::Resign:
-		relayed = m_engine->resign();
-		break;
-	}
+	const auto* place  = std::get_if<Place>(&delta.move.action);
+	const bool relayed = place ? m_engine->place(place->coord) : m_engine->pass();
 
 	// The engine either died or refused a move our rules accepted. Either way its board is behind the
 	// Game's from here on, so every move it would still generate answers a position we are not in.
@@ -209,16 +184,12 @@ void BotSession::onMoveGenerated(const engine::BotMove& move) {
 	}
 
 	// TODO: The Game drops rejected moves silently, so a move our ruleset disagrees with leaves the bot idle.
-	switch (move.action) {
-	case engine::MoveAction::Place:
-		m_game.pushEvent(PutStoneEvent{m_botColour, move.coord});
-		break;
-	case engine::MoveAction::Pass:
+	if (const auto* place = std::get_if<Place>(&move)) {
+		m_game.pushEvent(PutStoneEvent{m_botColour, place->coord});
+	} else if (std::holds_alternative<Pass>(move)) {
 		m_game.pushEvent(PassEvent{m_botColour});
-		break;
-	case engine::MoveAction::Resign:
+	} else {
 		m_game.pushEvent(ResignEvent{m_botColour});
-		break;
 	}
 }
 

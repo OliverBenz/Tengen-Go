@@ -4,18 +4,19 @@ set(targetName gameRuntime)
 
 # Get files to build
 set(headers
-	"${CMAKE_CURRENT_LIST_DIR}/include/tengen/botSession.hpp"
-	"${CMAKE_CURRENT_LIST_DIR}/include/tengen/networkSession.hpp"
-	"${CMAKE_CURRENT_LIST_DIR}/include/tengen/openSession.hpp"
+	"${CMAKE_CURRENT_LIST_DIR}/include/tengen/sessionManager.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/tengen/IAppSignal.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/tengen/IGameSession.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/tengen/IChatSession.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/tengen/INetworkSession.hpp"
-	"${CMAKE_CURRENT_LIST_DIR}/include/tengen/eventHub.hpp"
-	"${CMAKE_CURRENT_LIST_DIR}/include/tengen/sessionGameInfo.hpp"
-	"${CMAKE_CURRENT_LIST_DIR}/include/tengen/sessionChatInfo.hpp"
-	"${CMAKE_CURRENT_LIST_DIR}/include/tengen/sessionNetworkInfo.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/tengen/gameServer.hpp"
+	"${CMAKE_CURRENT_LIST_DIR}/botSession.hpp"
+	"${CMAKE_CURRENT_LIST_DIR}/networkSession.hpp"
+	"${CMAKE_CURRENT_LIST_DIR}/openSession.hpp"
+	"${CMAKE_CURRENT_LIST_DIR}/eventHub.hpp"
+	"${CMAKE_CURRENT_LIST_DIR}/sessionGameInfo.hpp"
+	"${CMAKE_CURRENT_LIST_DIR}/sessionChatInfo.hpp"
+	"${CMAKE_CURRENT_LIST_DIR}/sessionNetworkInfo.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/logging.hpp"
 )
 
@@ -23,6 +24,7 @@ set(sources
 	"${CMAKE_CURRENT_LIST_DIR}/botSession.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/networkSession.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/openSession.cpp"
+	"${CMAKE_CURRENT_LIST_DIR}/sessionManager.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/eventHub.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/sessionGameInfo.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/sessionChatInfo.cpp"

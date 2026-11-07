@@ -38,8 +38,8 @@ KataGo::KataGo(KataGoConfig config)
     : m_config(std::move(config)) {
 }
 
-void KataGo::start(const unsigned boardSize, const GameRules& rules, const tengen::Player botColour) {
-	assert(acceptsKomi(rules.komi));
+void KataGo::start(const GameConfig& gameConfig, const tengen::Player botColour) {
+	assert(acceptsKomi(gameConfig.rules.komi));
 
 	const Skill rank = std::clamp(m_config.rank, KataGoConfig::weakestRank, KataGoConfig::strongestRank);
 
@@ -63,8 +63,8 @@ void KataGo::start(const unsigned boardSize, const GameRules& rules, const tenge
 	        },
 	        .requiredFiles = {executable, model, humanModel, gtpConfig},
 	        .logFile       = "katago.log",
-	        .setupCommands = {setRulesCommand(rules)}}, // Overrides the rules in the config file.
-	       boardSize, rules, botColour);
+	        .setupCommands = {setRulesCommand(gameConfig.rules)}}, // Overrides the rules in the config file.
+	       gameConfig, botColour);
 }
 
 bool KataGo::acceptsKomi(const float komi) {

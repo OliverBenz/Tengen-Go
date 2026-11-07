@@ -1,6 +1,6 @@
 #include "BoardSizeWidget.hpp"
 
-#include "model/gameConfig.hpp"
+#include "model/gameUpdates.hpp"
 
 #include <QButtonGroup>
 #include <QHBoxLayout>

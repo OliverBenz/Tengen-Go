@@ -126,7 +126,7 @@ static Coord rotateCoord(const Coord c, const unsigned quarterTurns, const unsig
 
 //! Stone states of a ground truth board seen from one of the four sides, laid out like StoneResult::stones.
 static std::vector<StoneState> toStoneStates(const Board& board, const unsigned quarterTurns) {
-	const auto boardSize = static_cast<unsigned>(board.size());
+	const auto boardSize = board.size();
 
 	std::vector<StoneState> stones(static_cast<std::size_t>(boardSize) * boardSize);
 	for (unsigned x = 0; x < boardSize; ++x) {
@@ -170,7 +170,7 @@ static OrientedLayout findClosestOrientation(const std::vector<StoneState>& ston
 }
 
 void expectStonesMatchBoard(const std::vector<StoneState>& stones, const Board& expected, const std::string_view context) {
-	const auto boardSize = static_cast<unsigned>(expected.size());
+	const auto boardSize = expected.size();
 	ASSERT_EQ(stones.size(), static_cast<std::size_t>(boardSize) * boardSize) << context;
 
 	const OrientedLayout closest = findClosestOrientation(stones, expected);

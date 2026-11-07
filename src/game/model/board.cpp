@@ -4,11 +4,11 @@
 
 namespace tengen {
 
-Board::Board(std::size_t size)
-    : m_size(size), m_board(size * size, Stone::Empty) {
+Board::Board(unsigned size)
+    : m_size(size), m_board(static_cast<std::size_t>(size) * size, Stone::Empty) {
 }
 
-std::size_t Board::size() const {
+unsigned Board::size() const {
 	return m_size;
 }
 

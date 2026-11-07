@@ -21,13 +21,12 @@ public:
 
 	bool registerListener(IEngineListener* listener);
 
-	void start(Launch command, unsigned boardSize, const GameRules& rules, tengen::Player botColour);
+	void start(Launch command, const GameConfig& gameConfig, tengen::Player botColour);
 	void stop();
 	bool isRunning() const;
 
 	bool place(tengen::Coord pos);
 	bool pass();
-	bool resign();
 
 	void genmove();
 
@@ -45,8 +44,7 @@ private:
 	SubProcess m_process;
 	IEngineListener* m_listener{nullptr};
 	tengen::Player m_botColour{tengen::Player::Black}; //!< The player takes the other one.
-	unsigned m_boardSize{9u};
-	GameRules m_rules{fromRuleSet(RuleSet::Japanese)};
+	GameConfig m_gameConfig{.boardSize = 9u, .rules = fromRuleSet(RuleSet::Japanese)};
 
 	std::atomic<bool> m_running{false}; //!< Engine thread running.
 	std::thread m_engineThread;
@@ -63,11 +61,10 @@ bool GtpEngine::Implementation::registerListener(IEngineListener* listener) {
 	return true;
 }
 
-void GtpEngine::Implementation::start(Launch command, const unsigned boardSize, const GameRules& rules, const tengen::Player botColour) {
+void GtpEngine::Implementation::start(Launch command, const GameConfig& gameConfig, const tengen::Player botColour) {
 	assert(!m_running); // Starting twice would strand the engine that is already up.
-	m_boardSize = boardSize;
-	m_rules     = rules;
-	m_botColour = botColour;
+	m_gameConfig = gameConfig;
+	m_botColour  = botColour;
 
 	// Bringing an engine up can cost seconds, so it is a request like any other.
 	m_running      = true;
@@ -108,7 +105,7 @@ bool GtpEngine::Implementation::isRunning() const {
 
 bool GtpEngine::Implementation::place(const tengen::Coord pos) {
 	std::string response;
-	return sendCommand(gtp::play(opponent(m_botColour), pos, m_boardSize), response);
+	return sendCommand(gtp::play(opponent(m_botColour), pos, m_gameConfig.boardSize), response);
 }
 
 bool GtpEngine::Implementation::pass() {
@@ -116,17 +113,12 @@ bool GtpEngine::Implementation::pass() {
 	return sendCommand(gtp::pass(opponent(m_botColour)), response);
 }
 
-bool GtpEngine::Implementation::resign() {
-	// GTP has no command for the opponent resigning. The game is simply over.
-	return true;
-}
-
 void GtpEngine::Implementation::genmove() {
 	post([this] {
 		// The engine plays the move on its own board, so it must not be relayed back with place().
 		BotMove move{};
 		std::string response;
-		const bool ok = sendCommand(gtp::genmove(m_botColour), response) && gtp::parseMove(response, m_boardSize, move);
+		const bool ok = sendCommand(gtp::genmove(m_botColour), response) && gtp::parseMove(response, m_gameConfig.boardSize, move);
 
 		if (!canNotify()) {
 			return;
@@ -197,14 +189,14 @@ bool GtpEngine::Implementation::launch(const Launch& command) {
 bool GtpEngine::Implementation::setupGame(const std::vector<std::string>& engineCommands) {
 	std::string response;
 	bool success = true;
-	success &= sendCommand(gtp::boardSize(m_boardSize), response);
+	success &= sendCommand(gtp::boardSize(m_gameConfig.boardSize), response);
 	success &= sendCommand(gtp::clearBoard(), response);
 	for (const std::string& command: engineCommands) {
 		success &= sendCommand(command, response);
 	}
 
 	// The only rule GTP itself knows. Last, as an engine may reset it along with its own rules.
-	success &= sendCommand(gtp::komi(m_rules.komi), response);
+	success &= sendCommand(gtp::komi(m_gameConfig.rules.komi), response);
 	return success;
 }
 
@@ -248,16 +240,12 @@ bool GtpEngine::pass() {
 	return m_pimpl->pass();
 }
 
-bool GtpEngine::resign() {
-	return m_pimpl->resign();
-}
-
 void GtpEngine::genmove() {
 	m_pimpl->genmove();
 }
 
-void GtpEngine::launch(Launch command, const unsigned boardSize, const GameRules& rules, const tengen::Player botColour) {
-	m_pimpl->start(std::move(command), boardSize, rules, botColour);
+void GtpEngine::launch(Launch command, const GameConfig& gameConfig, const tengen::Player botColour) {
+	m_pimpl->start(std::move(command), gameConfig, botColour);
 }
 
 } // namespace tengen::engine

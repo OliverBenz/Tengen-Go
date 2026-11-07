@@ -4,8 +4,7 @@
 #include "core/position.hpp"
 #include "core/positionHistory.hpp"
 #include "model/coordinate.hpp"
-#include "model/gameConfig.hpp"
-#include "model/gameResult.hpp"
+#include "model/gameUpdates.hpp"
 #include "model/player.hpp"
 
 #include <memory>

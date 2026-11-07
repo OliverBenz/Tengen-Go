@@ -28,35 +28,19 @@ void MockServer::onPlayerLeft(const Player player) {
 
 void MockServer::onPlace(const Player player, const Coord c) {
 	m_network.broadcast(network::ServerGameDelta{GameDelta{
-	        .moveId     = ++m_turn,
-	        .action     = GameAction::Place,
-	        .player     = player,
-	        .coord      = c,
-	        .captures   = {},
-	        .nextPlayer = opponent(player),
+	        .move     = {.moveId = ++m_turn, .player = player, .action = Place{c}},
+	        .captures = {},
 	}});
 }
 
 void MockServer::onPass(const Player player) {
 	m_network.broadcast(network::ServerGameDelta{GameDelta{
-	        .moveId     = ++m_turn,
-	        .action     = GameAction::Pass,
-	        .player     = player,
-	        .coord      = std::nullopt,
-	        .captures   = {},
-	        .nextPlayer = opponent(player),
+	        .move     = {.moveId = ++m_turn, .player = player, .action = Pass{}},
+	        .captures = {},
 	}});
 }
 
 void MockServer::onResign(const Player player) {
-	m_network.broadcast(network::ServerGameDelta{GameDelta{
-	        .moveId     = ++m_turn,
-	        .action     = GameAction::Resign,
-	        .player     = player,
-	        .coord      = std::nullopt,
-	        .captures   = {},
-	        .nextPlayer = opponent(player),
-	}});
 	m_network.broadcast(network::ServerGameEnd{GameResult{.winner = opponent(player), .reason = EndReason::Resignation}});
 }
 

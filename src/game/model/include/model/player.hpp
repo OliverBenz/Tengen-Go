@@ -7,7 +7,7 @@
 namespace tengen {
 
 // Player Info
-enum class Player : int8_t {
+enum class Player : std::uint8_t {
 	Black = 1,
 	White = 2,
 };
@@ -15,7 +15,7 @@ inline constexpr Player opponent(Player player);  //!< Returns the opponent enum
 inline std::string toString(const Player player); //!< Convert a player to a string as "White" and "Black".
 
 // Skill Level
-enum class Skill : int8_t {
+enum class Skill : std::int8_t {
 }; //!< Strength increasing. So Skill{0}=30kyu -> Skill{29}=1kyu -> Skill{30}=1dan -> Skill{38}=9dan
 
 inline constexpr Skill fromKyu(int k) noexcept;           //!< Convert a numeric kyu skill level to our 'Skill' convention.

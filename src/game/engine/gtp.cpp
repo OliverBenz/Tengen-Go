@@ -123,11 +123,11 @@ static bool row(const std::string_view number, const unsigned boardSize, unsigne
 
 bool parseMove(const std::string& value, const unsigned boardSize, BotMove& move) {
 	if (equalsIgnoreCase(value, "pass")) {
-		move = BotMove{.action = MoveAction::Pass};
+		move = tengen::Pass{};
 		return true;
 	}
 	if (equalsIgnoreCase(value, "resign")) {
-		move = BotMove{.action = MoveAction::Resign};
+		move = Resign{};
 		return true;
 	}
 
@@ -144,7 +144,7 @@ bool parseMove(const std::string& value, const unsigned boardSize, BotMove& move
 		return false;
 	}
 
-	move = BotMove{.action = MoveAction::Place, .coord = position};
+	move = tengen::Place{position};
 	return true;
 }
 

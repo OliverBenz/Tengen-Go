@@ -1,8 +1,8 @@
-#include "tengen/sessionGameInfo.hpp"
+#include "sessionGameInfo.hpp"
 #include "logging.hpp"
 
 #include <algorithm>
-#include <cassert>
+#include <variant>
 
 namespace tengen::app {
 
@@ -31,12 +31,11 @@ bool SessionGameInfo::update(const GameDelta& delta) {
 		return false;
 	}
 
-	m_moveId = delta.moveId;
-	m_player = delta.nextPlayer;
+	m_moveId = delta.move.moveId;
+	m_player = opponent(delta.move.player); // Players alternate.
 
-	if (delta.action == GameAction::Place) {
-		assert(delta.coord); // isDeltaApplicable() rejects a place without one.
-		m_board.place(*delta.coord, toStone(delta.player));
+	if (const auto* place = std::get_if<Place>(&delta.move.action)) {
+		m_board.place(place->coord, toStone(delta.move.player));
 		for (const auto c: delta.captures) {
 			m_board.remove(c);
 		}
@@ -79,10 +78,10 @@ bool SessionGameInfo::isDeltaApplicable(const GameDelta& delta) const {
 	}
 
 	// Check the move order
-	if (delta.moveId <= m_moveId) {
+	if (delta.move.moveId <= m_moveId) {
 		Logger().Log(Logging::LogLevel::Error, "Game delta sent to client twice.");
 		return false;
-	} else if (delta.moveId > m_moveId + 1) {
+	} else if (delta.move.moveId > m_moveId + 1) {
 		Logger().Log(Logging::LogLevel::Error, "Game delta missing updates; applying latest update only.");
 
 		// TODO: Query missing move and apply update first.
@@ -90,16 +89,11 @@ bool SessionGameInfo::isDeltaApplicable(const GameDelta& delta) const {
 	}
 
 	// Check place action is valid
-	if (delta.action == GameAction::Place) {
-		if (!delta.coord) {
-			Logger().Log(Logging::LogLevel::Error, "Game delta missing place coordinate.");
-			return false;
-		}
-
+	if (const auto* place = std::get_if<Place>(&delta.move.action)) {
 		// Board does not check coordinates: every one from the wire has to be on it.
 		const auto size    = m_board.size();
 		const auto onBoard = [size](const Coord c) { return c.x < size && c.y < size; };
-		if (!onBoard(*delta.coord) || !std::ranges::all_of(delta.captures, onBoard)) {
+		if (!onBoard(place->coord) || !std::ranges::all_of(delta.captures, onBoard)) {
 			Logger().Log(Logging::LogLevel::Error, "Game delta coordinate outside the board.");
 			return false;
 		}

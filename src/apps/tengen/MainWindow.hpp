@@ -1,7 +1,7 @@
 #pragma once
 
 #include "engine/engineCatalog.hpp"
-#include "model/gameConfig.hpp"
+#include "model/gameUpdates.hpp"
 #include "model/player.hpp"
 
 #include <QCloseEvent>
