@@ -116,9 +116,9 @@ std::vector<ChatMessage> NetworkSession::getChatSince(const unsigned messageId) 
 	std::lock_guard<std::mutex> lock(m_stateMutex);
 	return m_chatInfo.getSince(messageId);
 }
-SessionNetworkInfo NetworkSession::networkInfo() const {
+ConnectionState NetworkSession::connection() const {
 	std::lock_guard<std::mutex> lock(m_stateMutex);
-	return m_networkInfo;
+	return m_networkInfo.state();
 }
 
 void NetworkSession::onConnecting() {
