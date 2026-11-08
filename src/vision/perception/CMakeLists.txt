@@ -9,9 +9,13 @@ find_package(OpenCV ${TENGEN_OPENCV_MIN_VERSION} REQUIRED)
 set(headers
 	"${CMAKE_CURRENT_LIST_DIR}/include/vision/source.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/vision/vision.hpp"
+	"${CMAKE_CURRENT_LIST_DIR}/include/vision/manualSetup.hpp"
+	"${CMAKE_CURRENT_LIST_DIR}/camera.hpp"
 )
 set(sources
 	"${CMAKE_CURRENT_LIST_DIR}/vision.cpp"
+	"${CMAKE_CURRENT_LIST_DIR}/manualSetup.cpp"
+	"${CMAKE_CURRENT_LIST_DIR}/camera.cpp"
 )
 
 add_library(${targetName} STATIC ${headers} ${sources})

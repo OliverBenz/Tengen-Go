@@ -24,9 +24,6 @@ struct PipelineResult {
 std::vector<std::filesystem::path> getImagesInDirectory(const std::filesystem::path& directory); //!< Get all image files in a directory, ordered by name.
 void ensureJsonExists(const std::vector<std::filesystem::path>& images);                         //!< Verify the json file for each image exists.
 
-//! Warp an image onto the given board corners, producing what an ideal BoardFinder stage would.
-WarpResult prepareIdealImage(const cv::Mat& image, const std::array<cv::Point2f, 4>& corners);
-
 PipelineResult runPipeline(const cv::Mat& image);                           //!< Run all pipeline stages: board, grid and stone detection.
 PipelineResult runPipeline(const cv::Mat& image, const WarpResult& warped); //!< Run the grid and stone detection stages on a given board warp.
 bool isValidPipelineResult(const PipelineResult& result);                   //!< True if every pipeline stage produced a usable result.

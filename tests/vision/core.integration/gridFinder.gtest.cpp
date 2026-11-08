@@ -45,7 +45,7 @@ static void runIdealTest(const std::string& testSetName, unsigned imageCount) {
 		const float boardTolerance   = TOLERANCE_FRACTION * minimumCornerPointDistance(geometry.boardCorners);
 
 		// Check that we found either the board contour or the grid contour.
-		const WarpResult warpResult = prepareIdealImage(image, geometry.boardCorners);
+		const WarpResult warpResult = warpToCorners(image, geometry.boardCorners);
 		if (!pointSetsMatch(warpResult.contourCorners, geometry.boardCorners, boardTolerance)) {
 			ADD_FAILURE() << "Ideal warp did not reproduce the labelled board corners for " << imagePath << "\n";
 			continue;

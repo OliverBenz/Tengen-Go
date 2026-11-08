@@ -18,6 +18,10 @@ struct WarpResult {
 //! \note       In the resulting warped image, it is not defined what exactly the border is. This is done in the second step (analyseGeometry + transformImage).
 WarpResult warpToBoard(const cv::Mat& image, DebugVisualizer* debugger = nullptr);
 
+//! Warp to a board whose corners are already known, e.g. picked by hand instead of found by warpToBoard.
+//! \param [in] corners Board corners in image space, in any order.
+WarpResult warpToCorners(const cv::Mat& image, const std::array<cv::Point2f, 4>& corners);
+
 bool isValidBoard(const WarpResult& board);
 
 } // namespace tengen::vision::core
