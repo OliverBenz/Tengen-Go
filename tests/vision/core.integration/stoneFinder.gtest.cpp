@@ -47,7 +47,7 @@ static void runTest(const std::string& testSetName, unsigned imageCount) {
 		const float boardTolerance         = TOLERANCE_FRACTION * minimumCornerPointDistance(geometry.boardCorners);
 
 		// Warp the image onto the defined board corners to get an ideal boardFinder output.
-		const WarpResult warpResult = prepareIdealImage(image, geometry.boardCorners);
+		const WarpResult warpResult = warpToCorners(image, geometry.boardCorners);
 		if (!pointSetsMatch(warpResult.contourCorners, geometry.boardCorners, boardTolerance)) {
 			ADD_FAILURE() << "Ideal warp did not reproduce the labelled board corners for " << imagePath << "\n";
 			continue;

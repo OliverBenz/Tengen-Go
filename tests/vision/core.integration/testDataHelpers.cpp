@@ -33,24 +33,6 @@ void ensureJsonExists(const std::vector<std::filesystem::path>& images) {
 }
 
 
-WarpResult prepareIdealImage(const cv::Mat& image, const std::array<cv::Point2f, 4>& corners) {
-	// TODO: This constant mirrors boardFinder internal::WARP_OUT_SIZE. Make it public so we can use the same one.
-	static constexpr int WARP_SIZE = 1000; //!< Edge length of the image produced by the board warp.
-
-	const std::array<cv::Point2f, 4> destination = {
-	        cv::Point2f(0.f, 0.f),
-	        cv::Point2f(WARP_SIZE - 1.f, 0.f),
-	        cv::Point2f(WARP_SIZE - 1.f, WARP_SIZE - 1.f),
-	        cv::Point2f(0.f, WARP_SIZE - 1.f),
-	};
-
-	const cv::Mat H = cv::getPerspectiveTransform(corners.data(), destination.data());
-
-	cv::Mat warped;
-	cv::warpPerspective(image, warped, H, cv::Size(WARP_SIZE, WARP_SIZE));
-	return {warped, H, corners};
-}
-
 PipelineResult runPipeline(const cv::Mat& image) {
 	return runPipeline(image, warpToBoard(image));
 }

@@ -76,30 +76,33 @@ WarpResult warpToBoard(const cv::Mat& image, DebugVisualizer* debugger) {
 		debugger->add("Contour Selected", selected);
 	}
 
-	const std::vector<cv::Point2f> dst = {
-	        {0.f, 0.f},
-	        {static_cast<float>(internal::WARP_OUT_SIZE) - 1.f, 0.f},
-	        {static_cast<float>(internal::WARP_OUT_SIZE) - 1.f, static_cast<float>(internal::WARP_OUT_SIZE) - 1.f},
-	        {0.f, static_cast<float>(internal::WARP_OUT_SIZE) - 1.f},
-	};
+	std::array<cv::Point2f, 4> corners{};
+	std::copy(bestCandidate->quad.begin(), bestCandidate->quad.end(), corners.begin());
 
-	cv::Mat H = cv::getPerspectiveTransform(bestCandidate->quad, dst);
-
-	cv::Mat warped;
-	cv::warpPerspective(image, warped, H, cv::Size(internal::WARP_OUT_SIZE, internal::WARP_OUT_SIZE));
+	WarpResult result = warpToCorners(image, corners);
 	if (bestCandidate->fromRelaxedPass) {
-		warped = internal::enhanceWarpContrast(warped);
+		result.imageB0 = internal::enhanceWarpContrast(result.imageB0);
 	}
 	if (debugger) {
-		debugger->add("Warped", warped);
+		debugger->add("Warped", result.imageB0);
 		debugger->endStage();
 	}
+	return result;
+}
 
-	// We keep the contour corners mainly for testing
-	std::array<cv::Point2f, 4> contourCorners{};
-	std::copy(bestCandidate->quad.begin(), bestCandidate->quad.end(), contourCorners.begin());
+WarpResult warpToCorners(const cv::Mat& image, const std::array<cv::Point2f, 4>& corners) {
+	const std::vector<cv::Point2f> ordered = internal::orderCorners({corners.begin(), corners.end()}); // TL, TR, BR, BL
 
-	return {warped, H, contourCorners};
+	constexpr float last               = static_cast<float>(internal::WARP_OUT_SIZE) - 1.f;
+	const std::vector<cv::Point2f> dst = {{0.f, 0.f}, {last, 0.f}, {last, last}, {0.f, last}};
+
+	const cv::Mat H = cv::getPerspectiveTransform(ordered, dst);
+	cv::Mat warped;
+	cv::warpPerspective(image, warped, H, cv::Size(internal::WARP_OUT_SIZE, internal::WARP_OUT_SIZE));
+
+	WarpResult result{warped, H, {}};
+	std::copy(ordered.begin(), ordered.end(), result.contourCorners.begin());
+	return result;
 }
 
 bool isValidBoard(const WarpResult& board) {
