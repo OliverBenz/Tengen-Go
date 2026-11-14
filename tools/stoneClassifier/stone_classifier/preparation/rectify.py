@@ -27,11 +27,15 @@ class Grid:
         return self.half_patch + col * self.spacing, self.half_patch + row * self.spacing
 
 
+def canonical_corners(grid: Grid) -> np.ndarray:
+    """The 4 outermost intersections of the canonical grid, clockwise from the top left."""
+    first, last = grid.half_patch, grid.half_patch + (grid.size - 1) * grid.spacing
+    return np.float32([[first, first], [last, first], [last, last], [first, last]])
+
+
 def rectify(image: np.ndarray, grid_corners: np.ndarray, grid: Grid) -> np.ndarray:
     """Warps the photo so its grid corners land on the canonical grid's corners."""
-    first, last = grid.half_patch, grid.half_patch + (grid.size - 1) * grid.spacing
-    target = np.float32([[first, first], [last, first], [last, last], [first, last]])
-    H = cv2.getPerspectiveTransform(order_clockwise(grid_corners), target * OVERSAMPLE)
+    H = cv2.getPerspectiveTransform(order_clockwise(grid_corners), canonical_corners(grid) * OVERSAMPLE)
 
     side = grid.side * OVERSAMPLE
     fine = cv2.warpPerspective(image, H, (side, side), borderMode=cv2.BORDER_REPLICATE)
