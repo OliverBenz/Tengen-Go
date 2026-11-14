@@ -1,6 +1,6 @@
 """Camera preview with the detected stones outlined: black in red, white in blue.
 
-  live_preview.py [--camera 0] [--model models/model_vN.pt]
+  live_preview.py [--camera 0] [--model stoneNet.onnx]
 
 Click the 4 outermost grid intersections once the board is in view. The grid stays fixed, so keep the camera still.
 The buttons below the image pick the board size and start a new corner selection, e.g. after bumping the board.
@@ -8,15 +8,14 @@ Keys: r = pick the corners again, q or closing the window = quit.
 """
 
 import argparse
+import json
 from dataclasses import dataclass
 from pathlib import Path
 
 import cv2
 import numpy as np
-import torch
 
 from stone_classifier.learning.dataset import INPUT_SIZE
-from stone_classifier.learning.model import load_model
 from stone_classifier.preparation.rectify import Grid, canonical_corners, cut_patch, order_clockwise, rectify
 
 BOARD_SIZES = (9, 13, 19)
@@ -27,12 +26,7 @@ GRID_COLOUR, CLICK_COLOUR = (255, 0, 255), (0, 255, 255)
 WINDOW = "stones"
 BAR_HEIGHT, BUTTON_WIDTH = 40, 110  # The button bar below the camera image.
 RESELECT = "reselect"
-MODELS = Path(__file__).resolve().parent / "models"  # model_v<N>.pt, N being the dataset version it was trained on.
-
-
-def latest_model() -> Path | None:
-    models = MODELS.glob("model_v*.pt")
-    return max(models, key=lambda path: int(path.stem.removeprefix("model_v")), default=None)
+MODEL = Path(__file__).resolve().parents[2] / "src/vision/core/models/stoneNet.onnx"  # Its usage: stoneNet.json.
 
 
 def make_grid(size: int) -> Grid:
@@ -128,26 +122,23 @@ def on_bar_click(state: State, x: int):
                 state.reset(action, keep_corners=True)
 
 
-@torch.inference_mode()
-def classify(model: torch.nn.Module, image: np.ndarray, board: Board) -> np.ndarray:
+def classify(model: cv2.dnn.Net, image: np.ndarray, board: Board) -> np.ndarray:
     """The class index of every intersection, as a (size, size) array. Prepared like the training patches."""
     grid = board.grid
     rectified = cv2.cvtColor(rectify(image, board.corners, grid), cv2.COLOR_BGR2RGB)
     patches = np.stack([cut_patch(rectified, grid, row, col) for row in range(grid.size) for col in range(grid.size)])
-    batch = torch.from_numpy(patches).permute(0, 3, 1, 2).float() / 255
-    return model(batch).argmax(dim=1).reshape(grid.size, grid.size).numpy()
+    model.setInput(patches.transpose(0, 3, 1, 2).astype(np.float32) / 255)  # NCHW in [0, 1], see stoneNet.json.
+    return model.forward().argmax(axis=1).reshape(grid.size, grid.size)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--camera", type=int, default=0)
-    parser.add_argument("--model", type=Path, default=latest_model(), help="default: the highest version in models/")
+    parser.add_argument("--model", type=Path, default=MODEL, help="ONNX model, with its .json next to it")
     args = parser.parse_args()
-    if args.model is None:
-        parser.error(f"no model_v<N>.pt in {MODELS}")
 
-    model, info = load_model(args.model)
-    model.eval()
+    model = cv2.dnn.readNetFromONNX(str(args.model))
+    class_names = json.loads(args.model.with_suffix(".json").read_text())["usage"]["output"]["classes"]
     camera = cv2.VideoCapture(args.camera)
     if not camera.isOpened():
         parser.error(f"cannot open camera {args.camera}")
@@ -171,7 +162,7 @@ def main():
             break
         image_height = image.shape[0]
         if state.board:
-            state.board.draw(image, state.debounce.update(classify(model, image, state.board)), info["class_names"])
+            state.board.draw(image, state.debounce.update(classify(model, image, state.board)), class_names)
         else:
             for click in state.clicks:
                 cv2.circle(image, click, 5, CLICK_COLOUR, -1)

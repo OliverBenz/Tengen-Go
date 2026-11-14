@@ -48,5 +48,10 @@ We shall strictly keep the above naming conventions for the spaces, images, and 
 This might be deemed to be redundant and ugly naming but any user adapting source code must be perfectly aware of the underlying design and understand the spaces they are working in.
 We move along with slightly more noisy naming to ensure perfect alignment with the foundational design described above.
 
+## Models
+`models/stoneNet.onnx` is a small CNN classifying one intersection as empty, black or white; not used by the pipeline yet.
+`models/stoneNet.json` describes how to prepare its input (warp, patch size, colour, scale) and where it came from.
+It is trained and exported with [`tools/stoneClassifier`](../../../tools/stoneClassifier/README.md).
+
 ## Class Diagram
 ![Class Diagram](docs/img/Class_Diagram.svg)
