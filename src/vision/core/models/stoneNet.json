@@ -1,0 +1,56 @@
+{
+  "model": "stoneNet",
+  "dataset_version": "stones_v10",
+  "usage": {
+    "summary": "Classifies one board intersection of a photo as empty, black or white.",
+    "geometry": "Warp the photo onto a square grid with neighbouring intersections 32 px apart. Warp at 4x that size, then shrink with area interpolation, so thin grid lines don't alias away.",
+    "patch": "32x32 px of the warped image, centred on the intersection.",
+    "input": {
+      "name": "patches",
+      "shape": [
+        "N",
+        3,
+        32,
+        32
+      ],
+      "layout": "NCHW",
+      "colour": "RGB",
+      "scale": "8-bit value / 255, so in [0, 1]",
+      "normalisation": "none"
+    },
+    "output": {
+      "name": "logits",
+      "shape": [
+        "N",
+        3
+      ],
+      "classes": [
+        "empty",
+        "black",
+        "white"
+      ],
+      "decision": "argmax; softmax gives a confidence"
+    },
+    "rotation": "Any: stones look the same from every side, so the board may be seen from any side.",
+    "video": "Debounce each intersection over a few frames: glare can show a false white for 1-2 frames."
+  },
+  "training": {
+    "run": "sweep_v10/w32__tests__s1",
+    "dataset_sha256": "2571ca83f4eea9344181701dd91bd7b432d737283cce1ae406c6c5b19c2a6c3d",
+    "augmentation": {
+      "random_crop": true,
+      "quarter_turns": true,
+      "colour_jitter": 0.3
+    },
+    "width": 32,
+    "epochs": 30,
+    "seed": 1,
+    "test_sets": [
+      "angled_easy",
+      "angled_hard_lighting",
+      "empty_angle_none",
+      "empty_angle_small"
+    ],
+    "test_errors": "0 of 3250 patches"
+  }
+}
