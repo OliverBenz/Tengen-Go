@@ -51,11 +51,12 @@ jobs:
     - name: Install dependencies
       run: |
         pacman -Syu --noconfirm --needed \
-          git cmake ninja opencv qt6-base qt6-multimedia
+          git git-lfs cmake ninja opencv qt6-base qt6-multimedia
 
     - uses: actions/checkout@v4
       with:
         submodules: recursive
+        lfs: true
 
     - name: Trust workspace
       run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
@@ -89,6 +90,7 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: recursive
+        lfs: true
 
     - uses: actions/setup-python@v5
       with:
