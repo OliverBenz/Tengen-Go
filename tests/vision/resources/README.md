@@ -9,6 +9,7 @@ Every image has two companion files of the same base name:
 | `<name>.json` | Board geometry, manually labeled from the raw photo | `example.geometry.json`     |
 
 e.g. `move_3.png` is described by `move_3.txt` and `move_3.json`.
+Both are written by clicking: `tools/geometryLabeler` makes the `.json` of every photo and the folder's `board.txt`.
 
 ## `dotBW` format (`.txt`)
 
