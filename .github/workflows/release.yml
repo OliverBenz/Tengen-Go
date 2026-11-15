@@ -51,7 +51,7 @@ jobs:
     - name: Install dependencies
       run: |
         pacman -Syu --noconfirm --needed \
-          git git-lfs cmake ninja opencv qt6-base qt6-multimedia
+          git git-lfs nodejs cmake ninja opencv qt6-base qt6-multimedia
 
     - uses: actions/checkout@v4
       with:
@@ -81,6 +81,8 @@ jobs:
 
   Windows_x64:
     needs: Version_Check
+    # No Windows runner on Gitea yet.
+    if: github.server_url == 'https://github.com'
     # windows-2025 ships Visual Studio 2026, the Win64 preset needs the 2022 generator.
     runs-on: windows-2022
     env:
@@ -131,8 +133,8 @@ jobs:
 
   Publish:
     needs: [Version_Check, Checks, Linux_x64, Windows_x64]
-    # Only tag pushes publish, a manual run started from a tag doesn't.
-    if: github.event_name == 'push'
+    # Only tag pushes publish, a manual run started from a tag doesn't. Releases are published on GitHub only.
+    if: github.event_name == 'push' && github.server_url == 'https://github.com'
     runs-on: ubuntu-latest
     permissions:
       contents: write

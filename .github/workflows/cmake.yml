@@ -21,7 +21,7 @@ jobs:
     - name: Install dependencies
       run: |
         pacman -Syu --noconfirm --needed \
-          git git-lfs cmake ninja opencv qt6-base qt6-multimedia
+          git git-lfs nodejs cmake ninja opencv qt6-base qt6-multimedia
 
     - uses: actions/checkout@v4
       with:
@@ -52,7 +52,7 @@ jobs:
     - name: Install dependencies
       run: |
         pacman -Syu --noconfirm --needed \
-          git git-lfs cmake ninja clang python opencv qt6-base qt6-multimedia
+          git git-lfs nodejs cmake ninja clang python opencv qt6-base qt6-multimedia
 
     - uses: actions/checkout@v4
       with:
