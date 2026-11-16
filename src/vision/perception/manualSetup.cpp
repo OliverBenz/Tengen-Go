@@ -13,6 +13,7 @@
 #include <cassert>
 #include <chrono>
 #include <mutex>
+#include <optional>
 #include <utility>
 
 namespace tengen::vision {
@@ -46,37 +47,20 @@ static cv::Mat markDetections(const core::RectifiedBoard& board, const std::vect
 	return marked;
 }
 
-//! Run the pipeline from H_0 on: warp, find the grid, find the stones and steady them over the last frames.
-static BoardSnapshot analyse(const cv::Mat& frame, const std::array<cv::Point2f, ManualSetup::CORNER_COUNT>& corners, cv::dnn::Net& model, StoneDebounce& debounce) {
-	const core::WarpResult warped      = core::warpToCorners(frame, corners);
-	const core::BoardGeometry geometry = core::analyseGeometry(warped);
-	if (!core::isValidGeometry(geometry)) {
-		return {.warped = toImage(warped.imageB0), .rectified = {}, .boardSize = 0u, .blackStones = 0u, .whiteStones = 0u};
-	}
-
-	const core::RectifiedBoard board = core::transformImage(frame, geometry);
-	const auto& stones               = debounce.update(core::analyseBoard(board, model).stones);
-	return {
-	        .warped      = toImage(warped.imageB0),
-	        .rectified   = toImage(markDetections(board, stones)),
-	        .boardSize   = geometry.boardSize,
-	        .blackStones = static_cast<unsigned>(std::ranges::count(stones, core::StoneState::Black)),
-	        .whiteStones = static_cast<unsigned>(std::ranges::count(stones, core::StoneState::White)),
-	};
-}
-
 struct ManualSetup::State {
 	State(int cameraIndex, const std::filesystem::path& modelPath, Callbacks callbacks);
-	void onFrame(const cv::Mat& frame); //!< Camera thread.
+	void onFrame(const cv::Mat& frame);                                                             //!< Camera thread.
+	BoardSnapshot analyse(const cv::Mat& frame, const std::array<cv::Point2f, CORNER_COUNT>& quad); //!< Camera thread.
 
 	Callbacks report;
 	std::mutex mutex;
 	std::array<cv::Point2f, CORNER_COUNT> corners{};
 	std::size_t picked{0}; //!< Corners picked so far.
 	bool applied{false};
-	cv::dnn::Net model;     //!< Camera thread only.
-	StoneDebounce debounce; //!< Camera thread only.
-	Camera camera;          //!< Last: starts after and stops before the members it reports to.
+	cv::dnn::Net model;                      //!< Camera thread only.
+	std::optional<core::BoardGeometry> grid; //!< Camera thread only. The grid within the applied corners, once found.
+	StoneDebounce debounce;                  //!< Camera thread only.
+	Camera camera;                           //!< Last: starts after and stops before the members it reports to.
 };
 
 ManualSetup::State::State(const int cameraIndex, const std::filesystem::path& modelPath, Callbacks callbacks)
@@ -95,11 +79,37 @@ void ManualSetup::State::onFrame(const cv::Mat& frame) {
 
 	// Analysing on the camera thread is fine: the camera drains its buffer again until the next period is due.
 	if (analysing) {
-		report.onAnalysed(analyse(frame, quad, model, debounce));
+		report.onAnalysed(analyse(frame, quad));
 	} else {
-		debounce.reset(); // The next corners may show another board.
+		// The next corners may show another board.
+		grid.reset();
+		debounce.reset();
 		report.onFrame(toImage(frame));
 	}
+}
+
+// Runs the pipeline from H_0 on: warp, find the grid, find the stones and steady them over the last frames.
+// The grid is only looked for until one is found: the board stays where it is for a game (see vision/core/README.md),
+// while a hand placing a stone would hide the grid or bend it.
+BoardSnapshot ManualSetup::State::analyse(const cv::Mat& frame, const std::array<cv::Point2f, CORNER_COUNT>& quad) {
+	const core::WarpResult warped = core::warpToCorners(frame, quad);
+	if (!grid) {
+		core::BoardGeometry found = core::analyseGeometry(warped);
+		if (!core::isValidGeometry(found)) {
+			return {.warped = toImage(warped.imageB0), .rectified = {}, .boardSize = 0u, .blackStones = 0u, .whiteStones = 0u};
+		}
+		grid = std::move(found);
+	}
+
+	const core::RectifiedBoard board = core::transformImage(frame, *grid);
+	const auto& stones               = debounce.update(core::analyseBoard(board, model).stones);
+	return {
+	        .warped      = toImage(warped.imageB0),
+	        .rectified   = toImage(markDetections(board, stones)),
+	        .boardSize   = grid->boardSize,
+	        .blackStones = static_cast<unsigned>(std::ranges::count(stones, core::StoneState::Black)),
+	        .whiteStones = static_cast<unsigned>(std::ranges::count(stones, core::StoneState::White)),
+	};
 }
 
 

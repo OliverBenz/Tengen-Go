@@ -4,7 +4,7 @@
 #include <QApplication>
 #include <QCoreApplication>
 
-//! Pick the board corners by hand, then run the rest of the vision pipeline on the live camera.
+//! Pick the board corners by hand, then watch the grid found in them and the stones on the live camera.
 int main(int argc, char** argv) {
 	QApplication application(argc, argv);
 

@@ -16,7 +16,7 @@ static QImage toQImage(const Image& image) {
 //! What the pipeline found, in the colours it marks the stones with.
 static QString describe(const BoardSnapshot& snapshot) {
 	if (snapshot.boardSize == 0u) {
-		return ManualSetupPresenter::tr("No grid found. Redo to pick the corners again.");
+		return ManualSetupPresenter::tr("No grid found yet. Redo if the corners are off.");
 	}
 	return ManualSetupPresenter::tr("%1x%1 grid: %2 black (red), %3 white (blue).").arg(snapshot.boardSize).arg(snapshot.blackStones).arg(snapshot.whiteStones);
 }

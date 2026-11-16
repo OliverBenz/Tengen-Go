@@ -20,12 +20,13 @@ struct Image {
 struct BoardSnapshot {
 	Image warped;         //!< The frame warped onto the applied corners.
 	Image rectified;      //!< The rectified board with its grid points and stones marked. A stone shows once found for a few frames in a row.
-	unsigned boardSize;   //!< Lines per side of the grid found. 0 if none was found, and rectified stays empty.
+	unsigned boardSize;   //!< Lines per side of the grid found. 0 as long as none is found, and rectified stays empty.
 	unsigned blackStones; //!< Black stones on the board, as marked in rectified.
 	unsigned whiteStones; //!< White stones on the board, as marked in rectified.
 };
 
 //! Set the board up by hand: the user picks the 4 board corners on the camera image instead of the board finder.
+//! Once applied, the grid is found once and the stones on it are watched frame by frame.
 class ManualSetup {
 public:
 	static constexpr std::size_t CORNER_COUNT = 4u;
@@ -43,8 +44,8 @@ public:
 
 	bool pick(float x, float y); //!< Add a board corner, in frame coordinates. False once all 4 are picked.
 	std::size_t picked() const;  //!< Corners picked so far.
-	bool apply();                //!< Fix H_0 to the picked corners. False until all 4 are picked.
-	void redo();                 //!< Drop the corners and go back to picking.
+	bool apply();                //!< Fix H_0 to the picked corners. The first grid found in them is kept until redo(). False until all 4 are picked.
+	void redo();                 //!< Drop the corners and their grid, and go back to picking.
 	bool isApplied() const;
 
 private:
