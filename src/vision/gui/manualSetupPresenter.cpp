@@ -13,12 +13,22 @@ static QImage toQImage(const Image& image) {
 	return QImage(image.rgb.data(), image.width, image.height, qsizetype{3} * image.width, QImage::Format_RGB888).copy();
 }
 
+static int count(const Board& board, const Board::Stone stone) {
+	int stones = 0;
+	for (unsigned x = 0; x < board.size(); ++x) {
+		for (unsigned y = 0; y < board.size(); ++y) {
+			stones += board.get({x, y}) == stone ? 1 : 0;
+		}
+	}
+	return stones;
+}
+
 //! What the pipeline found, in the colours it marks the stones with.
-static QString describe(const BoardSnapshot& snapshot) {
-	if (snapshot.boardSize == 0u) {
+static QString describe(const Board& board) {
+	if (board.size() == 0u) {
 		return ManualSetupPresenter::tr("No grid found yet. Redo if the corners are off.");
 	}
-	return ManualSetupPresenter::tr("%1x%1 grid: %2 black (red), %3 white (blue).").arg(snapshot.boardSize).arg(snapshot.blackStones).arg(snapshot.whiteStones);
+	return ManualSetupPresenter::tr("%1x%1 grid: %2 black (red), %3 white (blue).").arg(board.size()).arg(count(board, Board::Stone::Black)).arg(count(board, Board::Stone::White));
 }
 
 ManualSetupPresenter::ManualSetupPresenter(ManualSetupView& view, const int cameraIndex, const std::filesystem::path& modelPath)
@@ -34,7 +44,7 @@ ManualSetup::Callbacks ManualSetupPresenter::callbacks() {
 	const auto onGuiThread = [this](auto job) { QMetaObject::invokeMethod(this, std::move(job), Qt::QueuedConnection); };
 	return {
 	        .onFrame      = [onGuiThread, this](const Image& frame) { onGuiThread([this, image = toQImage(frame)] { showFrame(image); }); },
-	        .onAnalysed   = [onGuiThread, this](const BoardSnapshot& snapshot) { onGuiThread([this, warped = toQImage(snapshot.warped), rectified = toQImage(snapshot.rectified), found = describe(snapshot)] { showSnapshot(warped, rectified, found); }); },
+	        .onAnalysed   = [onGuiThread, this](const BoardSnapshot& snapshot) { onGuiThread([this, warped = toQImage(snapshot.warped), rectified = toQImage(snapshot.rectified), found = describe(snapshot.board)] { showSnapshot(warped, rectified, found); }); },
 	        .onCameraLost = [onGuiThread, this] { onGuiThread([this] { showCameraLost(); }); },
 	};
 }

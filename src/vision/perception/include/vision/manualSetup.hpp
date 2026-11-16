@@ -1,5 +1,7 @@
 #pragma once
 
+#include "model/board.hpp"
+
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
@@ -18,11 +20,12 @@ struct Image {
 
 //! What the pipeline made of one frame.
 struct BoardSnapshot {
-	Image warped;         //!< The frame warped onto the applied corners.
-	Image rectified;      //!< The rectified board with its grid points and stones marked. A stone shows once found for a few frames in a row.
-	unsigned boardSize;   //!< Lines per side of the grid found. 0 as long as none is found, and rectified stays empty.
-	unsigned blackStones; //!< Black stones on the board, as marked in rectified.
-	unsigned whiteStones; //!< White stones on the board, as marked in rectified.
+	Image warped;    //!< The frame warped onto the applied corners.
+	Image rectified; //!< The rectified board with its grid points and the stones of board marked. Empty as long as no grid is found.
+
+	//! The stones on the board: one shows once found for a few frames in a row. Size 0 as long as no grid is found.
+	//! \note As the camera sees it: Coord{x, y} counts columns and rows from the top left of rectified, whatever side the game calls its first line.
+	Board board;
 };
 
 //! Set the board up by hand: the user picks the 4 board corners on the camera image instead of the board finder.

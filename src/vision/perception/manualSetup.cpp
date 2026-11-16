@@ -30,6 +30,29 @@ static Image toImage(const cv::Mat& bgr) {
 	return {.width = rgb.cols, .height = rgb.rows, .rgb = std::vector<std::uint8_t>(rgb.data, rgb.data + rgb.total() * rgb.elemSize())};
 }
 
+static Board::Stone toStone(const core::StoneState state) {
+	switch (state) {
+	case core::StoneState::Black:
+		return Board::Stone::Black;
+	case core::StoneState::White:
+		return Board::Stone::White;
+	case core::StoneState::Empty:
+		return Board::Stone::Empty;
+	}
+	return Board::Stone::Empty;
+}
+
+//! The stones of a grid as a board: intersection i is Coord{i / boardSize, i % boardSize}.
+static Board toBoard(const std::vector<core::StoneState>& stones, const unsigned boardSize) {
+	Board board(boardSize);
+	for (std::size_t i = 0; i < stones.size(); ++i) {
+		if (stones[i] != core::StoneState::Empty) {
+			board.place({static_cast<unsigned>(i / boardSize), static_cast<unsigned>(i % boardSize)}, toStone(stones[i]));
+		}
+	}
+	return board;
+}
+
 //! The rectified board with its grid points dotted green and every stone circled: red for black, blue for white.
 static cv::Mat markDetections(const core::RectifiedBoard& board, const std::vector<core::StoneState>& stones) {
 	const core::BoardGeometry& geometry = board.geometry;
@@ -96,20 +119,14 @@ BoardSnapshot ManualSetup::State::analyse(const cv::Mat& frame, const std::array
 	if (!grid) {
 		core::BoardGeometry found = core::analyseGeometry(warped);
 		if (!core::isValidGeometry(found)) {
-			return {.warped = toImage(warped.imageB0), .rectified = {}, .boardSize = 0u, .blackStones = 0u, .whiteStones = 0u};
+			return {.warped = toImage(warped.imageB0), .rectified = {}, .board = Board(0u)};
 		}
 		grid = std::move(found);
 	}
 
 	const core::RectifiedBoard board = core::transformImage(frame, *grid);
 	const auto& stones               = debounce.update(core::analyseBoard(board, model).stones);
-	return {
-	        .warped      = toImage(warped.imageB0),
-	        .rectified   = toImage(markDetections(board, stones)),
-	        .boardSize   = grid->boardSize,
-	        .blackStones = static_cast<unsigned>(std::ranges::count(stones, core::StoneState::Black)),
-	        .whiteStones = static_cast<unsigned>(std::ranges::count(stones, core::StoneState::White)),
-	};
+	return {.warped = toImage(warped.imageB0), .rectified = toImage(markDetections(board, stones)), .board = toBoard(stones, grid->boardSize)};
 }
 
 
