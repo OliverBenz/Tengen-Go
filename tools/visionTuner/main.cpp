@@ -1,9 +1,11 @@
 #include "analyser.hpp"
 #include "mainWindow.hpp"
 #include "pipelineStep.hpp"
+#include "vision/core/stoneFinder.hpp"
 #include "webcam.hpp"
 
 #include <QApplication>
+#include <QCoreApplication>
 #include <QFileDialog>
 #include <opencv2/opencv.hpp>
 
@@ -36,12 +38,13 @@ int run(int argc, char** argv) {
 	window.resize(1400, 900);
 
 	PipelineStep currentStep{PipelineStep::FindBoard};
-	cv::Mat currentImage = loadFallbackImage(argc, argv);
+	cv::Mat currentImage    = loadFallbackImage(argc, argv);
+	cv::dnn::Net stoneModel = vision::core::loadStoneModel(QCoreApplication::applicationDirPath().toStdString() + "/models/stoneNet.onnx"); // Copied there by the build.
 
 	// Re-run the selected pipeline step on whatever image is currently loaded (webcam frame or file).
 	const auto refresh = [&] {
 		if (!currentImage.empty()) {
-			window.setImage(vision::analyse(currentImage, currentStep));
+			window.setImage(vision::analyse(currentImage, currentStep, stoneModel));
 		}
 	};
 

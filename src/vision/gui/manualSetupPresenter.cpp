@@ -13,8 +13,8 @@ static QImage toQImage(const Image& image) {
 	return QImage(image.rgb.data(), image.width, image.height, qsizetype{3} * image.width, QImage::Format_RGB888).copy();
 }
 
-ManualSetupPresenter::ManualSetupPresenter(ManualSetupView& view, const int cameraIndex)
-    : m_view(view), m_setup(cameraIndex, callbacks()) {
+ManualSetupPresenter::ManualSetupPresenter(ManualSetupView& view, const int cameraIndex, const std::filesystem::path& modelPath)
+    : m_view(view), m_setup(cameraIndex, modelPath, callbacks()) {
 	connect(&m_view, &ManualSetupView::cornerPicked, this, &ManualSetupPresenter::onCornerPicked);
 	connect(&m_view, &ManualSetupView::applyRequested, this, &ManualSetupPresenter::onApplyRequested);
 	connect(&m_view, &ManualSetupView::redoRequested, this, &ManualSetupPresenter::onRedoRequested);

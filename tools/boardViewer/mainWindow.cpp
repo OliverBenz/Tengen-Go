@@ -58,7 +58,7 @@ static Board::Stone toBoardStone(StoneState state) {
 
 //! Run the pipeline and draw detected stones + .json ground truth corners onto a copy of the original image.
 //! If groundTruth is provided and matches the detected board size, mismatching intersections are circled thick red.
-static cv::Mat buildOverlayImage(const cv::Mat& original, const std::filesystem::path& imagePath, const Board* groundTruth) {
+static cv::Mat buildOverlayImage(const cv::Mat& original, const std::filesystem::path& imagePath, const Board* groundTruth, cv::dnn::Net& stoneModel) {
 	cv::Mat overlay = original.clone();
 
 	const WarpResult warped = warpToBoard(original);
@@ -73,7 +73,7 @@ static cv::Mat buildOverlayImage(const cv::Mat& original, const std::filesystem:
 	if (!isValidRectifiedBoard(rectified)) {
 		return overlay;
 	}
-	const StoneResult stoneRes = analyseBoard(rectified);
+	const StoneResult stoneRes = analyseBoard(rectified, stoneModel);
 
 	// Project detected intersections (in rectified/B space) back into the original image space.
 	std::vector<cv::Point2f> intersectionsOriginal;
@@ -130,8 +130,8 @@ static cv::Mat buildOverlayImage(const cv::Mat& original, const std::filesystem:
 }
 
 
-MainWindow::MainWindow(QWidget* parent)
-    : QMainWindow(parent) {
+MainWindow::MainWindow(const std::filesystem::path& stoneModelPath, QWidget* parent)
+    : QMainWindow(parent), m_stoneModel(loadStoneModel(stoneModelPath)) {
 	setWindowTitle("Board Viewer");
 	buildLayout();
 
@@ -183,7 +183,7 @@ void MainWindow::loadImage(const std::filesystem::path& imagePath) {
 	Board board(0u);
 	const bool hasBoard = readBoard(txtPath, board);
 
-	const cv::Mat overlay = buildOverlayImage(original, imagePath, hasBoard ? &board : nullptr);
+	const cv::Mat overlay = buildOverlayImage(original, imagePath, hasBoard ? &board : nullptr, m_stoneModel);
 	m_imageLabel->setPixmap(QPixmap::fromImage(matToQImage(overlay)).scaled(m_imageLabel->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
 
 	if (hasBoard) {

@@ -18,7 +18,7 @@ static cv::Mat buildInfoTile(const std::string& title, const std::string& messag
 	return tile;
 }
 
-cv::Mat analyse(const cv::Mat& image, const PipelineStep step) {
+cv::Mat analyse(const cv::Mat& image, const PipelineStep step, cv::dnn::Net& stoneModel) {
 	if (image.empty()) {
 		return buildInfoTile("Input Error", "Could not load image.");
 	}
@@ -53,7 +53,7 @@ cv::Mat analyse(const cv::Mat& image, const PipelineStep step) {
 			return buildInfoTile("Find Stones", "Rectification failed for this image.");
 		}
 
-		const core::StoneResult result = core::analyseBoard(rectified, &debugger);
+		const core::StoneResult result = core::analyseBoard(rectified, stoneModel, &debugger);
 		if (!result.success) {
 			return buildInfoTile("Find Stones", "analyseBoard failed for this image.");
 		}
@@ -72,7 +72,7 @@ cv::Mat analyse(const cv::Mat& image, const PipelineStep step) {
 			break;
 		}
 
-		core::analyseBoard(rectified, &debugger);
+		core::analyseBoard(rectified, stoneModel, &debugger);
 		break;
 	}
 	}

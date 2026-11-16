@@ -23,10 +23,15 @@ static std::size_t countState(const std::vector<StoneState>& stones, StoneState 
 	return static_cast<std::size_t>(std::count(stones.begin(), stones.end(), s));
 }
 
-TEST(StoneFinderUnit, EmptyBoard_NoStones) {
+class StoneFinderUnit : public ::testing::Test {
+protected:
+	cv::dnn::Net model{loadStoneModel(PATH_VISION_MODELS "stoneNet.onnx")};
+};
+
+TEST_F(StoneFinderUnit, EmptyBoard_NoStones) {
 	RectifiedBoard g = makeSyntheticBoard(9u, 80.0, cv::Scalar(80, 140, 200));
 
-	const StoneResult r = analyseBoard(g);
+	const StoneResult r = analyseBoard(g, model);
 	ASSERT_TRUE(r.success);
 	ASSERT_EQ(r.stones.size(), g.geometry.intersections.size());
 	ASSERT_EQ(r.confidence.size(), r.stones.size());
@@ -35,11 +40,11 @@ TEST(StoneFinderUnit, EmptyBoard_NoStones) {
 	EXPECT_EQ(countState(r.stones, StoneState::White), 0u);
 }
 
-TEST(StoneFinderUnit, SingleBlackStone_Detected) {
+TEST_F(StoneFinderUnit, SingleBlackStone_Detected) {
 	RectifiedBoard g = makeSyntheticBoard(9u, 80.0, cv::Scalar(80, 140, 200));
 	drawStone(g, 4u, 4u, StoneState::Black);
 
-	const StoneResult r = analyseBoard(g);
+	const StoneResult r = analyseBoard(g, model);
 	ASSERT_TRUE(r.success);
 
 	EXPECT_EQ(countState(r.stones, StoneState::Black), 1u);
@@ -47,11 +52,11 @@ TEST(StoneFinderUnit, SingleBlackStone_Detected) {
 	EXPECT_EQ(r.stones[4u * 9u + 4u], StoneState::Black);
 }
 
-TEST(StoneFinderUnit, SingleWhiteStone_Detected) {
+TEST_F(StoneFinderUnit, SingleWhiteStone_Detected) {
 	RectifiedBoard g = makeSyntheticBoard(9u, 80.0, cv::Scalar(80, 140, 200));
 	drawStone(g, 4u, 4u, StoneState::White);
 
-	const StoneResult r = analyseBoard(g);
+	const StoneResult r = analyseBoard(g, model);
 	ASSERT_TRUE(r.success);
 
 	EXPECT_EQ(countState(r.stones, StoneState::Black), 0u);
@@ -59,11 +64,11 @@ TEST(StoneFinderUnit, SingleWhiteStone_Detected) {
 	EXPECT_EQ(r.stones[4u * 9u + 4u], StoneState::White);
 }
 
-TEST(StoneFinderUnit, EdgeWhiteStone_Detected) {
+TEST_F(StoneFinderUnit, EdgeWhiteStone_Detected) {
 	RectifiedBoard g = makeSyntheticBoard(9u, 80.0, cv::Scalar(80, 140, 200));
 	drawStone(g, 0u, 4u, StoneState::White); // on grid edge
 
-	const StoneResult r = analyseBoard(g);
+	const StoneResult r = analyseBoard(g, model);
 	ASSERT_TRUE(r.success);
 
 	EXPECT_EQ(countState(r.stones, StoneState::Black), 0u);
@@ -71,7 +76,7 @@ TEST(StoneFinderUnit, EdgeWhiteStone_Detected) {
 	EXPECT_EQ(r.stones[0u * 9u + 4u], StoneState::White);
 }
 
-TEST(StoneFinderUnit, BlackStone_WithMildGlare_NotWhite) {
+TEST_F(StoneFinderUnit, BlackStone_WithMildGlare_NotWhite) {
 	RectifiedBoard g = makeSyntheticBoard(9u, 80.0, cv::Scalar(80, 140, 200));
 	drawStone(g, 4u, 4u, StoneState::Black);
 
@@ -79,7 +84,7 @@ TEST(StoneFinderUnit, BlackStone_WithMildGlare_NotWhite) {
 	const cv::Point2f c = g.geometry.intersections[4u * 9u + 4u];
 	cv::circle(g.imageB, c + cv::Point2f(10.0f, -10.0f), 6, cv::Scalar(255, 255, 255), cv::FILLED, cv::LINE_AA);
 
-	const StoneResult r = analyseBoard(g);
+	const StoneResult r = analyseBoard(g, model);
 	ASSERT_TRUE(r.success);
 
 	EXPECT_EQ(r.stones[4u * 9u + 4u], StoneState::Black);

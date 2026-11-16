@@ -6,6 +6,7 @@
 
 #include <atomic>
 #include <filesystem>
+#include <opencv2/dnn.hpp>
 #include <thread>
 
 namespace tengen::vision {
@@ -31,7 +32,8 @@ public:
 	};
 
 public:
-	explicit Vision(Source source = Source::Video);
+	//! \throws std::runtime_error if modelPath is no readable stone model.
+	explicit Vision(const std::filesystem::path& modelPath, Source source = Source::Video);
 	~Vision();
 
 	//! Detect the board and grid once before the game starts.
@@ -54,6 +56,7 @@ private:
 private:
 	Source m_source;                        //!< Source input for the board detection.
 	core::RectifiedBoard m_board;           //!< Result of the setup process.
+	cv::dnn::Net m_model;                   //!< Stone model, loaded once.
 	std::filesystem::path m_setupImagePath; //!< Setup image path for Source::Camera.
 
 	Callbacks m_callbacks; //!< Callback functions to signal events.

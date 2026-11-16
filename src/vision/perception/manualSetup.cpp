@@ -47,7 +47,7 @@ static cv::Mat markDetections(const core::RectifiedBoard& board, const core::Sto
 }
 
 //! Run the pipeline from H_0 on: warp, find the grid, find the stones.
-static BoardSnapshot analyse(const cv::Mat& frame, const std::array<cv::Point2f, CORNER_COUNT>& corners) {
+static BoardSnapshot analyse(const cv::Mat& frame, const std::array<cv::Point2f, CORNER_COUNT>& corners, cv::dnn::Net& model) {
 	const core::WarpResult warped      = core::warpToCorners(frame, corners);
 	const core::BoardGeometry geometry = core::analyseGeometry(warped);
 	if (!core::isValidGeometry(geometry)) {
@@ -55,11 +55,11 @@ static BoardSnapshot analyse(const cv::Mat& frame, const std::array<cv::Point2f,
 	}
 
 	const core::RectifiedBoard board = core::transformImage(frame, geometry);
-	return {.warped = toImage(warped.imageB0), .rectified = toImage(markDetections(board, core::analyseBoard(board))), .boardSize = geometry.boardSize};
+	return {.warped = toImage(warped.imageB0), .rectified = toImage(markDetections(board, core::analyseBoard(board, model))), .boardSize = geometry.boardSize};
 }
 
 struct ManualSetup::State {
-	State(int cameraIndex, Callbacks callbacks);
+	State(int cameraIndex, const std::filesystem::path& modelPath, Callbacks callbacks);
 	void onFrame(const cv::Mat& frame); //!< Camera thread.
 
 	Callbacks report;
@@ -67,11 +67,12 @@ struct ManualSetup::State {
 	std::array<cv::Point2f, CORNER_COUNT> corners{};
 	std::size_t picked{0}; //!< Corners picked so far.
 	bool applied{false};
-	Camera camera; //!< Last: starts after and stops before the members it reports to.
+	cv::dnn::Net model; //!< Camera thread only.
+	Camera camera;      //!< Last: starts after and stops before the members it reports to.
 };
 
-ManualSetup::State::State(const int cameraIndex, Callbacks callbacks)
-    : report(std::move(callbacks)), camera(cameraIndex, FRAME_PERIOD, {.onFrame = [this](const cv::Mat& frame) { onFrame(frame); }, .onLost = [this] { report.onCameraLost(); }}) {
+ManualSetup::State::State(const int cameraIndex, const std::filesystem::path& modelPath, Callbacks callbacks)
+    : report(std::move(callbacks)), model(core::loadStoneModel(modelPath)), camera(cameraIndex, FRAME_PERIOD, {.onFrame = [this](const cv::Mat& frame) { onFrame(frame); }, .onLost = [this] { report.onCameraLost(); }}) {
 	assert(report.onFrame && report.onAnalysed && report.onCameraLost);
 }
 
@@ -86,15 +87,15 @@ void ManualSetup::State::onFrame(const cv::Mat& frame) {
 
 	// Analysing on the camera thread is fine: the camera drains its buffer again until the next period is due.
 	if (analysing) {
-		report.onAnalysed(analyse(frame, quad));
+		report.onAnalysed(analyse(frame, quad, model));
 	} else {
 		report.onFrame(toImage(frame));
 	}
 }
 
 
-ManualSetup::ManualSetup(const int cameraIndex, Callbacks callbacks)
-    : m_state(std::make_unique<State>(cameraIndex, std::move(callbacks))) {
+ManualSetup::ManualSetup(const int cameraIndex, const std::filesystem::path& modelPath, Callbacks callbacks)
+    : m_state(std::make_unique<State>(cameraIndex, modelPath, std::move(callbacks))) {
 }
 
 ManualSetup::~ManualSetup() = default;

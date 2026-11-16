@@ -27,6 +27,7 @@ set_target_properties(${targetName}
 target_compile_definitions(${targetName}
     PRIVATE
         PATH_TEST_IMG="${CMAKE_CURRENT_LIST_DIR}/../resources/"
+        PATH_VISION_MODELS="${PROJECT_SOURCE_DIR}/src/vision/core/models/"
 )
 
 # Setup project settings

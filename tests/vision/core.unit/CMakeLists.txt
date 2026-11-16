@@ -13,6 +13,7 @@ target_link_libraries(${targetName}
         tengen::vision::core
         GTest::gtest_main
 )
+target_compile_definitions(${targetName} PRIVATE PATH_VISION_MODELS="${PROJECT_SOURCE_DIR}/src/vision/core/models/")
 set_target_properties(${targetName}
     PROPERTIES
         FOLDER "${IDE_FOLDER_TESTS}/vision"

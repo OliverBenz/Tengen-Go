@@ -95,7 +95,8 @@ std::optional<DetectedStone> detectSingleStone(const std::filesystem::path& imag
 		return std::nullopt;
 	}
 
-	const core::StoneResult result = core::analyseBoard(rectified);
+	cv::dnn::Net model             = core::loadStoneModel(PATH_VISION_MODELS "stoneNet.onnx");
+	const core::StoneResult result = core::analyseBoard(rectified, model);
 	if (!result.success || result.stones.size() != rectified.geometry.intersections.size()) {
 		return std::nullopt;
 	}
@@ -192,7 +193,7 @@ TEST(Perception, Setup_SymmetryBreaking_D4Orbit) {
 		const auto outsideOrbit = pickOutsideOrbit(stone->boardSize, orbit);
 		ASSERT_TRUE(outsideOrbit.has_value()) << imagePath.string();
 
-		Vision vision{Source::Image};
+		Vision vision{PATH_VISION_MODELS "stoneNet.onnx", Source::Image};
 		vision.setSetupImage(imagePath);
 
 		for (const Coord gaugeCoord: orbit) {

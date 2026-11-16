@@ -2,13 +2,14 @@
 #include "vision/gui/manualSetupView.hpp"
 
 #include <QApplication>
+#include <QCoreApplication>
 
 //! Pick the board corners by hand, then run the rest of the vision pipeline on the live camera.
 int main(int argc, char** argv) {
 	QApplication application(argc, argv);
 
 	tengen::vision::gui::ManualSetupView view;
-	tengen::vision::gui::ManualSetupPresenter presenter(view, 0);
+	tengen::vision::gui::ManualSetupPresenter presenter(view, 0, QCoreApplication::applicationDirPath().toStdString() + "/models/stoneNet.onnx");
 	view.resize(1400, 900);
 	view.show();
 

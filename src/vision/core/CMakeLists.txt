@@ -20,19 +20,7 @@ set(headers
 	"${CMAKE_CURRENT_LIST_DIR}/include/vision/core/debugVisualizer.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/vision/core/boardFinder.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/vision/core/gridFinder.hpp"
-	"${CMAKE_CURRENT_LIST_DIR}/include/vision/core/stoneClassifier.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/vision/core/stoneFinder.hpp"
-	"${CMAKE_CURRENT_LIST_DIR}/include/vision/core/stoneFinderConfig.hpp"
-	"${CMAKE_CURRENT_LIST_DIR}/stoneFinder/decisionPolicy.hpp"
-	"${CMAKE_CURRENT_LIST_DIR}/stoneFinder/debugging.hpp"
-	"${CMAKE_CURRENT_LIST_DIR}/stoneFinder/featureExtraction.hpp"
-	"${CMAKE_CURRENT_LIST_DIR}/stoneFinder/features.hpp"
-	"${CMAKE_CURRENT_LIST_DIR}/stoneFinder/geometrySampling.hpp"
-	"${CMAKE_CURRENT_LIST_DIR}/stoneFinder/modelCalibration.hpp"
-	"${CMAKE_CURRENT_LIST_DIR}/stoneFinder/refinementEngine.hpp"
-	"${CMAKE_CURRENT_LIST_DIR}/stoneFinder/scoring.hpp"
-	"${CMAKE_CURRENT_LIST_DIR}/stoneFinder/stoneFinderInternal.hpp"
-	"${CMAKE_CURRENT_LIST_DIR}/stoneFinder/stoneFinderTypes.hpp"
 )
 set(sources
 	"${CMAKE_CURRENT_LIST_DIR}/statistics.cpp"
@@ -41,16 +29,7 @@ set(sources
 	"${CMAKE_CURRENT_LIST_DIR}/boardFinder.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/gridLatticeFinder.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/gridFinder.cpp"
-	"${CMAKE_CURRENT_LIST_DIR}/stoneClassifier.cpp"
-	"${CMAKE_CURRENT_LIST_DIR}/stoneFinder/debugging.cpp"
-	"${CMAKE_CURRENT_LIST_DIR}/stoneFinder/decisionPolicy.cpp"
-	"${CMAKE_CURRENT_LIST_DIR}/stoneFinder/featureExtraction.cpp"
-	"${CMAKE_CURRENT_LIST_DIR}/stoneFinder/geometrySampling.cpp"
-	"${CMAKE_CURRENT_LIST_DIR}/stoneFinder/modelCalibration.cpp"
-	"${CMAKE_CURRENT_LIST_DIR}/stoneFinder/refinementEngine.cpp"
-	"${CMAKE_CURRENT_LIST_DIR}/stoneFinder/scoring.cpp"
-	"${CMAKE_CURRENT_LIST_DIR}/stoneFinder/stoneFinder.cpp"
-	"${CMAKE_CURRENT_LIST_DIR}/stoneFinder/stoneFinderInternal.cpp"
+	"${CMAKE_CURRENT_LIST_DIR}/stoneFinder.cpp"
 )
 
 add_library(${targetName} STATIC ${headers} ${sources})
@@ -80,5 +59,16 @@ target_compile_definitions(${targetName}
 		$<$<CONFIG:Debug>:VISION_DEBUG_LOGGING>
 		# VISION_LOG_BOARDFINDER
 		# VISION_LOG_GRIDFINDER
-		# VISION_LOG_STONEFINDER
+)
+
+# Copy the models next to the executables
+add_custom_target(${targetName}_models ALL
+	COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
+	        "${CMAKE_CURRENT_LIST_DIR}/models"
+	        "$<GENEX_EVAL:$<TARGET_PROPERTY:${targetName},RUNTIME_OUTPUT_DIRECTORY>>/models"
+)
+add_dependencies(${targetName} ${targetName}_models)
+set_target_properties(${targetName}_models
+	PROPERTIES
+		FOLDER "${IDE_FOLDER_SOURCE}/vision"
 )

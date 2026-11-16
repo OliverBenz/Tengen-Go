@@ -44,7 +44,8 @@ PipelineResult runPipeline(const cv::Mat& image, const WarpResult& warped) {
 	}
 
 	const RectifiedBoard rectified = transformImage(image, geometry);
-	return {warped, rectified, analyseBoard(rectified)};
+	cv::dnn::Net model             = loadStoneModel(PATH_VISION_MODELS "stoneNet.onnx");
+	return {warped, rectified, analyseBoard(rectified, model)};
 }
 
 bool isValidPipelineResult(const PipelineResult& result) {

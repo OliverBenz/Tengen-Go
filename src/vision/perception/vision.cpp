@@ -12,8 +12,8 @@
 
 namespace tengen::vision {
 
-Vision::Vision(Source source)
-    : m_source{source} {
+Vision::Vision(const std::filesystem::path& modelPath, Source source)
+    : m_source{source}, m_model{core::loadStoneModel(modelPath)} {
 }
 
 Vision::~Vision() {
@@ -65,7 +65,7 @@ bool Vision::setup(const Coord gaugeCoord) {
 		return false;
 	}
 
-	const core::StoneResult result = core::analyseBoard(board);
+	const core::StoneResult result = core::analyseBoard(board, m_model);
 	if (!result.success || stoneCount(result.stones) != 1) {
 		// TODO: Log
 		return false;

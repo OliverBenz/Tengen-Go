@@ -6,6 +6,8 @@
 #include <QObject>
 #include <QPointF>
 
+#include <filesystem>
+
 namespace tengen::vision::gui {
 
 class ManualSetupView;
@@ -15,7 +17,7 @@ class ManualSetupPresenter final : public QObject {
 	Q_OBJECT
 
 public:
-	ManualSetupPresenter(ManualSetupView& view, int cameraIndex);
+	ManualSetupPresenter(ManualSetupView& view, int cameraIndex, const std::filesystem::path& modelPath);
 
 private:
 	ManualSetup::Callbacks callbacks(); //!< Report to this presenter, on the GUI thread.

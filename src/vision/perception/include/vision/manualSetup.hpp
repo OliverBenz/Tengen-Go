@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <filesystem>
 #include <functional>
 #include <memory>
 #include <vector>
@@ -30,8 +31,10 @@ public:
 		std::function<void()> onCameraLost;                   //!< The camera could not be opened or stopped delivering.
 	};
 
-	ManualSetup(int cameraIndex, Callbacks callbacks); //!< Starts the camera right away. Callbacks run on its thread.
-	~ManualSetup();                                    //!< No callback once this returns.
+	//! Starts the camera right away. Callbacks run on its thread.
+	//! \throws std::runtime_error if modelPath is no readable stone model.
+	ManualSetup(int cameraIndex, const std::filesystem::path& modelPath, Callbacks callbacks);
+	~ManualSetup(); //!< No callback once this returns.
 
 	bool pick(float x, float y); //!< Add a board corner, in frame coordinates. False once all 4 are picked.
 	bool apply();                //!< Fix H_0 to the picked corners. False until all 4 are picked.
