@@ -51,6 +51,7 @@ We move along with slightly more noisy naming to ensure perfect alignment with t
 ## Models
 `models/stoneNet.onnx` is a small CNN classifying one intersection as empty, black or white. `analyseBoard` uses it (`loadStoneModel`); the build copies `models/` next to the executables.
 `models/stoneNet.json` describes how to prepare its input (warp, patch size, colour, scale) and where it came from.
+`analyseBoard` prepares it that way, except that it cuts the patches from $i_B$ instead of warping the photo once more; on the angled test sets both classify the same.
 It is trained and exported with [`tools/stoneClassifier`](../../../tools/stoneClassifier/README.md).
 
 ## Class Diagram

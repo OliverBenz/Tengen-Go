@@ -250,74 +250,16 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="HiK9nCTFrRXax04GlXtv-1" parent="1" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=none;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" value="StoneDetectionConfig" vertex="1">
-          <mxGeometry height="156" width="200" x="600" y="640" as="geometry" />
-        </mxCell>
-        <mxCell id="HiK9nCTFrRXax04GlXtv-2" parent="HiK9nCTFrRXax04GlXtv-1" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" value="+ geometry: GeometryConfig" vertex="1">
-          <mxGeometry height="26" width="200" y="26" as="geometry" />
-        </mxCell>
-        <mxCell id="HiK9nCTFrRXax04GlXtv-3" parent="HiK9nCTFrRXax04GlXtv-1" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" value="+ calibration: CalibrationConfig" vertex="1">
-          <mxGeometry height="26" width="200" y="52" as="geometry" />
-        </mxCell>
-        <mxCell id="HiK9nCTFrRXax04GlXtv-4" parent="HiK9nCTFrRXax04GlXtv-1" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" value="+ scoring: ScoringConfig" vertex="1">
-          <mxGeometry height="26" width="200" y="78" as="geometry" />
-        </mxCell>
-        <mxCell id="HiK9nCTFrRXax04GlXtv-5" parent="HiK9nCTFrRXax04GlXtv-1" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" value="+ decision: DecisionConfig" vertex="1">
-          <mxGeometry height="26" width="200" y="104" as="geometry" />
-        </mxCell>
-        <mxCell id="HiK9nCTFrRXax04GlXtv-6" parent="HiK9nCTFrRXax04GlXtv-1" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" value="+ refinement: RefinementConfig" vertex="1">
-          <mxGeometry height="26" width="200" y="130" as="geometry" />
-        </mxCell>
-        <mxCell id="HiK9nCTFrRXax04GlXtv-7" parent="1" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=none;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" value="GeometryConfig" vertex="1">
-          <mxGeometry height="40" width="120" x="320" y="840" as="geometry" />
-        </mxCell>
-        <mxCell id="HiK9nCTFrRXax04GlXtv-11" parent="1" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=none;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" value="&lt;span style=&quot;text-align: left;&quot;&gt;CalibrationConfig&lt;/span&gt;" vertex="1">
-          <mxGeometry height="40" width="120" x="480" y="840" as="geometry" />
-        </mxCell>
-        <mxCell id="HiK9nCTFrRXax04GlXtv-12" parent="1" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=none;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" value="&lt;span style=&quot;text-align: left;&quot;&gt;ScoringConfig&lt;/span&gt;" vertex="1">
-          <mxGeometry height="40" width="120" x="640" y="840" as="geometry" />
-        </mxCell>
-        <mxCell id="HiK9nCTFrRXax04GlXtv-13" parent="1" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=none;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" value="&lt;span style=&quot;text-align: left;&quot;&gt;DecisionConfig&lt;/span&gt;" vertex="1">
-          <mxGeometry height="40" width="120" x="960" y="840" as="geometry" />
-        </mxCell>
-        <mxCell id="HiK9nCTFrRXax04GlXtv-14" parent="1" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=none;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" value="&lt;span style=&quot;text-align: left;&quot;&gt;RefinementConfig&lt;/span&gt;" vertex="1">
-          <mxGeometry height="40" width="120" x="800" y="840" as="geometry" />
-        </mxCell>
         <mxCell id="HiK9nCTFrRXax04GlXtv-16" parent="1" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=none;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" value="StoneFinder" vertex="1">
-          <mxGeometry height="52" width="480" x="720" y="241" as="geometry" />
+          <mxGeometry height="78" width="480" x="720" y="241" as="geometry" />
         </mxCell>
-        <mxCell id="HiK9nCTFrRXax04GlXtv-17" parent="HiK9nCTFrRXax04GlXtv-16" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" value="analyseBoard(BoardGeometry, DebugVisualizer, StoneDetectionConfig): StoneResult" vertex="1">
+        <mxCell id="HiK9nCTFrRXax04GlXtv-17" parent="HiK9nCTFrRXax04GlXtv-16" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" value="analyseBoard(RectifiedBoard, cv::dnn::Net, DebugVisualizer): StoneResult" vertex="1">
           <mxGeometry height="26" width="480" y="26" as="geometry" />
         </mxCell>
+        <mxCell id="HiK9nCTFrRXax04GlXtv-18" parent="HiK9nCTFrRXax04GlXtv-16" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" value="loadStoneModel(path): cv::dnn::Net" vertex="1">
+          <mxGeometry height="26" width="480" y="52" as="geometry" />
+        </mxCell>
         <mxCell id="HiK9nCTFrRXax04GlXtv-20" edge="1" parent="1" source="HiK9nCTFrRXax04GlXtv-17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;dashed=1;strokeColor=light-dark(#9999FF,#9999FF);" target="fN3V_bLpRborIXYz6zZh-13">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="HiK9nCTFrRXax04GlXtv-21" edge="1" parent="1" source="HiK9nCTFrRXax04GlXtv-17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;dashed=1;strokeColor=light-dark(#66FF66,#66FF66);" target="HiK9nCTFrRXax04GlXtv-1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="HiK9nCTFrRXax04GlXtv-22" edge="1" parent="1" source="HiK9nCTFrRXax04GlXtv-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;dashed=1;" target="HiK9nCTFrRXax04GlXtv-7">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="890" y="690" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="HiK9nCTFrRXax04GlXtv-23" edge="1" parent="1" source="HiK9nCTFrRXax04GlXtv-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;dashed=1;" target="HiK9nCTFrRXax04GlXtv-11">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="900" y="770" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="HiK9nCTFrRXax04GlXtv-24" edge="1" parent="1" source="HiK9nCTFrRXax04GlXtv-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;dashed=1;" target="HiK9nCTFrRXax04GlXtv-12">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="580" y="731" />
-              <mxPoint x="580" y="820" />
-              <mxPoint x="705" y="820" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="HiK9nCTFrRXax04GlXtv-25" edge="1" parent="1" source="HiK9nCTFrRXax04GlXtv-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;dashed=1;" target="HiK9nCTFrRXax04GlXtv-13">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="HiK9nCTFrRXax04GlXtv-26" edge="1" parent="1" source="HiK9nCTFrRXax04GlXtv-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;dashed=1;" target="HiK9nCTFrRXax04GlXtv-14">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="HiK9nCTFrRXax04GlXtv-28" edge="1" parent="1" source="HiK9nCTFrRXax04GlXtv-17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;dashed=1;strokeColor=light-dark(#66FF66,#66FF66);entryX=0.75;entryY=0;entryDx=0;entryDy=0;" target="HiK9nCTFrRXax04GlXtv-47">
