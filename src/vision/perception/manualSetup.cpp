@@ -42,17 +42,6 @@ static Board::Stone toStone(const core::StoneState state) {
 	return Board::Stone::Empty;
 }
 
-//! The stones of a grid as a board: intersection i is Coord{i / boardSize, i % boardSize}.
-static Board toBoard(const std::vector<core::StoneState>& stones, const unsigned boardSize) {
-	Board board(boardSize);
-	for (std::size_t i = 0; i < stones.size(); ++i) {
-		if (stones[i] != core::StoneState::Empty) {
-			board.place({static_cast<unsigned>(i / boardSize), static_cast<unsigned>(i % boardSize)}, toStone(stones[i]));
-		}
-	}
-	return board;
-}
-
 //! The rectified board with its grid points dotted green and every stone circled: red for black, blue for white.
 static cv::Mat markDetections(const core::RectifiedBoard& board, const std::vector<core::StoneState>& stones) {
 	const core::BoardGeometry& geometry = board.geometry;
@@ -68,6 +57,63 @@ static cv::Mat markDetections(const core::RectifiedBoard& board, const std::vect
 		}
 	}
 	return marked;
+}
+
+//! A quarter turn of the rectified board, as OpenCV names it. None leaves it as the pipeline made it.
+using Turn = std::optional<cv::RotateFlags>;
+
+//! The turn bringing the first corner picked to the top left: there the game has Coord{0, 0}.
+//! Only what the pipeline found is turned, never its input: the grid finder is not as steady on a turned image.
+//! \note Quarter turns only: a camera shows the board from some side, but never mirrored.
+static Turn turnToGame(const core::WarpResult& warped, const cv::Point2f firstCorner) {
+	// The warp puts each picked corner on a corner of imageB0. Which one got the first?
+	std::vector<cv::Point2d> first;
+	cv::perspectiveTransform(std::vector<cv::Point2d>{firstCorner}, first, warped.H0);
+	const double centre = (warped.imageB0.cols - 1) / 2.0; // imageB0 is square.
+	const bool right    = first.front().x > centre;
+	const bool bottom   = first.front().y > centre;
+
+	if (!bottom) {
+		return right ? Turn{cv::ROTATE_90_COUNTERCLOCKWISE} : std::nullopt;
+	}
+	return right ? cv::ROTATE_180 : cv::ROTATE_90_CLOCKWISE;
+}
+
+static cv::Mat turned(const cv::Mat& image, const Turn turn) {
+	if (!turn) {
+		return image;
+	}
+	cv::Mat result;
+	cv::rotate(image, result, *turn);
+	return result;
+}
+
+//! Where a point of a board with lines 0..last is after the turn.
+static Coord turned(const Coord point, const unsigned last, const Turn turn) {
+	if (!turn) {
+		return point;
+	}
+	switch (*turn) {
+	case cv::ROTATE_90_CLOCKWISE:
+		return {last - point.y, point.x};
+	case cv::ROTATE_180:
+		return {last - point.x, last - point.y};
+	case cv::ROTATE_90_COUNTERCLOCKWISE:
+		return {point.y, last - point.x};
+	}
+	return point;
+}
+
+//! The stones of a grid as the game's board. Before the turn, intersection i is column i / boardSize and row i % boardSize from the top left.
+static Board toBoard(const std::vector<core::StoneState>& stones, const unsigned boardSize, const Turn turn) {
+	Board board(boardSize);
+	for (std::size_t i = 0; i < stones.size(); ++i) {
+		if (stones[i] != core::StoneState::Empty) {
+			const Coord found{static_cast<unsigned>(i / boardSize), static_cast<unsigned>(i % boardSize)};
+			board.place(turned(found, boardSize - 1u, turn), toStone(stones[i]));
+		}
+	}
+	return board;
 }
 
 struct ManualSetup::State {
@@ -116,17 +162,18 @@ void ManualSetup::State::onFrame(const cv::Mat& frame) {
 // while a hand placing a stone would hide the grid or bend it.
 BoardSnapshot ManualSetup::State::analyse(const cv::Mat& frame, const std::array<cv::Point2f, CORNER_COUNT>& quad) {
 	const core::WarpResult warped = core::warpToCorners(frame, quad);
+	const Turn turn               = turnToGame(warped, quad.front());
 	if (!grid) {
 		core::BoardGeometry found = core::analyseGeometry(warped);
 		if (!core::isValidGeometry(found)) {
-			return {.warped = toImage(warped.imageB0), .rectified = {}, .board = Board(0u)};
+			return {.warped = toImage(turned(warped.imageB0, turn)), .rectified = {}, .board = Board(0u)};
 		}
 		grid = std::move(found);
 	}
 
 	const core::RectifiedBoard board = core::transformImage(frame, *grid);
 	const auto& stones               = debounce.update(core::analyseBoard(board, model).stones);
-	return {.warped = toImage(warped.imageB0), .rectified = toImage(markDetections(board, stones)), .board = toBoard(stones, grid->boardSize)};
+	return {.warped = toImage(turned(warped.imageB0, turn)), .rectified = toImage(turned(markDetections(board, stones), turn)), .board = toBoard(stones, grid->boardSize, turn)};
 }
 
 

@@ -84,7 +84,7 @@ void ManualSetupPresenter::showProgress() {
 		m_view.showStatus(tr("Apply to look for the grid, or redo to pick other corners."));
 	} else {
 		m_view.setApplyAvailable(false, tr("Click all %1 corners first.").arg(ManualSetup::CORNER_COUNT));
-		m_view.showStatus(tr("Click the %1 corners of the board: %2 picked.").arg(ManualSetup::CORNER_COUNT).arg(picked));
+		m_view.showStatus(tr("Click the %1 corners of the board, first the one the game shows at the top left: %2 picked.").arg(ManualSetup::CORNER_COUNT).arg(picked));
 	}
 }
 

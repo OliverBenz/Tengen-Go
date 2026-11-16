@@ -20,11 +20,11 @@ struct Image {
 
 //! What the pipeline made of one frame.
 struct BoardSnapshot {
-	Image warped;    //!< The frame warped onto the applied corners.
+	Image warped;    //!< The frame warped onto the applied corners, the first one picked at the top left.
 	Image rectified; //!< The rectified board with its grid points and the stones of board marked. Empty as long as no grid is found.
 
 	//! The stones on the board: one shows once found for a few frames in a row. Size 0 as long as no grid is found.
-	//! \note As the camera sees it: Coord{x, y} counts columns and rows from the top left of rectified, whatever side the game calls its first line.
+	//! \note In the game's orientation, if the first corner picked is the one the game shows at the top left: that is Coord{0, 0}, as in rectified.
 	Board board;
 };
 
@@ -45,10 +45,12 @@ public:
 	ManualSetup(int cameraIndex, const std::filesystem::path& modelPath, Callbacks callbacks);
 	~ManualSetup(); //!< No callback once this returns.
 
-	bool pick(float x, float y); //!< Add a board corner, in frame coordinates. False once all 4 are picked.
-	std::size_t picked() const;  //!< Corners picked so far.
-	bool apply();                //!< Fix H_0 to the picked corners. The first grid found in them is kept until redo(). False until all 4 are picked.
-	void redo();                 //!< Drop the corners and their grid, and go back to picking.
+	//! Add a board corner, in frame coordinates. False once all 4 are picked.
+	//! The first one tells from which side the camera looks: it is where the game has its top left, Coord{0, 0}. The others may come in any order.
+	bool pick(float x, float y);
+	std::size_t picked() const; //!< Corners picked so far.
+	bool apply();               //!< Fix H_0 to the picked corners. The first grid found in them is kept until redo(). False until all 4 are picked.
+	void redo();                //!< Drop the corners and their grid, and go back to picking.
 	bool isApplied() const;
 
 private:
