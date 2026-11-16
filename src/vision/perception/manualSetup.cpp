@@ -1,6 +1,7 @@
 #include "vision/manualSetup.hpp"
 
 #include "camera.hpp"
+#include "stoneDebounce.hpp"
 #include "vision/core/boardFinder.hpp"
 #include "vision/core/gridFinder.hpp"
 #include "vision/core/stoneFinder.hpp"
@@ -16,7 +17,7 @@
 
 namespace tengen::vision {
 
-static constexpr std::chrono::seconds FRAME_PERIOD{1};
+static constexpr std::chrono::milliseconds FRAME_PERIOD{100}; //!< Short enough for the debounce to settle within a second.
 static constexpr std::size_t CORNER_COUNT = 4u;
 
 static Image toImage(const cv::Mat& bgr) {
@@ -29,25 +30,25 @@ static Image toImage(const cv::Mat& bgr) {
 	return {.width = rgb.cols, .height = rgb.rows, .rgb = std::vector<std::uint8_t>(rgb.data, rgb.data + rgb.total() * rgb.elemSize())};
 }
 
-//! The rectified board with its grid points dotted green and every stone found circled: red for black, blue for white.
-static cv::Mat markDetections(const core::RectifiedBoard& board, const core::StoneResult& result) {
+//! The rectified board with its grid points dotted green and every stone circled: red for black, blue for white.
+static cv::Mat markDetections(const core::RectifiedBoard& board, const std::vector<core::StoneState>& stones) {
 	const core::BoardGeometry& geometry = board.geometry;
 
 	cv::Mat marked = board.imageB.clone();
 	for (const cv::Point2f& point: geometry.intersections) {
 		cv::circle(marked, point, std::max(2, static_cast<int>(geometry.spacing * 0.08)), cv::Scalar(0, 200, 0), cv::FILLED, cv::LINE_AA);
 	}
-	for (std::size_t i = 0; i < result.stones.size(); ++i) {
-		if (result.stones[i] != core::StoneState::Empty) {
-			const cv::Scalar colour = result.stones[i] == core::StoneState::Black ? cv::Scalar(0, 0, 255) : cv::Scalar(255, 0, 0);
+	for (std::size_t i = 0; i < stones.size(); ++i) {
+		if (stones[i] != core::StoneState::Empty) {
+			const cv::Scalar colour = stones[i] == core::StoneState::Black ? cv::Scalar(0, 0, 255) : cv::Scalar(255, 0, 0);
 			cv::circle(marked, geometry.intersections[i], static_cast<int>(geometry.spacing * 0.45), colour, 2, cv::LINE_AA);
 		}
 	}
 	return marked;
 }
 
-//! Run the pipeline from H_0 on: warp, find the grid, find the stones.
-static BoardSnapshot analyse(const cv::Mat& frame, const std::array<cv::Point2f, CORNER_COUNT>& corners, cv::dnn::Net& model) {
+//! Run the pipeline from H_0 on: warp, find the grid, find the stones and steady them over the last frames.
+static BoardSnapshot analyse(const cv::Mat& frame, const std::array<cv::Point2f, CORNER_COUNT>& corners, cv::dnn::Net& model, StoneDebounce& debounce) {
 	const core::WarpResult warped      = core::warpToCorners(frame, corners);
 	const core::BoardGeometry geometry = core::analyseGeometry(warped);
 	if (!core::isValidGeometry(geometry)) {
@@ -55,7 +56,8 @@ static BoardSnapshot analyse(const cv::Mat& frame, const std::array<cv::Point2f,
 	}
 
 	const core::RectifiedBoard board = core::transformImage(frame, geometry);
-	return {.warped = toImage(warped.imageB0), .rectified = toImage(markDetections(board, core::analyseBoard(board, model))), .boardSize = geometry.boardSize};
+	const auto& stones               = debounce.update(core::analyseBoard(board, model).stones);
+	return {.warped = toImage(warped.imageB0), .rectified = toImage(markDetections(board, stones)), .boardSize = geometry.boardSize};
 }
 
 struct ManualSetup::State {
@@ -67,8 +69,9 @@ struct ManualSetup::State {
 	std::array<cv::Point2f, CORNER_COUNT> corners{};
 	std::size_t picked{0}; //!< Corners picked so far.
 	bool applied{false};
-	cv::dnn::Net model; //!< Camera thread only.
-	Camera camera;      //!< Last: starts after and stops before the members it reports to.
+	cv::dnn::Net model;     //!< Camera thread only.
+	StoneDebounce debounce; //!< Camera thread only.
+	Camera camera;          //!< Last: starts after and stops before the members it reports to.
 };
 
 ManualSetup::State::State(const int cameraIndex, const std::filesystem::path& modelPath, Callbacks callbacks)
@@ -87,8 +90,9 @@ void ManualSetup::State::onFrame(const cv::Mat& frame) {
 
 	// Analysing on the camera thread is fine: the camera drains its buffer again until the next period is due.
 	if (analysing) {
-		report.onAnalysed(analyse(frame, quad, model));
+		report.onAnalysed(analyse(frame, quad, model, debounce));
 	} else {
+		debounce.reset(); // The next corners may show another board.
 		report.onFrame(toImage(frame));
 	}
 }

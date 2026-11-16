@@ -18,7 +18,7 @@ struct Image {
 //! What the pipeline made of one frame.
 struct BoardSnapshot {
 	Image warped;       //!< The frame warped onto the applied corners.
-	Image rectified;    //!< The rectified board with its grid points and the stones found marked.
+	Image rectified;    //!< The rectified board with its grid points and stones marked. A stone shows once found for a few frames in a row.
 	unsigned boardSize; //!< Lines per side of the grid found. 0 if none was found, and rectified stays empty.
 };
 

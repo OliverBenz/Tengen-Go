@@ -9,8 +9,11 @@
 #include "LocalGameDialog.hpp"
 #include "gui/gameWidget.hpp"
 #include "gui/resources.hpp"
+#include "vision/gui/manualSetupView.hpp"
 
+#include <QDialog>
 #include <QMenuBar>
+#include <QVBoxLayout>
 #include <cassert>
 
 namespace tengen::gui {
@@ -28,6 +31,11 @@ MainWindow::~MainWindow() = default;
 GameWidget& MainWindow::gameWidget() {
 	assert(m_gameWidget);
 	return *m_gameWidget;
+}
+
+vision::gui::ManualSetupView& MainWindow::visionPreview() {
+	assert(m_visionPreview);
+	return *m_visionPreview;
 }
 
 void MainWindow::buildLayout() {
@@ -54,13 +62,16 @@ void MainWindow::buildLayout() {
 	connect(actConnectToServer, &QAction::triggered, this, &MainWindow::openConnectDialog);
 	connect(actHostServer, &QAction::triggered, this, &MainWindow::openHostDialog);
 
-	// auto* tools                   = menuBar()->addMenu(tr("&Tools"));
+	auto* vision     = menuBar()->addMenu(tr("&Vision"));
+	auto* actPreview = new QAction("&Preview", this);
+	vision->addAction(actPreview);
+	connect(actPreview, &QAction::triggered, this, &MainWindow::visionPreviewRequested);
 	// auto* actImportBoardImage     = new QAction("&Import Board Image", this);
 	// auto* actStartCameraDetection = new QAction("&Start Camera Detection", this);
 	// auto* actCalibrateDetection   = new QAction("&Calibrate Detection", this);
-	// tools->addAction(actImportBoardImage);
-	// tools->addAction(actStartCameraDetection);
-	// tools->addAction(actCalibrateDetection);
+	// vision->addAction(actImportBoardImage);
+	// vision->addAction(actStartCameraDetection);
+	// vision->addAction(actCalibrateDetection);
 
 	auto* settings = menuBar()->addMenu(tr("&Settings"));
 	auto* actStyle = new QAction("&Style", this);
@@ -81,6 +92,14 @@ void MainWindow::buildLayout() {
 	m_gameWidget = new GameWidget();
 	setCentralWidget(m_gameWidget);
 	m_gameWidget->boardWidget().setBackgroundTexture(boardStyle::defaultTexture());
+
+	// Vision preview: next to the game, so both stay usable.
+	m_visionWindow  = new QDialog(this);
+	m_visionPreview = new vision::gui::ManualSetupView(m_visionWindow);
+	m_visionWindow->setWindowTitle(tr("Vision Preview"));
+	m_visionWindow->resize(1100, 700);
+	(new QVBoxLayout(m_visionWindow))->addWidget(m_visionPreview);
+	connect(m_visionWindow, &QDialog::finished, this, &MainWindow::visionPreviewClosed);
 }
 
 void MainWindow::openLocalGameDialog() {
@@ -105,6 +124,12 @@ void MainWindow::openBotDialog(const engine::InstalledEngines& engines) {
 	if (dialog.exec() == QDialog::Accepted) {
 		emit gameBotRequested(dialog.config(), dialog.engineConfig(), dialog.humanPlaysBlack());
 	}
+}
+
+void MainWindow::showVisionPreview() {
+	m_visionWindow->show();
+	m_visionWindow->raise();
+	m_visionWindow->activateWindow();
 }
 
 void MainWindow::openHostDialog() {

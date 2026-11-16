@@ -72,3 +72,6 @@ set_target_properties(${targetName}_models
 	PROPERTIES
 		FOLDER "${IDE_FOLDER_SOURCE}/vision"
 )
+
+# ----- Installation -----
+install(DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/models/" DESTINATION "${CMAKE_INSTALL_BINDIR}/models")

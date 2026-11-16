@@ -32,6 +32,7 @@ target_link_libraries(${targetName}
         Logger::Logger
         tengen::game::runtime
         tengen::game::gui
+        tengen::vision::gui
         Qt6::Widgets
         Qt6::Concurrent
 )
@@ -55,6 +56,7 @@ set_target_properties(${targetName}
 set_target_configuration(${targetName} Config::Default)
 set_output_directory(${targetName})
 tengen_deploy_qt(${targetName})
+tengen_copy_runtime_dlls(${targetName})
 
 
 # Copy resource directory to the output

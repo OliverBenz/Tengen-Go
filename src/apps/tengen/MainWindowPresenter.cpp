@@ -3,6 +3,7 @@
 #include "GamePresenter.hpp"
 #include "engine/engineCatalog.hpp"
 #include "model/gameUpdates.hpp"
+#include "vision/gui/manualSetupView.hpp"
 
 #include <QCoreApplication>
 #include <QObject>
@@ -10,9 +11,12 @@
 #include <cassert>
 #include <filesystem>
 #include <memory>
+#include <stdexcept>
 #include <vector>
 
 namespace tengen {
+
+static constexpr int CAMERA_INDEX = 0; //!< The system's default camera.
 
 MainWindowPresenter::MainWindowPresenter(gui::MainWindow& mainWindow)
     : QObject(nullptr), m_mainWindow(mainWindow) {
@@ -23,6 +27,9 @@ MainWindowPresenter::MainWindowPresenter(gui::MainWindow& mainWindow)
 	QObject::connect(&m_mainWindow, &gui::MainWindow::botDialogRequested, this, &MainWindowPresenter::onBotDialogRequested);
 	QObject::connect(&m_mainWindow, &gui::MainWindow::connectRequested, this, &MainWindowPresenter::onConnectRequested);
 	QObject::connect(&m_mainWindow, &gui::MainWindow::shutdownRequested, this, &MainWindowPresenter::onShutdownRequested);
+
+	QObject::connect(&m_mainWindow, &gui::MainWindow::visionPreviewRequested, this, &MainWindowPresenter::onVisionPreviewRequested);
+	QObject::connect(&m_mainWindow, &gui::MainWindow::visionPreviewClosed, this, &MainWindowPresenter::onVisionPreviewClosed);
 
 	startOpenPlay(GameConfig{.boardSize = 9u, .rules = fromRuleSet(RuleSet::Japanese)});
 }
@@ -105,6 +112,23 @@ void MainWindowPresenter::onHostRequested(const GameConfig& config, const Player
 void MainWindowPresenter::onShutdownRequested() {
 	resetPresenters();
 	m_sessions.shutdown();
+}
+
+void MainWindowPresenter::onVisionPreviewRequested() {
+	if (!m_visionPreview) { // Else it is open already.
+		// The build puts the models next to our executable.
+		const std::filesystem::path stoneModel = (QCoreApplication::applicationDirPath() + "/models/stoneNet.onnx").toStdWString();
+		try {
+			m_visionPreview = std::make_unique<vision::gui::ManualSetupPresenter>(m_mainWindow.visionPreview(), CAMERA_INDEX, stoneModel);
+		} catch (const std::runtime_error&) {
+			m_mainWindow.visionPreview().showStatus(tr("The stone model could not be loaded."));
+		}
+	}
+	m_mainWindow.showVisionPreview();
+}
+
+void MainWindowPresenter::onVisionPreviewClosed() {
+	m_visionPreview.reset(); // Stops the camera.
 }
 
 } // namespace tengen

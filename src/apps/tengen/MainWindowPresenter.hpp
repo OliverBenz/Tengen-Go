@@ -6,6 +6,7 @@
 #include "engine/engineCatalog.hpp"
 #include "model/gameUpdates.hpp"
 #include "tengen/sessionManager.hpp"
+#include "vision/gui/manualSetupPresenter.hpp"
 
 #include <QObject>
 #include <memory>
@@ -26,6 +27,8 @@ private slots:
 	void onConnectRequested(const QString& hostIp);
 	void onHostRequested(const GameConfig& config, Player hostColour);
 	void onShutdownRequested();
+	void onVisionPreviewRequested();
+	void onVisionPreviewClosed();
 
 private:
 	void startOpenPlay(const GameConfig& config);
@@ -40,6 +43,8 @@ private:
 	app::SessionManager m_sessions;                                //!< Owns the actual game. Declared first, so it outlives the presenters.
 	std::unique_ptr<GamePresenter> m_gamePresenter{nullptr};       //!< The 'drawer' of the game.
 	std::unique_ptr<NetworkPresenter> m_networkPresenter{nullptr}; //!< Network games only: our seat, why the connection ended.
+
+	std::unique_ptr<vision::gui::ManualSetupPresenter> m_visionPreview{nullptr}; //!< Runs the camera, so it only lives while the preview is open.
 };
 
 } // namespace tengen
