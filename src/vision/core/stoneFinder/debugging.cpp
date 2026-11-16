@@ -6,11 +6,11 @@
 #include <array>
 #include <cmath>
 #include <cstdlib>
+#include <format>
 #include <string>
 #include <string_view>
 
 #if defined(VISION_DEBUG_LOGGING) && defined(VISION_LOG_STONEFINDER)
-#include <format>
 #include <iostream>
 #define DEBUG_LOG(x) std::cout << x
 
