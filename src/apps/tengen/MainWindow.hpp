@@ -47,6 +47,7 @@ signals:
 private:
 	//! Initial setup constructing the layout of the window.
 	void buildLayout();
+	void buildVisionPreview(); //!< A window of its own next to the game, so both stay usable.
 
 private:
 	void openLocalGameDialog();

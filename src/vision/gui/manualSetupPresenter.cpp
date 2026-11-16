@@ -13,6 +13,14 @@ static QImage toQImage(const Image& image) {
 	return QImage(image.rgb.data(), image.width, image.height, qsizetype{3} * image.width, QImage::Format_RGB888).copy();
 }
 
+//! What the pipeline found, in the colours it marks the stones with.
+static QString describe(const BoardSnapshot& snapshot) {
+	if (snapshot.boardSize == 0u) {
+		return ManualSetupPresenter::tr("No grid found. Redo to pick the corners again.");
+	}
+	return ManualSetupPresenter::tr("%1x%1 grid: %2 black (red), %3 white (blue).").arg(snapshot.boardSize).arg(snapshot.blackStones).arg(snapshot.whiteStones);
+}
+
 ManualSetupPresenter::ManualSetupPresenter(ManualSetupView& view, const int cameraIndex, const std::filesystem::path& modelPath)
     : m_view(view), m_setup(cameraIndex, modelPath, callbacks()) {
 	connect(&m_view, &ManualSetupView::cornerPicked, this, &ManualSetupPresenter::onCornerPicked);
@@ -26,23 +34,24 @@ ManualSetup::Callbacks ManualSetupPresenter::callbacks() {
 	const auto onGuiThread = [this](auto job) { QMetaObject::invokeMethod(this, std::move(job), Qt::QueuedConnection); };
 	return {
 	        .onFrame      = [onGuiThread, this](const Image& frame) { onGuiThread([this, image = toQImage(frame)] { showFrame(image); }); },
-	        .onAnalysed   = [onGuiThread, this](const BoardSnapshot& snapshot) { onGuiThread([this, warped = toQImage(snapshot.warped), rectified = toQImage(snapshot.rectified), size = snapshot.boardSize] { showSnapshot(warped, rectified, size); }); },
-	        .onCameraLost = [onGuiThread, this] { onGuiThread([this] { m_view.showStatus(tr("No camera, or it stopped delivering.")); }); },
+	        .onAnalysed   = [onGuiThread, this](const BoardSnapshot& snapshot) { onGuiThread([this, warped = toQImage(snapshot.warped), rectified = toQImage(snapshot.rectified), found = describe(snapshot)] { showSnapshot(warped, rectified, found); }); },
+	        .onCameraLost = [onGuiThread, this] { onGuiThread([this] { showCameraLost(); }); },
 	};
 }
 
 void ManualSetupPresenter::onCornerPicked(const QPointF corner) {
 	if (m_setup.pick(static_cast<float>(corner.x()), static_cast<float>(corner.y()))) {
 		m_view.addCorner(corner);
+		showProgress();
 	}
 }
 
 void ManualSetupPresenter::onApplyRequested() {
 	if (!m_setup.apply()) {
-		m_view.showStatus(tr("Click all 4 corners first."));
-		return;
+		return; // Apply is greyed out until all corners are picked.
 	}
 	m_view.clearCorners();
+	m_view.setApplyAvailable(false, tr("Applied. Redo to pick other corners."));
 	m_view.showStatus(tr("Looking for the grid..."));
 }
 
@@ -55,7 +64,23 @@ void ManualSetupPresenter::showPicking() {
 	m_view.showImage({}); // The warped image is no frame to pick corners on.
 	m_view.clearCorners();
 	m_view.showRectified({});
-	m_view.showStatus(tr("Click the 4 corners of the board."));
+	showProgress();
+}
+
+void ManualSetupPresenter::showProgress() {
+	const auto picked = m_setup.picked();
+	if (picked == ManualSetup::CORNER_COUNT) {
+		m_view.setApplyAvailable(true, {});
+		m_view.showStatus(tr("Apply to look for the grid, or redo to pick other corners."));
+	} else {
+		m_view.setApplyAvailable(false, tr("Click all %1 corners first.").arg(ManualSetup::CORNER_COUNT));
+		m_view.showStatus(tr("Click the %1 corners of the board: %2 picked.").arg(ManualSetup::CORNER_COUNT).arg(picked));
+	}
+}
+
+void ManualSetupPresenter::showCameraLost() {
+	m_view.setApplyAvailable(false, tr("No camera."));
+	m_view.showStatus(tr("No camera, or it stopped delivering."));
 }
 
 void ManualSetupPresenter::showFrame(const QImage& frame) {
@@ -64,14 +89,14 @@ void ManualSetupPresenter::showFrame(const QImage& frame) {
 	}
 }
 
-void ManualSetupPresenter::showSnapshot(const QImage& warped, const QImage& rectified, const unsigned boardSize) {
+void ManualSetupPresenter::showSnapshot(const QImage& warped, const QImage& rectified, const QString& found) {
 	if (!m_setup.isApplied()) { // Analysed just before redo().
 		return;
 	}
 
 	m_view.showImage(warped);
 	m_view.showRectified(rectified);
-	m_view.showStatus(boardSize == 0u ? tr("No grid found. Redo to pick the corners again.") : tr("Grid found: %1x%1.").arg(boardSize));
+	m_view.showStatus(found);
 }
 
 } // namespace tengen::vision::gui

@@ -18,7 +18,6 @@
 namespace tengen::vision {
 
 static constexpr std::chrono::milliseconds FRAME_PERIOD{100}; //!< Short enough for the debounce to settle within a second.
-static constexpr std::size_t CORNER_COUNT = 4u;
 
 static Image toImage(const cv::Mat& bgr) {
 	if (bgr.empty()) {
@@ -48,16 +47,22 @@ static cv::Mat markDetections(const core::RectifiedBoard& board, const std::vect
 }
 
 //! Run the pipeline from H_0 on: warp, find the grid, find the stones and steady them over the last frames.
-static BoardSnapshot analyse(const cv::Mat& frame, const std::array<cv::Point2f, CORNER_COUNT>& corners, cv::dnn::Net& model, StoneDebounce& debounce) {
+static BoardSnapshot analyse(const cv::Mat& frame, const std::array<cv::Point2f, ManualSetup::CORNER_COUNT>& corners, cv::dnn::Net& model, StoneDebounce& debounce) {
 	const core::WarpResult warped      = core::warpToCorners(frame, corners);
 	const core::BoardGeometry geometry = core::analyseGeometry(warped);
 	if (!core::isValidGeometry(geometry)) {
-		return {.warped = toImage(warped.imageB0), .rectified = {}, .boardSize = 0u};
+		return {.warped = toImage(warped.imageB0), .rectified = {}, .boardSize = 0u, .blackStones = 0u, .whiteStones = 0u};
 	}
 
 	const core::RectifiedBoard board = core::transformImage(frame, geometry);
 	const auto& stones               = debounce.update(core::analyseBoard(board, model).stones);
-	return {.warped = toImage(warped.imageB0), .rectified = toImage(markDetections(board, stones)), .boardSize = geometry.boardSize};
+	return {
+	        .warped      = toImage(warped.imageB0),
+	        .rectified   = toImage(markDetections(board, stones)),
+	        .boardSize   = geometry.boardSize,
+	        .blackStones = static_cast<unsigned>(std::ranges::count(stones, core::StoneState::Black)),
+	        .whiteStones = static_cast<unsigned>(std::ranges::count(stones, core::StoneState::White)),
+	};
 }
 
 struct ManualSetup::State {
@@ -111,6 +116,11 @@ bool ManualSetup::pick(const float x, const float y) {
 	}
 	m_state->corners[m_state->picked++] = cv::Point2f(x, y);
 	return true;
+}
+
+std::size_t ManualSetup::picked() const {
+	std::lock_guard<std::mutex> lock(m_state->mutex);
+	return m_state->picked;
 }
 
 bool ManualSetup::apply() {

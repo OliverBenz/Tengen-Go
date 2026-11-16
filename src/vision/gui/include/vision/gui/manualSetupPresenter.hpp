@@ -27,9 +27,11 @@ private:
 	void onRedoRequested();
 
 	// GUI thread only.
-	void showPicking(); //!< Start over: no image until the next camera frame, no corners.
+	void showPicking();  //!< Start over: no image until the next camera frame, no corners.
+	void showProgress(); //!< How many corners are picked, and Apply once all are.
 	void showFrame(const QImage& frame);
-	void showSnapshot(const QImage& warped, const QImage& rectified, unsigned boardSize);
+	void showSnapshot(const QImage& warped, const QImage& rectified, const QString& found);
+	void showCameraLost();
 
 private:
 	ManualSetupView& m_view;

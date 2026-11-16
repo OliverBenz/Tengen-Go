@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <functional>
@@ -17,14 +18,18 @@ struct Image {
 
 //! What the pipeline made of one frame.
 struct BoardSnapshot {
-	Image warped;       //!< The frame warped onto the applied corners.
-	Image rectified;    //!< The rectified board with its grid points and stones marked. A stone shows once found for a few frames in a row.
-	unsigned boardSize; //!< Lines per side of the grid found. 0 if none was found, and rectified stays empty.
+	Image warped;         //!< The frame warped onto the applied corners.
+	Image rectified;      //!< The rectified board with its grid points and stones marked. A stone shows once found for a few frames in a row.
+	unsigned boardSize;   //!< Lines per side of the grid found. 0 if none was found, and rectified stays empty.
+	unsigned blackStones; //!< Black stones on the board, as marked in rectified.
+	unsigned whiteStones; //!< White stones on the board, as marked in rectified.
 };
 
 //! Set the board up by hand: the user picks the 4 board corners on the camera image instead of the board finder.
 class ManualSetup {
 public:
+	static constexpr std::size_t CORNER_COUNT = 4u;
+
 	struct Callbacks {
 		std::function<void(const Image&)> onFrame;            //!< A camera frame, until the corners are applied.
 		std::function<void(const BoardSnapshot&)> onAnalysed; //!< A frame through the applied corners.
@@ -37,6 +42,7 @@ public:
 	~ManualSetup(); //!< No callback once this returns.
 
 	bool pick(float x, float y); //!< Add a board corner, in frame coordinates. False once all 4 are picked.
+	std::size_t picked() const;  //!< Corners picked so far.
 	bool apply();                //!< Fix H_0 to the picked corners. False until all 4 are picked.
 	void redo();                 //!< Drop the corners and go back to picking.
 	bool isApplied() const;

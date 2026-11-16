@@ -93,12 +93,19 @@ void MainWindow::buildLayout() {
 	setCentralWidget(m_gameWidget);
 	m_gameWidget->boardWidget().setBackgroundTexture(boardStyle::defaultTexture());
 
-	// Vision preview: next to the game, so both stay usable.
+	buildVisionPreview();
+}
+
+void MainWindow::buildVisionPreview() {
 	m_visionWindow  = new QDialog(this);
 	m_visionPreview = new vision::gui::ManualSetupView(m_visionWindow);
 	m_visionWindow->setWindowTitle(tr("Vision Preview"));
 	m_visionWindow->resize(1100, 700);
-	(new QVBoxLayout(m_visionWindow))->addWidget(m_visionPreview);
+
+	auto* layout = new QVBoxLayout(m_visionWindow);
+	layout->setContentsMargins(0, 0, 0, 0); // The view brings its own.
+	layout->addWidget(m_visionPreview);
+
 	connect(m_visionWindow, &QDialog::finished, this, &MainWindow::visionPreviewClosed);
 }
 

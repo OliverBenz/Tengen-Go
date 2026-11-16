@@ -18,13 +18,13 @@ ManualSetupView::ManualSetupView(QWidget* parent)
 	m_image     = new ImageView(this);
 	m_rectified = new ImageView(this);
 	m_status    = new QLabel(this);
-	auto* apply = new QPushButton(tr("Apply"), this);
+	m_apply     = new QPushButton(tr("Apply"), this);
 	auto* redo  = new QPushButton(tr("Redo"), this);
 	m_rectified->setFixedWidth(SIDE_COLUMN_WIDTH);
 
 	auto* controls = new QHBoxLayout();
 	controls->addWidget(m_status, 1);
-	controls->addWidget(apply);
+	controls->addWidget(m_apply);
 	controls->addWidget(redo);
 
 	auto* mainColumn = new QVBoxLayout();
@@ -36,7 +36,7 @@ ManualSetupView::ManualSetupView(QWidget* parent)
 	layout->addWidget(m_rectified);
 
 	connect(m_image, &ImageView::clicked, this, &ManualSetupView::cornerPicked);
-	connect(apply, &QPushButton::clicked, this, &ManualSetupView::applyRequested);
+	connect(m_apply, &QPushButton::clicked, this, &ManualSetupView::applyRequested);
 	connect(redo, &QPushButton::clicked, this, &ManualSetupView::redoRequested);
 }
 
@@ -58,6 +58,11 @@ void ManualSetupView::showRectified(const QImage& rectified) {
 
 void ManualSetupView::showStatus(const QString& text) {
 	m_status->setText(text);
+}
+
+void ManualSetupView::setApplyAvailable(const bool available, const QString& reason) {
+	m_apply->setEnabled(available);
+	m_apply->setToolTip(reason);
 }
 
 } // namespace tengen::vision::gui

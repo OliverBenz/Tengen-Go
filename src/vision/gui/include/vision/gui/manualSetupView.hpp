@@ -6,6 +6,7 @@
 #include <QWidget>
 
 class QLabel;
+class QPushButton;
 
 namespace tengen::vision::gui {
 
@@ -23,6 +24,7 @@ public:
 	void clearCorners();
 	void showRectified(const QImage& rectified); //!< A null image clears the side column.
 	void showStatus(const QString& text);
+	void setApplyAvailable(bool available, const QString& reason); //!< Greyed out, Apply tells the reason as its tooltip.
 
 signals:
 	void cornerPicked(QPointF imagePoint);
@@ -33,6 +35,7 @@ private:
 	ImageView* m_image{nullptr};
 	ImageView* m_rectified{nullptr};
 	QLabel* m_status{nullptr};
+	QPushButton* m_apply{nullptr};
 };
 
 } // namespace tengen::vision::gui

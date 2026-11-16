@@ -90,6 +90,9 @@ if(WIN32)
 	qt_generate_deploy_app_script(TARGET ${targetName} OUTPUT_SCRIPT deployScript NO_TRANSLATIONS NO_COMPILER_RUNTIME ${deployOptions})
 	install(SCRIPT "${deployScript}")
 
+	# The deploy script only knows Qt: OpenCV comes along as one of the linked DLLs.
+	install(FILES $<TARGET_RUNTIME_DLLS:${targetName}> DESTINATION "${CMAKE_INSTALL_BINDIR}")
+
 	set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION "${CMAKE_INSTALL_BINDIR}")
 	include(InstallRequiredSystemLibraries)
 endif()
