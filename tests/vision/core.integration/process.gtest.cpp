@@ -65,8 +65,7 @@ TEST(Process, Empty_Angle_Small) {
 	runTest("empty_angle_small", 3u);
 }
 
-// TODO: The stone detection fails on angle_3 and angle_4 (see StoneFinder.DISABLED_Ideal_Angled_Easy).
-TEST(Process, DISABLED_Angled_Easy) {
+TEST(Process, Angled_Easy) {
 	runTest("angled_easy", 6u);
 }
 
@@ -75,7 +74,7 @@ TEST(Process, DISABLED_Angled_Hard_Lighting) {
 	runTest("angled_hard_lighting", 6u);
 }
 
-// TODO: This test set has no stone layout (board.txt) yet.
+// TODO: Most images get a single intersection wrong (see StoneFinder.DISABLED_Ideal_Angled_Hard).
 TEST(Process, DISABLED_Angled_Hard) {
 	runTest("angled_hard", 8u);
 }
@@ -85,7 +84,7 @@ TEST(Process, DISABLED_Game_Simple_Size9) {
 	runTest("game_simple/size_9", 14u);
 }
 
-// TODO: The game series have no labelled geometry (.json) yet. Once enabled, move_24 misses the stone at (12, 8).
+// TODO: The game series have no labelled geometry (.json) yet.
 TEST(Process, DISABLED_Game_Simple_Size13) {
 	runTest("game_simple/size_13", 28u);
 }

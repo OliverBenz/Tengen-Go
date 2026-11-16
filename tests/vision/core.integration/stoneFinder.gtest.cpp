@@ -101,17 +101,16 @@ TEST(StoneFinder, Ideal_Empty_Angle_Small) {
 	runTest("empty_angle_small", 3u);
 }
 
-// TODO: angle_3 and angle_4 show the board from the far side. Two of their white stones are missed and two empty intersections are reported white.
-TEST(StoneFinder, DISABLED_Ideal_Angled_Easy) {
+TEST(StoneFinder, Ideal_Angled_Easy) {
 	runTest("angled_easy", 6u);
 }
 
-// TODO: angle_3 and angle_5 each miss a single white stone, angle_4 is off by 14 intersections.
+// TODO: angle_4 fails in the grid, not in the stones: the grid is found about 50 px off the labelled one, so 19 intersections are wrong.
 TEST(StoneFinder, DISABLED_Ideal_Angled_Hard_Lighting) {
 	runTest("angled_hard_lighting", 6u);
 }
 
-// TODO: This test set has no stone layout (board.txt) yet.
+// TODO: angle_2, angle_7 and angle_8 each get a single intersection wrong.
 TEST(StoneFinder, DISABLED_Ideal_Angled_Hard) {
 	runTest("angled_hard", 8u);
 }

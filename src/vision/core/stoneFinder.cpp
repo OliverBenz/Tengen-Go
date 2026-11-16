@@ -38,14 +38,12 @@ static cv::Mat warpToPatchGrid(const RectifiedBoard& board) {
 	return grid;
 }
 
-//! One patch per intersection, in the order of BoardGeometry::intersections. The patches are views into grid.
-static std::vector<cv::Mat> cutPatches(const cv::Mat& grid, const int boardSize) {
+//! The patches of one board column, in the order of BoardGeometry::intersections. They are views into grid.
+static std::vector<cv::Mat> cutColumn(const cv::Mat& grid, const int column, const int boardSize) {
 	std::vector<cv::Mat> patches;
-	patches.reserve(static_cast<std::size_t>(boardSize) * static_cast<std::size_t>(boardSize));
-	for (int column = 0; column < boardSize; ++column) {
-		for (int row = 0; row < boardSize; ++row) {
-			patches.push_back(grid(cv::Rect{column * PATCH_SIZE, row * PATCH_SIZE, PATCH_SIZE, PATCH_SIZE}));
-		}
+	patches.reserve(static_cast<std::size_t>(boardSize));
+	for (int row = 0; row < boardSize; ++row) {
+		patches.push_back(grid(cv::Rect{column * PATCH_SIZE, row * PATCH_SIZE, PATCH_SIZE, PATCH_SIZE}));
 	}
 	return patches;
 }
@@ -75,20 +73,25 @@ StoneResult analyseBoard(const RectifiedBoard& board, cv::dnn::Net& model, Debug
 
 	const int boardSize = static_cast<int>(board.geometry.boardSize);
 	const cv::Mat grid  = warpToPatchGrid(board);
-	model.setInput(cv::dnn::blobFromImages(cutPatches(grid, boardSize), 1.0 / 255.0, {}, {}, /*swapRB=*/true));
-	const cv::Mat logits = model.forward();
-	if (logits.type() != CV_32FC1 || logits.rows != boardSize * boardSize || logits.cols != std::ssize(CLASSES)) {
-		throw std::runtime_error("Stone model output does not match stoneNet.json");
-	}
 
 	StoneResult result{.success = true, .stones = {}, .confidence = {}};
-	result.stones.reserve(static_cast<std::size_t>(logits.rows));
-	result.confidence.reserve(static_cast<std::size_t>(logits.rows));
-	for (int i = 0; i < logits.rows; ++i) {
-		const std::span<const float> scores{logits.ptr<float>(i), CLASSES.size()};
-		const auto best = std::ranges::max_element(scores);
-		result.stones.push_back(CLASSES[static_cast<std::size_t>(best - scores.begin())]);
-		result.confidence.push_back(softmaxOfBest(scores, *best));
+	result.stones.reserve(board.geometry.intersections.size());
+	result.confidence.reserve(board.geometry.intersections.size());
+
+	// One column per forward pass: the model keeps the activations of a whole batch, about 170 kB per patch.
+	for (int column = 0; column < boardSize; ++column) {
+		model.setInput(cv::dnn::blobFromImages(cutColumn(grid, column, boardSize), 1.0 / 255.0, {}, {}, /*swapRB=*/true));
+		const cv::Mat logits = model.forward();
+		if (logits.type() != CV_32FC1 || logits.rows != boardSize || logits.cols != std::ssize(CLASSES)) {
+			throw std::runtime_error("Stone model output does not match stoneNet.json");
+		}
+
+		for (int row = 0; row < boardSize; ++row) {
+			const std::span<const float> scores{logits.ptr<float>(row), CLASSES.size()};
+			const auto best = std::ranges::max_element(scores);
+			result.stones.push_back(CLASSES[static_cast<std::size_t>(best - scores.begin())]);
+			result.confidence.push_back(softmaxOfBest(scores, *best));
+		}
 	}
 
 	if (debugger) {

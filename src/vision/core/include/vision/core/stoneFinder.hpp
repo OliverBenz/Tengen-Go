@@ -33,6 +33,7 @@ cv::dnn::Net loadStoneModel(const std::filesystem::path& modelPath);
  * \param [in,out] model    Network from loadStoneModel. Not thread-safe: a forward pass mutates it.
  * \param [in,out] debugger Optional debug visualizer for overlays.
  * \return         StoneResult where `stones[i]`/`confidence[i]` map to `board.geometry.intersections[i]`.
+ * \throws         std::runtime_error if the model's output is not the one models/stoneNet.json describes.
  */
 StoneResult analyseBoard(const RectifiedBoard& board, cv::dnn::Net& model, DebugVisualizer* debugger = nullptr);
 
