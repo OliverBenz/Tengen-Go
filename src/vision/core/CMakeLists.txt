@@ -9,6 +9,7 @@ find_package(OpenCV ${TENGEN_OPENCV_MIN_VERSION} REQUIRED COMPONENTS
 	videoio
 	highgui
 	geometry
+	dnn
 )
 
 # Get files to build
@@ -19,6 +20,7 @@ set(headers
 	"${CMAKE_CURRENT_LIST_DIR}/include/vision/core/debugVisualizer.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/vision/core/boardFinder.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/vision/core/gridFinder.hpp"
+	"${CMAKE_CURRENT_LIST_DIR}/include/vision/core/stoneClassifier.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/vision/core/stoneFinder.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/vision/core/stoneFinderConfig.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/stoneFinder/decisionPolicy.hpp"
@@ -39,6 +41,7 @@ set(sources
 	"${CMAKE_CURRENT_LIST_DIR}/boardFinder.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/gridLatticeFinder.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/gridFinder.cpp"
+	"${CMAKE_CURRENT_LIST_DIR}/stoneClassifier.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/stoneFinder/debugging.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/stoneFinder/decisionPolicy.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/stoneFinder/featureExtraction.cpp"

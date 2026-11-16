@@ -50,6 +50,7 @@ We move along with slightly more noisy naming to ensure perfect alignment with t
 
 ## Models
 `models/stoneNet.onnx` is a small CNN classifying one intersection as empty, black or white; not used by the pipeline yet.
+`StoneClassifier` (`stoneClassifier.hpp`) loads it through OpenCV's `dnn` module.
 `models/stoneNet.json` describes how to prepare its input (warp, patch size, colour, scale) and where it came from.
 It is trained and exported with [`tools/stoneClassifier`](../../../tools/stoneClassifier/README.md).
 
