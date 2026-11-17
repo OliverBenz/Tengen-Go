@@ -8,10 +8,18 @@
 
 namespace tengen::network {
 
+namespace {
+//! Combines lambdas into one visitor for std::visit.
+template <class... Ts>
+struct Overloaded : Ts... {
+	using Ts::operator()...;
+};
+
 //! Connection::send would drop an empty or oversized message silently; send() and broadcast() refuse it so the caller knows.
-static bool isSendable(const core::Message& payload) {
+bool isSendable(const core::Message& payload) {
 	return !payload.empty() && payload.size() <= core::MAX_PAYLOAD_BYTES;
 }
+} // namespace
 
 // Network callbacks are kept thin: they only enqueue events. None runs before start(), so capturing this is safe here.
 Server::Implementation::Implementation(std::uint16_t port)
@@ -191,7 +199,14 @@ void Server::Implementation::processEvent(const ClientMessage& event) {
 
 	// Forward client intent to the game/app layer.
 	if (m_handler) {
-		std::visit([&](const auto& e) { handleNetworkEvent(*player, e); }, *networkEvent);
+		std::visit(Overloaded{
+		                   [](const ClientHello&) {}, // The session is open already. A second hello changes nothing.
+		                   [&](const ClientPutStone& e) { m_handler->onPlace(*player, e.c); },
+		                   [&](const ClientPass&) { m_handler->onPass(*player); },
+		                   [&](const ClientResign&) { m_handler->onResign(*player); },
+		                   [&](const ClientChat& e) { m_handler->onChat(*player, e.message); },
+		           },
+		           *networkEvent);
 	}
 }
 
@@ -212,26 +227,6 @@ void Server::Implementation::processHello(const SessionId sessionId, const Clien
 	if (m_handler && player) {
 		m_handler->onPlayerJoined(*player);
 	}
-}
-
-void Server::Implementation::handleNetworkEvent(const Player, const ClientHello&) {
-	// The session is open already. A second hello changes nothing.
-}
-
-void Server::Implementation::handleNetworkEvent(const Player player, const ClientPutStone& event) {
-	m_handler->onPlace(player, event.c);
-}
-
-void Server::Implementation::handleNetworkEvent(const Player player, const ClientPass&) {
-	m_handler->onPass(player);
-}
-
-void Server::Implementation::handleNetworkEvent(const Player player, const ClientResign&) {
-	m_handler->onResign(player);
-}
-
-void Server::Implementation::handleNetworkEvent(const Player player, const ClientChat& event) {
-	m_handler->onChat(player, event.message);
 }
 
 void Server::Implementation::processEvent(const ClientDisconnected& event) {

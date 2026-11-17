@@ -52,13 +52,6 @@ private:
 	void processEvent(const Shutdown& event);                         //!< Never reached: serverLoop ends on it.
 	void processHello(SessionId sessionId, const ClientHello& hello); //!< Welcome the client with a seat, or reject it.
 
-	// Hand a player's message to the handler.
-	void handleNetworkEvent(Player player, const ClientHello& event);
-	void handleNetworkEvent(Player player, const ClientPutStone& event);
-	void handleNetworkEvent(Player player, const ClientPass& event);
-	void handleNetworkEvent(Player player, const ClientResign& event);
-	void handleNetworkEvent(Player player, const ClientChat& event);
-
 private:
 	enum class State : std::uint8_t {
 		Created,
