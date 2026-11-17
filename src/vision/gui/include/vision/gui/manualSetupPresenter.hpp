@@ -19,6 +19,10 @@ class ManualSetupPresenter final : public QObject {
 public:
 	ManualSetupPresenter(ManualSetupView& view, int cameraIndex, const std::filesystem::path& modelPath);
 
+signals:
+	//! The stones seen on the board with every analysed frame, in the game's orientation. Size 0 as long as no grid is found.
+	void boardSeen(const Board& board);
+
 private:
 	ManualSetup::Callbacks callbacks(); //!< Report to this presenter, on the GUI thread.
 
@@ -30,7 +34,7 @@ private:
 	void showPicking();  //!< Start over: no image until the next camera frame, no corners.
 	void showProgress(); //!< How many corners are picked, and Apply once all are.
 	void showFrame(const QImage& frame);
-	void showSnapshot(const QImage& warped, const QImage& rectified, const QString& found);
+	void showSnapshot(const QImage& warped, const QImage& rectified, const Board& board);
 	void showCameraLost();
 
 private:

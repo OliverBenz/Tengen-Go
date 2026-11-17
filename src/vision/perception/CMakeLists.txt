@@ -10,14 +10,12 @@ set(headers
 	"${CMAKE_CURRENT_LIST_DIR}/include/vision/source.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/vision/vision.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/vision/manualSetup.hpp"
-	"${CMAKE_CURRENT_LIST_DIR}/include/vision/boardComparison.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/camera.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/stoneDebounce.hpp"
 )
 set(sources
 	"${CMAKE_CURRENT_LIST_DIR}/vision.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/manualSetup.cpp"
-	"${CMAKE_CURRENT_LIST_DIR}/boardComparison.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/camera.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/stoneDebounce.cpp"
 )

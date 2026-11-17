@@ -44,7 +44,7 @@ ManualSetup::Callbacks ManualSetupPresenter::callbacks() {
 	const auto onGuiThread = [this](auto job) { QMetaObject::invokeMethod(this, std::move(job), Qt::QueuedConnection); };
 	return {
 	        .onFrame      = [onGuiThread, this](const Image& frame) { onGuiThread([this, image = toQImage(frame)] { showFrame(image); }); },
-	        .onAnalysed   = [onGuiThread, this](const BoardSnapshot& snapshot) { onGuiThread([this, warped = toQImage(snapshot.warped), rectified = toQImage(snapshot.rectified), found = describe(snapshot.board)] { showSnapshot(warped, rectified, found); }); },
+	        .onAnalysed   = [onGuiThread, this](const BoardSnapshot& snapshot) { onGuiThread([this, warped = toQImage(snapshot.warped), rectified = toQImage(snapshot.rectified), board = snapshot.board] { showSnapshot(warped, rectified, board); }); },
 	        .onCameraLost = [onGuiThread, this] { onGuiThread([this] { showCameraLost(); }); },
 	};
 }
@@ -99,14 +99,15 @@ void ManualSetupPresenter::showFrame(const QImage& frame) {
 	}
 }
 
-void ManualSetupPresenter::showSnapshot(const QImage& warped, const QImage& rectified, const QString& found) {
+void ManualSetupPresenter::showSnapshot(const QImage& warped, const QImage& rectified, const Board& board) {
 	if (!m_setup.isApplied()) { // Analysed just before redo().
 		return;
 	}
 
 	m_view.showImage(warped);
 	m_view.showRectified(rectified);
-	m_view.showStatus(found);
+	m_view.showStatus(describe(board));
+	emit boardSeen(board);
 }
 
 } // namespace tengen::vision::gui

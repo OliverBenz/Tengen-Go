@@ -53,11 +53,13 @@ void MainWindowPresenter::createPresenters() {
 	if (auto* network = m_sessions.network()) {
 		m_networkPresenter = std::make_unique<NetworkPresenter>(*network, m_mainWindow.gameWidget());
 	}
+	m_boardInput = std::make_unique<app::PhysicalBoardInput>(*m_sessions.game());
 }
 
 void MainWindowPresenter::resetPresenters() {
 	m_gamePresenter.reset();
 	m_networkPresenter.reset();
+	m_boardInput.reset();
 }
 
 void MainWindowPresenter::showLocalPlayers() {
@@ -120,6 +122,7 @@ void MainWindowPresenter::onVisionPreviewRequested() {
 		const std::filesystem::path stoneModel = (QCoreApplication::applicationDirPath() + "/models/stoneNet.onnx").toStdWString();
 		try {
 			m_visionPreview = std::make_unique<vision::gui::ManualSetupPresenter>(m_mainWindow.visionPreview(), CAMERA_INDEX, stoneModel);
+			QObject::connect(m_visionPreview.get(), &vision::gui::ManualSetupPresenter::boardSeen, this, &MainWindowPresenter::onPhysicalBoardSeen);
 		} catch (const std::runtime_error&) {
 			m_mainWindow.visionPreview().showStatus(tr("The stone model could not be loaded."));
 		}
@@ -129,6 +132,12 @@ void MainWindowPresenter::onVisionPreviewRequested() {
 
 void MainWindowPresenter::onVisionPreviewClosed() {
 	m_visionPreview.reset(); // Stops the camera.
+}
+
+void MainWindowPresenter::onPhysicalBoardSeen(const Board& board) {
+	if (m_boardInput) { // No session, nobody to move.
+		m_boardInput->onBoardSeen(board);
+	}
 }
 
 } // namespace tengen

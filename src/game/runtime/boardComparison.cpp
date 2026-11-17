@@ -1,8 +1,8 @@
-#include "vision/boardComparison.hpp"
+#include "boardComparison.hpp"
 
 #include <optional>
 
-namespace tengen::vision {
+namespace tengen::app {
 
 BoardComparison compareBoards(const Board& game, const Board& physical, const Player toMove) {
 	using enum BoardComparison::Result;
@@ -28,4 +28,4 @@ BoardComparison compareBoards(const Board& game, const Board& physical, const Pl
 	return placed ? BoardComparison{.result = StonePlaced, .placed = *placed} : BoardComparison{.result = Same, .placed = {}};
 }
 
-} // namespace tengen::vision
+} // namespace tengen::app

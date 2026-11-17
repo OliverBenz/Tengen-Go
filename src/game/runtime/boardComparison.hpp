@@ -4,7 +4,7 @@
 #include "model/coordinate.hpp"
 #include "model/player.hpp"
 
-namespace tengen::vision {
+namespace tengen::app {
 
 //! How the physical board relates to the board of the game.
 struct BoardComparison {
@@ -18,13 +18,13 @@ struct BoardComparison {
 	Coord placed; //!< Only for Result::StonePlaced.
 };
 
-//! Compare the board the camera sees with the board of the game, to find the stone the player to move has placed.
+//! Compare the physical board, as it is seen, with the board of the game, to find the stone the player to move has placed.
 //! Deliberately strict: captured stones still lying on the board, a hand over it, a stone of the wrong colour or
 //! several new stones all make the boards differ, so nothing reaches the game until they agree again.
 //! \param [in] game     The board of the game.
-//! \param [in] physical The board the camera sees, in the orientation of game.
+//! \param [in] physical The physical board as seen, in the orientation of game.
 //! \param [in] toMove   The player whose turn it is.
 //! \note Knows no rules: a stone the game would refuse (ko, suicide) is reported as placed all the same.
 BoardComparison compareBoards(const Board& game, const Board& physical, Player toMove);
 
-} // namespace tengen::vision
+} // namespace tengen::app
