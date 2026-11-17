@@ -21,13 +21,13 @@ bool isSendable(const core::Message& payload) {
 }
 } // namespace
 
-// Network callbacks are kept thin: they only enqueue events. None runs before start(), so capturing this is safe here.
+// Network callbacks run on the IO thread and only queue events. None runs before start(), so capturing this is safe here.
 Server::Implementation::Implementation(std::uint16_t port)
     : m_network(
               core::TcpServer::Callbacks{
-                      .onConnect    = [this](core::ConnectionId connectionId) { onClientConnected(connectionId); },
-                      .onMessage    = [this](core::ConnectionId connectionId, core::Message payload) { onClientMessage(connectionId, std::move(payload)); },
-                      .onDisconnect = [this](core::ConnectionId connectionId) { onClientDisconnected(connectionId); },
+                      .onConnect    = [this](core::ConnectionId connectionId) { queue(ClientConnected{.connectionId = connectionId}); },
+                      .onMessage    = [this](core::ConnectionId connectionId, core::Message payload) { queue(ClientMessage{.connectionId = connectionId, .payload = std::move(payload)}); },
+                      .onDisconnect = [this](core::ConnectionId connectionId) { queue(ClientDisconnected{.connectionId = connectionId}); },
               },
               port) {
 }
@@ -125,18 +125,6 @@ void Server::Implementation::broadcastNow(const core::Message& message) {
 			m_network.send(context.connectionId, message);
 		}
 	});
-}
-
-void Server::Implementation::onClientConnected(core::ConnectionId connectionId) {
-	queue(ClientConnected{.connectionId = connectionId});
-}
-
-void Server::Implementation::onClientMessage(core::ConnectionId connectionId, core::Message payload) {
-	queue(ClientMessage{.connectionId = connectionId, .payload = std::move(payload)});
-}
-
-void Server::Implementation::onClientDisconnected(core::ConnectionId connectionId) {
-	queue(ClientDisconnected{.connectionId = connectionId});
 }
 
 void Server::Implementation::serverLoop() {
