@@ -26,24 +26,10 @@ public:
 	bool broadcast(const ServerEvent& event);                 //!< Queue an event for all welcomed clients. Any thread.
 
 private:
-	void serverLoop(); //!< Server thread: drain queue and act.
+	bool queue(ServerQueueEvent event); //!< Queue an event while running. Any thread. Dropped once stopped: the server thread won't handle it.
 
-	Seat freeSeat() const;
-
-	bool queue(ServerQueueEvent event); //!< Queue any event while running. Dropped once stopped: the server thread won't handle it.
-
-	// Server thread: the only one that reads the sessions.
-	void sendNow(SessionId sessionId, const core::Message& message);
-	void broadcastNow(const core::Message& message);
-
-private:
-	// Network callbacks (run on libNetwork threads) just enqueue events.
-	void onClientConnected(core::ConnectionId connectionId);
-	void onClientMessage(core::ConnectionId connectionId, core::Message payload);
-	void onClientDisconnected(core::ConnectionId connectionId);
-
-private:
-	// Processing of server events. The server loop hands each event to its overload.
+	// Server thread: the only one that touches the sessions.
+	void serverLoop();                                                //!< Handle queued events until the shutdown.
 	void processEvent(const ClientConnected& event);                  //!< Creates session key.
 	void processEvent(const ClientDisconnected& event);               //!< Destroys session key.
 	void processEvent(const ClientMessage& event);                    //!< Translate payload to network event and handle.
@@ -51,6 +37,10 @@ private:
 	void processEvent(const Broadcast& event);                        //!< Send to all welcomed clients.
 	void processEvent(const Shutdown& event);                         //!< Never reached: serverLoop ends on it.
 	void processHello(SessionId sessionId, const ClientHello& hello); //!< Welcome the client with a seat, or reject it.
+
+	void sendNow(SessionId sessionId, const core::Message& message);
+	void broadcastNow(const core::Message& message);
+	Seat freeSeat() const;
 
 private:
 	enum class State : std::uint8_t {
