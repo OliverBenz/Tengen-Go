@@ -22,6 +22,8 @@ add_library(${targetName} STATIC
 
 	"${CMAKE_CURRENT_LIST_DIR}/engineCatalog.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/gtpEngine.cpp"
+	"${CMAKE_CURRENT_LIST_DIR}/gtpEngineImpl.hpp"
+	"${CMAKE_CURRENT_LIST_DIR}/gtpEngineImpl.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/kataGo.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/gnuGo.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/gtp.hpp"
