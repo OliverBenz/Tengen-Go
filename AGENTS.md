@@ -116,7 +116,7 @@ Valid with `reuse lint`. **Never remove or change license headers.** When adding
 ## Docs
 
 See `docs/` for deeper guidance beyond what belongs in an agent instruction file:
-[`Compilation.md`](docs/Compilation.md) · [`Core.md`](docs/Core.md) · [`GUI.md`](docs/GUI.md) · [`Networking.md`](docs/Networking.md) · [`Engine.md`](docs/Engine.md) · [`Release.md`](docs/Release.md) · [`stoneClassifier/`](docs/stoneClassifier/) (CNN primer, PDF)
+[`Compilation.md`](docs/Compilation.md) · [`Core.md`](docs/Core.md) · [`GUI.md`](docs/GUI.md) · [`Networking.md`](docs/Networking.md) · [`Engine.md`](docs/Engine.md) · [`Release.md`](docs/Release.md) · [`stoneClassifier/`](docs/stoneClassifier/) (CNN primer, PDF) · [`patterns/`](docs/patterns/README.md) (non-obvious code patterns, e.g. the variant state machine)
 
 ## General rules
 
