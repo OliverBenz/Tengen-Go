@@ -78,6 +78,7 @@ Tests live in `tests/`, one project per component and kind, e.g. `gameCore.unit`
 - [Core](docs/Core.md): core rules and logic overview
 - [GUI](docs/GUI.md): GUI architecture and rendering notes
 - [Networking](docs/Networking.md): higher-level networking notes
+- [Patterns](docs/patterns/README.md): code patterns whose workings aren't obvious at first sight
 
 Per component:
 
