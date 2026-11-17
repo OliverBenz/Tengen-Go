@@ -4,8 +4,14 @@
 #include <mutex>
 #include <thread>
 #include <utility>
+#include <variant>
 
 namespace tengen::network {
+
+//! Connection::send would drop an empty or oversized message silently; send() and broadcast() refuse it so the caller knows.
+static bool isSendable(const core::Message& payload) {
+	return !payload.empty() && payload.size() <= core::MAX_PAYLOAD_BYTES;
+}
 
 // Network callbacks are kept thin: they only enqueue events. None runs before start(), so capturing this is safe here.
 Server::Implementation::Implementation(std::uint16_t port)
@@ -54,7 +60,7 @@ void Server::Implementation::stop() {
 		if (state != State::Running) {
 			return;
 		}
-		m_eventQueue.Push(ServerQueueEvent{.type = ServerQueueEventType::Shutdown});
+		m_eventQueue.Push(Shutdown{});
 	}
 
 	m_serverThread.join(); // Handles every event before the shutdown, so the messages reach the connections.
@@ -75,19 +81,19 @@ void Server::Implementation::setFirstSeat(const Seat seat) {
 }
 
 bool Server::Implementation::send(SessionId sessionId, const ServerEvent& event) {
-	return queueToSend(ServerQueueEvent{.type = ServerQueueEventType::Send, .sessionId = sessionId, .payload = toMessage(event)});
+	auto payload = toMessage(event);
+	if (!isSendable(payload)) {
+		return false;
+	}
+	return queue(Send{.sessionId = sessionId, .payload = std::move(payload)});
 }
 
 bool Server::Implementation::broadcast(const ServerEvent& event) {
-	return queueToSend(ServerQueueEvent{.type = ServerQueueEventType::Broadcast, .payload = toMessage(event)});
-}
-
-bool Server::Implementation::queueToSend(ServerQueueEvent event) {
-	// Connection::send would drop an oversized message silently; refuse it here so the caller knows.
-	if (event.payload.empty() || event.payload.size() > core::MAX_PAYLOAD_BYTES) {
+	auto payload = toMessage(event);
+	if (!isSendable(payload)) {
 		return false;
 	}
-	return queue(std::move(event));
+	return queue(Broadcast{.payload = std::move(payload)});
 }
 
 bool Server::Implementation::queue(ServerQueueEvent event) {
@@ -114,60 +120,50 @@ void Server::Implementation::broadcastNow(const core::Message& message) {
 }
 
 void Server::Implementation::onClientConnected(core::ConnectionId connectionId) {
-	queue(ServerQueueEvent{.type = ServerQueueEventType::ClientConnected, .connectionId = connectionId});
+	queue(ClientConnected{.connectionId = connectionId});
 }
 
 void Server::Implementation::onClientMessage(core::ConnectionId connectionId, core::Message payload) {
-	queue(ServerQueueEvent{
-	        .type         = ServerQueueEventType::ClientMessage,
-	        .connectionId = connectionId,
-	        .payload      = std::move(payload),
-	});
+	queue(ClientMessage{.connectionId = connectionId, .payload = std::move(payload)});
 }
 
 void Server::Implementation::onClientDisconnected(core::ConnectionId connectionId) {
-	queue(ServerQueueEvent{.type = ServerQueueEventType::ClientDisconnected, .connectionId = connectionId});
+	queue(ClientDisconnected{.connectionId = connectionId});
 }
 
 void Server::Implementation::serverLoop() {
-	// stop() ends the loop with the shutdown event.
-	for (auto event = m_eventQueue.Pop(); event.type != ServerQueueEventType::Shutdown; event = m_eventQueue.Pop()) {
+	while (true) {
+		const auto event = m_eventQueue.Pop();
+		if (std::holds_alternative<Shutdown>(event)) {
+			return; // Queued last by stop().
+		}
+
 		// The server thread must survive a throwing handler. The event is lost, the next one goes on.
 		try {
-			processEvent(event);
+			std::visit([this](const auto& e) { processEvent(e); }, event);
 		} catch (...) {} // NOLINT(bugprone-empty-catch)
 	}
 }
 
-void Server::Implementation::processEvent(const ServerQueueEvent& event) {
-	switch (event.type) {
-	case ServerQueueEventType::ClientConnected:
-		processClientConnect(event);
-		break;
-	case ServerQueueEventType::ClientDisconnected:
-		processClientDisconnect(event);
-		break;
-	case ServerQueueEventType::ClientMessage:
-		processClientMessage(event);
-		break;
-	case ServerQueueEventType::Send:
-		sendNow(event.sessionId, event.payload);
-		break;
-	case ServerQueueEventType::Broadcast:
-		broadcastNow(event.payload);
-		break;
-	case ServerQueueEventType::Shutdown:
-		break; // serverLoop ends on it.
-	}
+void Server::Implementation::processEvent(const Send& event) {
+	sendNow(event.sessionId, event.payload);
 }
 
-void Server::Implementation::processClientConnect(const ServerQueueEvent& event) {
+void Server::Implementation::processEvent(const Broadcast& event) {
+	broadcastNow(event.payload);
+}
+
+void Server::Implementation::processEvent(const Shutdown&) {
+	// serverLoop ends on it.
+}
+
+void Server::Implementation::processEvent(const ClientConnected& event) {
 	// TODO: Possible to have this connectionId already registered? Yes, reconnect! Not thandled yet
 	// The session starts without a seat. The client gets one with its hello.
 	m_sessionManager.add(event.connectionId);
 }
 
-void Server::Implementation::processClientMessage(const ServerQueueEvent& event) {
+void Server::Implementation::processEvent(const ClientMessage& event) {
 	const auto sessionId = m_sessionManager.getSessionId(event.connectionId);
 	if (sessionId == SessionId::Empty) {
 		return;
@@ -238,7 +234,7 @@ void Server::Implementation::handleNetworkEvent(const Player player, const Clien
 	m_handler->onChat(player, event.message);
 }
 
-void Server::Implementation::processClientDisconnect(const ServerQueueEvent& event) {
+void Server::Implementation::processEvent(const ClientDisconnected& event) {
 	const auto sessionId = m_sessionManager.getSessionId(event.connectionId);
 	if (sessionId == SessionId::Empty) {
 		return; // Should never happen

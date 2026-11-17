@@ -26,13 +26,11 @@ public:
 	bool broadcast(const ServerEvent& event);                 //!< Queue an event for all welcomed clients. Any thread.
 
 private:
-	void serverLoop();                                //!< Server thread: drain queue and act.
-	void processEvent(const ServerQueueEvent& event); //!< Server loop calls this. Reads event type and distributes.
+	void serverLoop(); //!< Server thread: drain queue and act.
 
 	Seat freeSeat() const;
 
-	bool queueToSend(ServerQueueEvent event); //!< Queue a Send or Broadcast while running. False if it's empty or the server isn't running.
-	bool queue(ServerQueueEvent event);       //!< Queue any event while running. Dropped once stopped: the server thread won't handle it.
+	bool queue(ServerQueueEvent event); //!< Queue any event while running. Dropped once stopped: the server thread won't handle it.
 
 	// Server thread: the only one that reads the sessions.
 	void sendNow(SessionId sessionId, const core::Message& message);
@@ -45,10 +43,13 @@ private:
 	void onClientDisconnected(core::ConnectionId connectionId);
 
 private:
-	// Processing of server events.
-	void processClientMessage(const ServerQueueEvent& event);         //!< Translate payload to network event and handle.
-	void processClientConnect(const ServerQueueEvent& event);         //!< Creates session key.
-	void processClientDisconnect(const ServerQueueEvent& event);      //!< Destroys session key.
+	// Processing of server events. The server loop hands each event to its overload.
+	void processEvent(const ClientConnected& event);                  //!< Creates session key.
+	void processEvent(const ClientDisconnected& event);               //!< Destroys session key.
+	void processEvent(const ClientMessage& event);                    //!< Translate payload to network event and handle.
+	void processEvent(const Send& event);                             //!< Send to one client.
+	void processEvent(const Broadcast& event);                        //!< Send to all welcomed clients.
+	void processEvent(const Shutdown& event);                         //!< Never reached: serverLoop ends on it.
 	void processHello(SessionId sessionId, const ClientHello& hello); //!< Welcome the client with a seat, or reject it.
 
 	// Hand a player's message to the handler.
