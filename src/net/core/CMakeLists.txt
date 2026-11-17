@@ -8,11 +8,15 @@ set(headers
     "${CMAKE_CURRENT_LIST_DIR}/include/network/core/tcpServer.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/include/network/core/tcpClient.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/connection.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/tcpClientImpl.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/tcpServerImpl.hpp"
 )
 
 set(sources
     "${CMAKE_CURRENT_LIST_DIR}/tcpServer.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/tcpServerImpl.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/tcpClient.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/tcpClientImpl.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/connection.cpp"
 )
 
