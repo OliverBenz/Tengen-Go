@@ -79,7 +79,7 @@ tools/                 3rdparty/             lib/                  docs/
 Libraries → core model/data → engine rules -> networking/serialization -> runtime/orchestration -> gui.
 Executables (`tengen`, `server`) are thin: input/output + presentation. Business logic lives in libraries.
 
-`tools/` holds dev tools (`visionTuner`, `boardViewer`, `manualSetup`, `geometryLabeler`, `stoneClassifier` in Python). The Qt tools follow the same presenter/view rules. `geometryLabeler` writes the geometry `.json` and `board.txt` described in `tests/vision/resources/README.md`; `stoneClassifier` trains on those files, see its README and the CNN primer in `docs/stoneClassifier/`.
+`tools/` holds dev tools (`visionTuner`, `boardViewer`, `manualSetup`, `geometryLabeler`, `stoneClassifier` in Python). The Qt tools follow the same presenter/view rules. `geometryLabeler` writes the geometry `.json` and `board.txt` described in `tests/vision/resource/README.md`; `stoneClassifier` trains on those files, see its README and the CNN primer in `docs/stoneClassifier/`.
 Images for tests, training and docs are Git LFS: new image paths must be covered by `.gitattributes`.
 
 ### Key constraints
@@ -95,7 +95,7 @@ Valid with `reuse lint`. **Never remove or change license headers.** When adding
 
 | Part                                    | License      |
 | --------------------------------------- | ------------ |
-| Everything under `src/game/gui/resources`  | See that dir's README |
+| Everything under `src/game/gui/resource`  | See that dir's README |
 | Remaining Tengen code                   | AGPL-3.0-only |
 | `src/net/core` (netCore)                | Apache-2.0   |
 | `src/vision/core` (visionCore)           | Apache-2.0   |

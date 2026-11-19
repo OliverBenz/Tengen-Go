@@ -8,12 +8,12 @@ find_package(Qt6 ${TENGEN_QT_MIN_VERSION} REQUIRED COMPONENTS Widgets)
 set(headers
 	"${CMAKE_CURRENT_LIST_DIR}/include/vision/gui/manualSetupView.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/vision/gui/manualSetupPresenter.hpp"
-	"${CMAKE_CURRENT_LIST_DIR}/imageView.hpp"
+	"${CMAKE_CURRENT_LIST_DIR}/src/imageView.hpp"
 )
 set(sources
-	"${CMAKE_CURRENT_LIST_DIR}/manualSetupView.cpp"
-	"${CMAKE_CURRENT_LIST_DIR}/manualSetupPresenter.cpp"
-	"${CMAKE_CURRENT_LIST_DIR}/imageView.cpp"
+	"${CMAKE_CURRENT_LIST_DIR}/src/manualSetupView.cpp"
+	"${CMAKE_CURRENT_LIST_DIR}/src/manualSetupPresenter.cpp"
+	"${CMAKE_CURRENT_LIST_DIR}/src/imageView.cpp"
 )
 
 add_library(${targetName} STATIC ${headers} ${sources})

@@ -9,9 +9,9 @@
 namespace tengen::gui {
 namespace {
 
-//! The build copies the resources to resources/ next to the executable.
+//! The build copies the resource folder to resource/ next to the executable.
 QString resourcePath(const QString& relative) {
-	return QCoreApplication::applicationDirPath() + QStringLiteral("/resources/") + relative;
+	return QCoreApplication::applicationDirPath() + QStringLiteral("/resource/") + relative;
 }
 
 QImage readImage(const QString& relative) {

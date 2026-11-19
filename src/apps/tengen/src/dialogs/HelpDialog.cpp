@@ -15,7 +15,7 @@ namespace {
 
 struct PageInfo {
 	std::string title; //!< Window title.
-	std::string file;  //!< File name inside resources/help/.
+	std::string file;  //!< File name inside resource/help/.
 };
 
 const PageInfo& pageInfo(const HelpPage page) {
@@ -27,7 +27,7 @@ const PageInfo& pageInfo(const HelpPage page) {
 }
 
 QString documentPath(const std::string& fileName) {
-	return QDir(QCoreApplication::applicationDirPath()).filePath(QString::fromStdString("resources/help/" + fileName));
+	return QDir(QCoreApplication::applicationDirPath()).filePath(QString::fromStdString("resource/help/" + fileName));
 }
 } // namespace
 

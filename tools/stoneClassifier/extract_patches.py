@@ -69,7 +69,7 @@ def main():
 
 def parse_args() -> argparse.Namespace:
     script_dir = Path(__file__).resolve().parent
-    default_resources = [script_dir.parents[1] / "tests/vision/resources", script_dir / "training_data"]
+    default_resources = [script_dir.parents[1] / "tests/vision/resource", script_dir / "training_data"]
 
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("out", type=Path, help="new output directory, e.g. .../stones_v1")

@@ -5,14 +5,14 @@ A CNN primer is in [`docs/stoneClassifier/cnn_course.pdf`](../../docs/stoneClass
 
 ## Workflow
 
-1. **Label photos.** Each photo needs a `<photo>.json` with its grid corners and a dotBW layout, either `<photo>.txt` or the folder's `board.txt`. Click them with `tools/geometryLabeler`, formats in [`tests/vision/resources/README.md`](../../tests/vision/resources/README.md).
+1. **Label photos.** Each photo needs a `<photo>.json` with its grid corners and a dotBW layout, either `<photo>.txt` or the folder's `board.txt`. Click them with `tools/geometryLabeler`, formats in [`tests/vision/resource/README.md`](../../tests/vision/resource/README.md).
 2. **Extract** a frozen dataset version: `extract_patches.py <data>/stones_vN`
 3. **Check** it by eye: `stones_vN/check/` has every rectified board with its crops marked, and contact sheets of all patches per class.
 4. **Train** one model: `train.py <data>/stones_vN/stones.npz <data>/runs/<name>`,
    or **compare options** in parallel: `sweep.py <stones.npz> <data>/runs/<sweep> --options ... --splits ...`
 5. **Evaluate** and look at the mistakes: `evaluate.py <run>/model.pt <stones.npz> <run>/eval`
 6. **Export** the best run for the vision library: `export_onnx.py <run>/model.pt` writes
-   `src/vision/core/models/stoneNet.onnx` and `stoneNet.json`, which says how to prepare the input and where the model came from.
+   `src/vision/core/resource/models/stoneNet.onnx` and `stoneNet.json`, which says how to prepare the input and where the model came from.
    Only the current model lives in the repo; every run stays in the data directory.
 7. **Try it live**: `live_preview.py` outlines the stones on a camera image, after clicking the 4 grid corners.
 
@@ -27,7 +27,7 @@ extract_patches.py   script: photos → stones.npz, manifest.json, check/
 train.py             script: training loop → model.pt, run.json
 evaluate.py          script: confusion matrix and contact sheets of the mistakes
 sweep.py             script: options × test splits × seeds as parallel train.py runs, one comparison table
-export_onnx.py       script: model.pt → src/vision/core/models/stoneNet.onnx + .json, checked against PyTorch
+export_onnx.py       script: model.pt → src/vision/core/resource/models/stoneNet.onnx + .json, checked against PyTorch
 live_preview.py      script: camera preview with the detected stones outlined
 stone_classifier/
 ├── provenance.py    file hashes and git commit for the records
@@ -39,7 +39,7 @@ stone_classifier/
     ├── dataset.py   stones.npz → network input: crop, augmentation
     ├── model.py     the CNN, saving and loading it
     └── metrics.py   predictions, confusion matrix, recall
-training_data/       labelled photos (Git LFS), same format as tests/vision/resources
+training_data/       labelled photos (Git LFS), same format as tests/vision/resource
 ```
 
 ## Setup

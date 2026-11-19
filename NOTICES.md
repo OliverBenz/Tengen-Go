@@ -12,13 +12,13 @@ Source code: <https://github.com/OliverBenz/Tengen-Go>. The tag of a release hol
 | Tengen, everything not listed below          | AGPL-3.0-only | 2024 Oliver Benz | `AGPL-3.0-only.txt` |
 | netCore (networking, part of Tengen)         | Apache-2.0    | 2024 Oliver Benz | `Apache-2.0.txt`    |
 | visionCore (board detection, part of Tengen) | Apache-2.0    | 2024 Oliver Benz | `Apache-2.0.txt`    |
-| Stone sounds (`resources/audio`)             | CC0-1.0       | 2024 Oliver Benz | `CC0-1.0.txt`       |
+| Stone sounds (`resource/audio`)              | CC0-1.0       | 2024 Oliver Benz | `CC0-1.0.txt`       |
 
 The license of every file in the repository is listed in `REUSE.toml`.
 
 ## Resources
 
-Shipped in `resources/`. Its README lists each file with its source.
+Shipped in `resource/`. Its README lists each file with its source.
 
 | Part                                                                      | License      | Copyright                | License text       |
 | ------------------------------------------------------------------------- | ------------ | ------------------------ | ------------------ |

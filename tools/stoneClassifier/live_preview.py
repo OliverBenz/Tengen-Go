@@ -26,7 +26,7 @@ GRID_COLOUR, CLICK_COLOUR = (255, 0, 255), (0, 255, 255)
 WINDOW = "stones"
 BAR_HEIGHT, BUTTON_WIDTH = 40, 110  # The button bar below the camera image.
 RESELECT = "reselect"
-MODEL = Path(__file__).resolve().parents[2] / "src/vision/core/models/stoneNet.onnx"  # Its usage: stoneNet.json.
+MODEL = Path(__file__).resolve().parents[2] / "src/vision/core/resource/models/stoneNet.onnx"  # Its usage: stoneNet.json.
 
 
 def make_grid(size: int) -> Grid:
