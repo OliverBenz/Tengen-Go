@@ -3,10 +3,15 @@
 #include "GamePresenter.hpp"
 #include "engine/engineCatalog.hpp"
 #include "model/gameUpdates.hpp"
+#include "vision/gui/cameraPreviewPresenter.hpp"
+#include "vision/gui/cameraPreviewView.hpp"
+#include "vision/gui/cameraSource.hpp"
 
 #include <QCoreApplication>
+#include <QDialog>
 #include <QObject>
 #include <QStandardPaths>
+#include <QVBoxLayout>
 #include <cassert>
 #include <filesystem>
 #include <memory>
@@ -22,6 +27,7 @@ MainWindowPresenter::MainWindowPresenter(gui::MainWindow& mainWindow, gui::Style
 
 	QObject::connect(&m_mainWindow, &gui::MainWindow::botDialogRequested, this, &MainWindowPresenter::onBotDialogRequested);
 	QObject::connect(&m_mainWindow, &gui::MainWindow::connectRequested, this, &MainWindowPresenter::onConnectRequested);
+	QObject::connect(&m_mainWindow, &gui::MainWindow::cameraPreviewRequested, this, &MainWindowPresenter::onCameraPreviewRequested);
 	QObject::connect(&m_mainWindow, &gui::MainWindow::shutdownRequested, this, &MainWindowPresenter::onShutdownRequested);
 
 	QObject::connect(&m_mainWindow, &gui::MainWindow::styleDialogRequested, this, &MainWindowPresenter::onStyleDialogRequested);
@@ -78,6 +84,19 @@ void MainWindowPresenter::onBotDialogRequested() {
 
 	// Look on every opening, so an engine installed while we run is offered right away.
 	m_mainWindow.openBotDialog(engine::findEngines(rootPaths));
+}
+
+void MainWindowPresenter::onCameraPreviewRequested() {
+	QDialog window(&m_mainWindow);
+	window.setWindowTitle(tr("Camera Preview"));
+	auto* view   = new vision::gui::CameraPreviewView(&window);
+	auto* layout = new QVBoxLayout(&window);
+	layout->setSizeConstraint(QLayout::SetFixedSize); // Follow the image size.
+	layout->addWidget(view);
+
+	vision::gui::CameraSource camera; // Runs only while the window is open.
+	const vision::gui::CameraPreviewPresenter presenter(*view, camera);
+	window.exec();
 }
 
 void MainWindowPresenter::onNewBotGameRequested(const GameConfig& config, const engine::EngineConfig& engineConfig, const bool humanPlaysBlack) {
