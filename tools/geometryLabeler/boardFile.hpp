@@ -5,7 +5,7 @@
 
 namespace tengen::labeler {
 
-//! Each value is its character in the dotBW format, see tests/vision/resources/README.md.
+//! Each value is its character in the dotBW format, see tests/vision/resource/README.md.
 enum class Stone : char {
 	empty = '.',
 	black = 'B',

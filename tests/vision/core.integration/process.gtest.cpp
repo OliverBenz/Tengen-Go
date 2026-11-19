@@ -9,7 +9,7 @@
 // The process tests verify the whole vision pipeline at once: board detection, grid detection and stone detection.
 // Nothing is prepared, so an image enters the pipeline exactly as the application would hand it over. The outcome is
 // checked against the labelled geometry (.json) and the stone layout (.txt) of each image.
-// These test sets require a triple: (<image>.jpeg, <image>.json, <layout>.txt) as documented in resources/README.md.
+// These test sets require a triple: (<image>.jpeg, <image>.json, <layout>.txt) as documented in resource/README.md.
 namespace tengen::vision::core {
 namespace gtest {
 

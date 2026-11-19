@@ -1,5 +1,4 @@
 #include "vision/vision.hpp"
-#include "include/vision/vision.hpp"
 #include "vision/core/boardFinder.hpp"
 #include "vision/core/gridFinder.hpp"
 #include "vision/core/stoneFinder.hpp"

@@ -1,6 +1,6 @@
 # Resources
 
-Images used by the board widget. The build copies this folder to `resources/` next to the executable, and they are loaded from there at runtime.
+Images used by the board widget. The build copies this folder to `resource/` next to the executable, and they are loaded from there at runtime.
 
 | Folder    | Used for                                     |
 | --------- | -------------------------------------------- |
@@ -52,7 +52,7 @@ The sounds in `audio/` were recorded by the author of this project and are relea
 
 ## Board textures
 
-The textures in `boards/` that are listed in `TEXTURES` in [`resources.cpp`](../resources.cpp) show up in **Settings → Style**, under their display name.
+The textures in `boards/` that are listed in `TEXTURES` in [`resources.cpp`](../src/resources.cpp) show up in **Settings → Style**, under their display name.
 The code refers to them by the `BoardTexture` enum; that table is the only place that knows their files.
 The plain texture has no file: the board is drawn in a plain colour.
 
@@ -75,7 +75,7 @@ The plain texture has no file: the board is drawn in a plain colour.
 
 ### Adding a texture
 
-- **Register:** Put the file in `boards/`. Add a value to `BoardTexture` in [`resources.hpp`](../include/gui/resources.hpp) and a row with its display name and file to `TEXTURES` in [`resources.cpp`](../resources.cpp). The row order is the order in the settings.
+- **Register:** Put the file in `boards/`. Add a value to `BoardTexture` in [`resources.hpp`](../include/gui/resources.hpp) and a row with its display name and file to `TEXTURES` in [`resources.cpp`](../src/resources.cpp). The row order is the order in the settings.
 
 - **Format:** Any format Qt can read. JPEG keeps photos small; PNG of the same image is several times larger.
 - **Which file:** Texture sites ship PBR sets with several maps. Only the colour map is needed (named _Color_, _Albedo_, _Diffuse_ or _BaseColor_).

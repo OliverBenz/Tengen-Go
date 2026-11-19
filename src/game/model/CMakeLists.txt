@@ -15,8 +15,8 @@ set(headers
     "${CMAKE_CURRENT_LIST_DIR}/include/model/chatMessage.hpp"
 )
 set(sources
-    "${CMAKE_CURRENT_LIST_DIR}/board.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/gameRules.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/src/board.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/src/gameRules.cpp"
 )
 
 # Create target

@@ -49,8 +49,8 @@ This might be deemed to be redundant and ugly naming but any user adapting sourc
 We move along with slightly more noisy naming to ensure perfect alignment with the foundational design described above.
 
 ## Models
-`models/stoneNet.onnx` is a small CNN classifying one intersection as empty, black or white; not used by the pipeline yet.
-`models/stoneNet.json` describes how to prepare its input (warp, patch size, colour, scale) and where it came from.
+`resource/models/stoneNet.onnx` is a small CNN classifying one intersection as empty, black or white; not used by the pipeline yet.
+`resource/models/stoneNet.json` describes how to prepare its input (warp, patch size, colour, scale) and where it came from.
 It is trained and exported with [`tools/stoneClassifier`](../../../tools/stoneClassifier/README.md).
 
 ## Class Diagram

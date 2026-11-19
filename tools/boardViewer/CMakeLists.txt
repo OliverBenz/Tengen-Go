@@ -32,7 +32,7 @@ set_target_properties(${targetName}
 
 target_compile_definitions(${targetName}
 	PRIVATE
-		PATH_TEST_IMG="${CMAKE_SOURCE_DIR}/tests/vision/resources/"
+		PATH_TEST_IMG="${CMAKE_SOURCE_DIR}/tests/vision/resource/"
 )
 
 # Setup project settings

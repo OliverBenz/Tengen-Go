@@ -11,18 +11,18 @@ set(headers
 	"${CMAKE_CURRENT_LIST_DIR}/include/gui/chatWidget.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/gui/gameWidget.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/gui/soundPlayer.hpp"
-	"${CMAKE_CURRENT_LIST_DIR}/boardRenderer.hpp"
-	"${CMAKE_CURRENT_LIST_DIR}/playerCard.hpp"
+	"${CMAKE_CURRENT_LIST_DIR}/src/boardRenderer.hpp"
+	"${CMAKE_CURRENT_LIST_DIR}/src/playerCard.hpp"
 )
 
 set(sources
-	"${CMAKE_CURRENT_LIST_DIR}/resources.cpp"
-	"${CMAKE_CURRENT_LIST_DIR}/boardWidget.cpp"
-	"${CMAKE_CURRENT_LIST_DIR}/chatWidget.cpp"
-	"${CMAKE_CURRENT_LIST_DIR}/gameWidget.cpp"
-	"${CMAKE_CURRENT_LIST_DIR}/soundPlayer.cpp"
-	"${CMAKE_CURRENT_LIST_DIR}/boardRenderer.cpp"
-	"${CMAKE_CURRENT_LIST_DIR}/playerCard.cpp"
+	"${CMAKE_CURRENT_LIST_DIR}/src/resources.cpp"
+	"${CMAKE_CURRENT_LIST_DIR}/src/boardWidget.cpp"
+	"${CMAKE_CURRENT_LIST_DIR}/src/chatWidget.cpp"
+	"${CMAKE_CURRENT_LIST_DIR}/src/gameWidget.cpp"
+	"${CMAKE_CURRENT_LIST_DIR}/src/soundPlayer.cpp"
+	"${CMAKE_CURRENT_LIST_DIR}/src/boardRenderer.cpp"
+	"${CMAKE_CURRENT_LIST_DIR}/src/playerCard.cpp"
 )
 
 add_library(${targetName} STATIC ${headers} ${sources})
@@ -51,16 +51,16 @@ set_target_configuration(${targetName} Config::Default)
 set_output_directory(${targetName})
 
 # Copy resource directory to the output
-add_custom_target(${targetName}_resources ALL
+add_custom_target(${targetName}_resource ALL
 	COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
-	        "${CMAKE_CURRENT_LIST_DIR}/resources"
-	        "$<GENEX_EVAL:$<TARGET_PROPERTY:${targetName},RUNTIME_OUTPUT_DIRECTORY>>/resources"
+	        "${CMAKE_CURRENT_LIST_DIR}/resource"
+	        "$<GENEX_EVAL:$<TARGET_PROPERTY:${targetName},RUNTIME_OUTPUT_DIRECTORY>>/resource"
 )
-add_dependencies(${targetName} ${targetName}_resources)
-set_target_properties(${targetName}_resources
+add_dependencies(${targetName} ${targetName}_resource)
+set_target_properties(${targetName}_resource
 	PROPERTIES
 		FOLDER "${IDE_FOLDER_SOURCE}/game"
 )
 
 # ----- Installation -----
-install(DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/resources/" DESTINATION "${CMAKE_INSTALL_BINDIR}/resources")
+install(DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/resource/" DESTINATION "${CMAKE_INSTALL_BINDIR}/resource")

@@ -1,6 +1,6 @@
 """Export a trained stone classifier as ONNX, with a JSON describing how to use it and where it came from.
 
-  export_onnx.py <run>/model.pt [--out src/vision/core/models]
+  export_onnx.py <run>/model.pt [--out src/vision/core/resource/models]
 
 Writes <out>/stoneNet.onnx and <out>/stoneNet.json. The run's run.json and its dataset must still exist: the JSON
 records the dataset version, and the export is checked against PyTorch on the run's test patches.
@@ -82,7 +82,7 @@ def strip_metadata(path: Path):
 def make_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("model", type=Path, help="model.pt of a training run, next to its run.json")
-    parser.add_argument("--out", type=Path, default=REPO / "src/vision/core/models")
+    parser.add_argument("--out", type=Path, default=REPO / "src/vision/core/resource/models")
     return parser
 
 

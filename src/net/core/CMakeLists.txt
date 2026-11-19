@@ -7,17 +7,17 @@ set(headers
     "${CMAKE_CURRENT_LIST_DIR}/include/network/core/protocol.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/include/network/core/tcpServer.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/include/network/core/tcpClient.hpp"
-    "${CMAKE_CURRENT_LIST_DIR}/connection.hpp"
-    "${CMAKE_CURRENT_LIST_DIR}/tcpClientImpl.hpp"
-    "${CMAKE_CURRENT_LIST_DIR}/tcpServerImpl.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/src/connection.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/src/tcpClientImpl.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/src/tcpServerImpl.hpp"
 )
 
 set(sources
-    "${CMAKE_CURRENT_LIST_DIR}/tcpServer.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/tcpServerImpl.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/tcpClient.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/tcpClientImpl.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/connection.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/src/tcpServer.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/src/tcpServerImpl.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/src/tcpClient.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/src/tcpClientImpl.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/src/connection.cpp"
 )
 
 

@@ -1,7 +1,7 @@
 % Page 4: the rules applied, taken from src/net.
 
 \newpage
-\section{Example 1 · Connection: framing and the read loop \hfill\src{src/net/core/connection.cpp}}
+\section{Example 1 · Connection: framing and the read loop \hfill\src{src/net/core/src/connection.cpp}}
 
 \begin{diagram}
 \begin{tikzpicture}[x=1mm, y=1mm, byte/.style={draw=io, fill=io!12, minimum width=7mm, minimum height=6mm, font=\scriptsize\ttfamily}, pay/.style={draw=app, fill=app!10, minimum height=6mm, font=\scriptsize\ttfamily}]
@@ -102,7 +102,7 @@ asio::async_read(m_socket,
 	\item \textbf{Why is \code{close()} posted too?} It lands \emph{behind} the sends posted before it, so they still go out. Sends posted after it see \code{m\_closing} and are dropped.
 \end{itemize}
 
-\section{Example 3 · TcpClient: handlers that come too late \hfill\src{src/net/core/tcpClient.cpp}}
+\section{Example 3 · TcpClient: handlers that come too late \hfill\src{src/net/core/src/tcpClient.cpp}}
 
 \begin{multicols}{2}
 \begin{diagram}

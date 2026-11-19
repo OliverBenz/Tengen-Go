@@ -16,7 +16,7 @@
 // The board corners defined in the .json file next to each image are used to warp an ideal board image, the same way
 // the gridFinder tests do. The stone detection therefore works on a perfect input and a failure here is a stone
 // detection problem rather than a board or grid detection problem.
-// These test sets require a triple: (<image>.jpeg, <image>.json, <layout>.txt) as documented in resources/README.md.
+// These test sets require a triple: (<image>.jpeg, <image>.json, <layout>.txt) as documented in resource/README.md.
 namespace tengen::vision::core {
 namespace gtest {
 
