@@ -22,9 +22,9 @@ signals:
 	void frameReady(const QImage& frame);
 
 private:
-	QCamera m_camera;
-	QVideoSink m_sink;
-	QMediaCaptureSession m_session; //!< Last: lets go of the camera and sink first.
+	QCamera m_camera;               //!< The chosen device.
+	QVideoSink m_sink;              //!< Receives its frames.
+	QMediaCaptureSession m_session; //!< Connects both. Last: released first.
 };
 
 } // namespace tengen::vision::gui
