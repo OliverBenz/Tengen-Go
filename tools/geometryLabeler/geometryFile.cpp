@@ -12,7 +12,7 @@ namespace tengen::labeler {
 
 static bool isPhoto(const std::filesystem::path& file) {
 	std::string extension = file.extension().string();
-	std::ranges::transform(extension, extension.begin(), [](const unsigned char c) { return std::tolower(c); });
+	std::ranges::transform(extension, extension.begin(), [](const unsigned char c) { return static_cast<char>(std::tolower(c)); });
 	return extension == ".png" || extension == ".jpg" || extension == ".jpeg";
 }
 
