@@ -28,6 +28,7 @@ public:
 signals:
 	void botDialogRequested();                    //!< The presenter will look for engines before opening the dialog.
 	void connectRequested(const QString& hostIp); //!< Join the game hosted at this address.
+	void cameraPreviewRequested();                //!< Show the live camera image.
 	void shutdownRequested();                     //!< The window closes. End the current game.
 
 	void gameLocalRequested(const GameConfig& config);                                                               //!< Start a local game for two players on this machine.

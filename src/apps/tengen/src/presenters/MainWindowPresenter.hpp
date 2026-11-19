@@ -24,6 +24,7 @@ private slots:
 	void onBotDialogRequested();
 	void onNewBotGameRequested(const GameConfig& config, const engine::EngineConfig& engineConfig, bool humanPlaysBlack);
 	void onConnectRequested(const QString& hostIp);
+	void onCameraPreviewRequested();
 	void onHostRequested(const GameConfig& config, Player hostColour);
 	void onShutdownRequested();
 

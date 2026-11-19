@@ -46,6 +46,7 @@ target_link_libraries(${targetName}
         tengen::game::gui
         Qt6::Widgets
         Qt6::Concurrent
+        tengen::vision::gui
 )
 
 # The About dialog finds the installed license texts relative to the executable.
