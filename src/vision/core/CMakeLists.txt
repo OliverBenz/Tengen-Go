@@ -11,6 +11,23 @@ find_package(OpenCV ${TENGEN_OPENCV_MIN_VERSION} REQUIRED COMPONENTS
 	geometry
 )
 
+# Compile the stone model in.
+set(stoneNetModel "${CMAKE_CURRENT_LIST_DIR}/resource/models/stoneNet.onnx")
+set(stoneNetSource "${CMAKE_CURRENT_BINARY_DIR}/generated/stoneNetModel.cpp")
+add_custom_command(
+	OUTPUT "${stoneNetSource}"
+	COMMAND ${CMAKE_COMMAND}
+	        -DINPUT=${stoneNetModel}
+	        -DOUTPUT=${stoneNetSource}
+	        -DHEADER=stoneNetModel.hpp
+	        -DNAMESPACE=tengen::vision::core
+	        -DFUNCTION=stoneNetModel
+	        -P "${CMAKE_CURRENT_LIST_DIR}/cmake/embedFile.cmake"
+	DEPENDS "${stoneNetModel}" "${CMAKE_CURRENT_LIST_DIR}/cmake/embedFile.cmake"
+	COMMENT "Compiling in stoneNet.onnx"
+	VERBATIM
+)
+
 # Get files to build
 set(headers
 	"${CMAKE_CURRENT_LIST_DIR}/src/statistics.hpp"
@@ -31,6 +48,7 @@ set(headers
 	"${CMAKE_CURRENT_LIST_DIR}/src/stoneFinder/scoring.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/src/stoneFinder/stoneFinderInternal.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/src/stoneFinder/stoneFinderTypes.hpp"
+	"${CMAKE_CURRENT_LIST_DIR}/src/stoneNetModel.hpp"
 )
 set(sources
 	"${CMAKE_CURRENT_LIST_DIR}/src/statistics.cpp"
@@ -48,6 +66,7 @@ set(sources
 	"${CMAKE_CURRENT_LIST_DIR}/src/stoneFinder/scoring.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/src/stoneFinder/stoneFinder.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/src/stoneFinder/stoneFinderInternal.cpp"
+	"${stoneNetSource}"
 )
 
 add_library(${targetName} STATIC ${headers} ${sources})
@@ -57,6 +76,8 @@ target_include_directories(${targetName}
 	PUBLIC
 		"${CMAKE_CURRENT_LIST_DIR}/include"
 		${OpenCV_INCLUDE_DIRS}
+	PRIVATE
+		"${CMAKE_CURRENT_LIST_DIR}/src" # For the generated model source.
 )
 target_link_libraries(${targetName}
 	PUBLIC
