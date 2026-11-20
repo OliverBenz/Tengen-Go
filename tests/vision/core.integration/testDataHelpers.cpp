@@ -33,18 +33,18 @@ void ensureJsonExists(const std::vector<std::filesystem::path>& images) {
 }
 
 
-PipelineResult runPipeline(const cv::Mat& image) {
-	return runPipeline(image, warpToBoard(image));
+PipelineResult runPipeline(const cv::Mat& image, StoneClassifier& classifier) {
+	return runPipeline(image, warpToBoard(image), classifier);
 }
 
-PipelineResult runPipeline(const cv::Mat& image, const WarpResult& warped) {
+PipelineResult runPipeline(const cv::Mat& image, const WarpResult& warped, StoneClassifier& classifier) {
 	const BoardGeometry geometry = analyseGeometry(warped);
 	if (!isValidGeometry(geometry)) {
 		return {warped, {}, {}}; // Stop here, the remaining stages cannot work without a grid.
 	}
 
 	const RectifiedBoard rectified = transformImage(image, geometry);
-	return {warped, rectified, analyseBoard(rectified)};
+	return {warped, rectified, analyseBoard(rectified, classifier)};
 }
 
 bool isValidPipelineResult(const PipelineResult& result) {

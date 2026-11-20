@@ -14,6 +14,7 @@ A CNN primer is in [`docs/stoneClassifier/cnn_course.pdf`](../../docs/stoneClass
 6. **Export** the best run for the vision library: `export_onnx.py <run>/model.pt` writes
    `src/vision/core/resource/models/stoneNet.onnx` and `stoneNet.json`, which says how to prepare the input and where the model came from.
    Only the current model lives in the repo; every run stays in the data directory.
+   Rebuild Tengen to use it: the model is compiled in. If the input preparation in `stoneNet.json` changed, update `stoneClassifier.cpp` and `stoneFinder.cpp` in `src/vision/core` to match.
 7. **Try it live**: `live_preview.py` outlines the stones on a camera image, after clicking the 4 grid corners.
 
 Every output directory must not exist yet, so a dataset version or run is never overwritten.

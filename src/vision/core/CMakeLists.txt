@@ -9,6 +9,7 @@ find_package(OpenCV ${TENGEN_OPENCV_MIN_VERSION} REQUIRED COMPONENTS
 	videoio
 	highgui
 	geometry
+	dnn
 )
 
 # Compile the stone model in.
@@ -36,18 +37,8 @@ set(headers
 	"${CMAKE_CURRENT_LIST_DIR}/include/vision/core/debugVisualizer.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/vision/core/boardFinder.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/vision/core/gridFinder.hpp"
+	"${CMAKE_CURRENT_LIST_DIR}/include/vision/core/stoneClassifier.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/vision/core/stoneFinder.hpp"
-	"${CMAKE_CURRENT_LIST_DIR}/include/vision/core/stoneFinderConfig.hpp"
-	"${CMAKE_CURRENT_LIST_DIR}/src/stoneFinder/decisionPolicy.hpp"
-	"${CMAKE_CURRENT_LIST_DIR}/src/stoneFinder/debugging.hpp"
-	"${CMAKE_CURRENT_LIST_DIR}/src/stoneFinder/featureExtraction.hpp"
-	"${CMAKE_CURRENT_LIST_DIR}/src/stoneFinder/features.hpp"
-	"${CMAKE_CURRENT_LIST_DIR}/src/stoneFinder/geometrySampling.hpp"
-	"${CMAKE_CURRENT_LIST_DIR}/src/stoneFinder/modelCalibration.hpp"
-	"${CMAKE_CURRENT_LIST_DIR}/src/stoneFinder/refinementEngine.hpp"
-	"${CMAKE_CURRENT_LIST_DIR}/src/stoneFinder/scoring.hpp"
-	"${CMAKE_CURRENT_LIST_DIR}/src/stoneFinder/stoneFinderInternal.hpp"
-	"${CMAKE_CURRENT_LIST_DIR}/src/stoneFinder/stoneFinderTypes.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/src/stoneNetModel.hpp"
 )
 set(sources
@@ -57,15 +48,8 @@ set(sources
 	"${CMAKE_CURRENT_LIST_DIR}/src/boardFinder.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/src/gridLatticeFinder.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/src/gridFinder.cpp"
-	"${CMAKE_CURRENT_LIST_DIR}/src/stoneFinder/debugging.cpp"
-	"${CMAKE_CURRENT_LIST_DIR}/src/stoneFinder/decisionPolicy.cpp"
-	"${CMAKE_CURRENT_LIST_DIR}/src/stoneFinder/featureExtraction.cpp"
-	"${CMAKE_CURRENT_LIST_DIR}/src/stoneFinder/geometrySampling.cpp"
-	"${CMAKE_CURRENT_LIST_DIR}/src/stoneFinder/modelCalibration.cpp"
-	"${CMAKE_CURRENT_LIST_DIR}/src/stoneFinder/refinementEngine.cpp"
-	"${CMAKE_CURRENT_LIST_DIR}/src/stoneFinder/scoring.cpp"
-	"${CMAKE_CURRENT_LIST_DIR}/src/stoneFinder/stoneFinder.cpp"
-	"${CMAKE_CURRENT_LIST_DIR}/src/stoneFinder/stoneFinderInternal.cpp"
+	"${CMAKE_CURRENT_LIST_DIR}/src/stoneClassifier.cpp"
+	"${CMAKE_CURRENT_LIST_DIR}/src/stoneFinder.cpp"
 	"${stoneNetSource}"
 )
 
@@ -98,5 +82,4 @@ target_compile_definitions(${targetName}
 		$<$<CONFIG:Debug>:VISION_DEBUG_LOGGING>
 		# VISION_LOG_BOARDFINDER
 		# VISION_LOG_GRIDFINDER
-		# VISION_LOG_STONEFINDER
 )
