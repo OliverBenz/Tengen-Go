@@ -8,14 +8,18 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <span>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 namespace tengen::vision::core {
 
 // See resource/models/stoneNet.json.
 static constexpr std::array<StoneState, 3> CLASSES{StoneState::Empty, StoneState::Black, StoneState::White}; //!< Logit order.
 static constexpr double SCALE = 1.0 / 255.0;                                                                 //!< To [0, 1].
+
+static constexpr std::size_t BATCH_SIZE = 64; //!< Patches per network run: bounds the memory used at once.
 
 static cv::dnn::Net loadModel() {
 	const std::span<const unsigned char> model = stoneNetModel();
@@ -42,23 +46,14 @@ StoneClassifier::StoneClassifier()
 
 StoneClassifier::~StoneClassifier() = default;
 
-std::vector<Classification> StoneClassifier::classify(const std::vector<cv::Mat>& patches) {
-	if (patches.empty()) {
-		return {};
-	}
-	const bool fits = std::ranges::all_of(patches, [](const cv::Mat& patch) { return patch.rows == PATCH_SIZE && patch.cols == PATCH_SIZE && patch.type() == CV_8UC3; });
-	if (!fits) {
-		throw std::invalid_argument("Stone patches must be " + std::to_string(PATCH_SIZE) + "x" + std::to_string(PATCH_SIZE) + " 8-bit BGR images");
-	}
-
-	m_impl->net.setInput(cv::dnn::blobFromImages(patches, SCALE, cv::Size(), cv::Scalar(), /*swapRB=*/true)); // NCHW, RGB.
-	const cv::Mat logits = m_impl->net.forward();
-	if (logits.dims != 2 || logits.type() != CV_32F || logits.rows != static_cast<int>(patches.size()) || logits.cols != static_cast<int>(CLASSES.size())) {
+//! Runs one batch through the network, appending its classifications.
+static void classifyBatch(cv::dnn::Net& net, const std::vector<cv::Mat>& batch, std::vector<Classification>& result) {
+	net.setInput(cv::dnn::blobFromImages(batch, SCALE, cv::Size(), cv::Scalar(), /*swapRB=*/true)); // NCHW, RGB.
+	const cv::Mat logits = net.forward();
+	if (logits.dims != 2 || logits.type() != CV_32F || logits.rows != static_cast<int>(batch.size()) || logits.cols != static_cast<int>(CLASSES.size())) {
 		throw std::runtime_error("The stone model's output does not match stoneNet.json");
 	}
 
-	std::vector<Classification> result;
-	result.reserve(patches.size());
 	for (int i = 0; i < logits.rows; ++i) {
 		const float* scores    = logits.ptr<float>(i);
 		const std::size_t best = static_cast<std::size_t>(std::max_element(scores, scores + CLASSES.size()) - scores);
@@ -67,6 +62,21 @@ std::vector<Classification> StoneClassifier::classify(const std::vector<cv::Mat>
 			sum += std::exp(scores[k] - scores[best]); // Shifted: no overflow.
 		}
 		result.push_back({.state = CLASSES[best], .confidence = 1.f / sum});
+	}
+}
+
+std::vector<Classification> StoneClassifier::classify(const std::vector<cv::Mat>& patches) {
+	const bool fits = std::ranges::all_of(patches, [](const cv::Mat& patch) { return patch.rows == PATCH_SIZE && patch.cols == PATCH_SIZE && patch.type() == CV_8UC3; });
+	if (!fits) {
+		throw std::invalid_argument("Stone patches must be " + std::to_string(PATCH_SIZE) + "x" + std::to_string(PATCH_SIZE) + " 8-bit BGR images");
+	}
+
+	std::vector<Classification> result;
+	result.reserve(patches.size());
+	const std::span<const cv::Mat> all(patches);
+	for (std::size_t first = 0; first < all.size(); first += BATCH_SIZE) {
+		const std::span<const cv::Mat> batch = all.subspan(first, std::min(BATCH_SIZE, all.size() - first));
+		classifyBatch(m_impl->net, {batch.begin(), batch.end()}, result); // Copies the Mat headers only.
 	}
 	return result;
 }
