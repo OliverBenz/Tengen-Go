@@ -16,7 +16,7 @@
 // The board corners defined in the .json file next to each image are used to warp an ideal board image, the same way
 // the gridFinder tests do. The stone detection therefore works on a perfect input and a failure here is a stone
 // detection problem rather than a board or grid detection problem.
-// These test sets require a triple: (<image>.jpeg, <image>.json, <layout>.txt) as documented in resources/README.md.
+// These test sets require a triple: (<image>.jpeg, <image>.json, <layout>.txt) as documented in resource/README.md.
 namespace tengen::vision::core {
 namespace gtest {
 
@@ -32,6 +32,7 @@ static void runTest(const std::string& testSetName, unsigned imageCount) {
 	ensureJsonExists(images);
 
 	// Checks below are non-fatal so one bad image does not hide the results of the remaining ones.
+	StoneClassifier classifier;
 	for (const auto& imagePath: images) {
 		// A) Prepare the test
 		// Load image
@@ -54,7 +55,7 @@ static void runTest(const std::string& testSetName, unsigned imageCount) {
 		}
 
 		// B) Start of the stone detection test
-		const PipelineResult result = runPipeline(image, warpResult);
+		const PipelineResult result = runPipeline(image, warpResult, classifier);
 		if (!isValidPipelineResult(result)) {
 			ADD_FAILURE() << "Stone detection produced no usable result for " << imagePath << "\n";
 			continue;
@@ -134,6 +135,7 @@ TEST(StoneFinder, Setup_SingleStone) {
 	        {"C2_4_white.png", StoneState::White},
 	}};
 
+	StoneClassifier classifier;
 	for (const auto& [fileName, expectedState]: CASES) {
 		const auto imagePath = std::filesystem::path(PATH_TEST_IMG) / "setup" / std::string(fileName);
 
@@ -143,7 +145,7 @@ TEST(StoneFinder, Setup_SingleStone) {
 			continue;
 		}
 
-		const PipelineResult result = runPipeline(image, warpSetupImage(image));
+		const PipelineResult result = runPipeline(image, warpSetupImage(image), classifier);
 		if (!isValidPipelineResult(result)) {
 			ADD_FAILURE() << "Stone detection produced no usable result for " << imagePath << "\n";
 			continue;

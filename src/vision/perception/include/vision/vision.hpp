@@ -1,12 +1,11 @@
 #pragma once
 
 #include "model/coordinate.hpp"
-#include "vision/core/gridFinder.hpp" // TODO: Move to source. Dont propagate dependencies.
 #include "vision/source.hpp"
 
-#include <atomic>
 #include <filesystem>
-#include <thread>
+#include <functional>
+#include <memory>
 
 namespace tengen::vision {
 
@@ -49,17 +48,8 @@ public:
 	void stop();
 
 private:
-	void boardLoop();
-
-private:
-	Source m_source;                        //!< Source input for the board detection.
-	core::RectifiedBoard m_board;           //!< Result of the setup process.
-	std::filesystem::path m_setupImagePath; //!< Setup image path for Source::Camera.
-
-	Callbacks m_callbacks; //!< Callback functions to signal events.
-
-	std::atomic<bool> m_running; //!< Stone detection loop running.
-	std::thread m_visionThread;  //!< Thread handling the stone detection loop.
+	struct State;
+	std::unique_ptr<State> m_state; //!< Hides core and OpenCV.
 };
 
 } // namespace tengen::vision

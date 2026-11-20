@@ -33,21 +33,21 @@ SPDX-License-Identifier = "Apache-2.0"
 
 # Own recordings.
 [[annotations]]
-path = "src/game/gui/resources/audio/**"
+path = "src/game/gui/resource/audio/**"
 SPDX-FileCopyrightText = "2024 Oliver Benz"
 SPDX-License-Identifier = "CC0-1.0"
 
 # Rules help page, from the Wikipedia article "Rules of Go".
 [[annotations]]
-path = "src/apps/tengen/resources/help/rules.html"
+path = "src/apps/tengen/resource/help/rules.html"
 SPDX-FileCopyrightText = "Wikipedia contributors"
 SPDX-License-Identifier = "CC-BY-SA-4.0"
 
 # Stones and board of the OGS "Anime" theme, from online-go/goban.
 [[annotations]]
 path = [
-	"src/game/gui/resources/stones/anime_*",
-	"src/game/gui/resources/boards/anime_board.svg",
+	"src/game/gui/resource/stones/anime_*",
+	"src/game/gui/resource/boards/anime_board.svg",
 ]
 SPDX-FileCopyrightText = "Online-Go.com"
 SPDX-License-Identifier = "Apache-2.0"
@@ -55,16 +55,16 @@ SPDX-License-Identifier = "Apache-2.0"
 # Board textures.
 [[annotations]]
 path = [
-	"src/game/gui/resources/boards/1K-wood_fine_8-diffuse.jpg",
-	"src/game/gui/resources/boards/2K_afromosia_basecolor.png",
+	"src/game/gui/resource/boards/1K-wood_fine_8-diffuse.jpg",
+	"src/game/gui/resource/boards/2K_afromosia_basecolor.png",
 ]
 SPDX-FileCopyrightText = "ShareTextures"
 SPDX-License-Identifier = "CC0-1.0"
 
 [[annotations]]
 path = [
-	"src/game/gui/resources/boards/Wood094_2K-PNG_Color.png",
-	"src/game/gui/resources/boards/Wood095_2K-PNG_Color.png",
+	"src/game/gui/resource/boards/Wood094_2K-PNG_Color.png",
+	"src/game/gui/resource/boards/Wood095_2K-PNG_Color.png",
 ]
 SPDX-FileCopyrightText = "ambientCG"
 SPDX-License-Identifier = "CC0-1.0"

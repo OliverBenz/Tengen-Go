@@ -5,26 +5,38 @@ set(targetName tengen)
 find_package(Qt6 ${TENGEN_QT_MIN_VERSION} REQUIRED COMPONENTS Widgets Concurrent)
 
 add_executable(${targetName}
-    "${CMAKE_CURRENT_LIST_DIR}/main.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/MainWindow.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/MainWindowPresenter.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/GamePresenter.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/BoardPresenter.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/BoardSizeWidget.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/PlayerColourWidget.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/LocalGameDialog.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/RulesConfigWidget.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/BotDialog.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/GnuGoConfigWidget.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/KataGoConfigWidget.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/ChatPresenter.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/NetworkPresenter.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/ConnectDialog.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/HostDialog.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/HelpDialog.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/AboutDialog.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/BoardStyleDialog.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/Logging.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/src/main.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/src/Logging.cpp"
+
+    "${CMAKE_CURRENT_LIST_DIR}/src/presenters/MainWindowPresenter.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/src/presenters/GamePresenter.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/src/presenters/BoardPresenter.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/src/presenters/ChatPresenter.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/src/presenters/NetworkPresenter.cpp"
+
+    "${CMAKE_CURRENT_LIST_DIR}/src/views/MainWindow.cpp"
+
+    "${CMAKE_CURRENT_LIST_DIR}/src/dialogs/LocalGameDialog.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/src/dialogs/BotDialog.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/src/dialogs/ConnectDialog.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/src/dialogs/HostDialog.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/src/dialogs/HelpDialog.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/src/dialogs/AboutDialog.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/src/dialogs/BoardStyleDialog.cpp"
+
+    "${CMAKE_CURRENT_LIST_DIR}/src/controls/BoardSizeWidget.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/src/controls/PlayerColourWidget.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/src/controls/RulesConfigWidget.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/src/controls/GnuGoConfigWidget.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/src/controls/KataGoConfigWidget.cpp"
+)
+
+target_include_directories(${targetName}
+    PRIVATE
+        "${CMAKE_CURRENT_LIST_DIR}/src/presenters"
+        "${CMAKE_CURRENT_LIST_DIR}/src/views"
+        "${CMAKE_CURRENT_LIST_DIR}/src/dialogs"
+        "${CMAKE_CURRENT_LIST_DIR}/src/controls"
 )
 
 target_link_libraries(${targetName}
@@ -34,6 +46,7 @@ target_link_libraries(${targetName}
         tengen::game::gui
         Qt6::Widgets
         Qt6::Concurrent
+        tengen::vision::gui
 )
 
 # The About dialog finds the installed license texts relative to the executable.
@@ -58,13 +71,13 @@ tengen_deploy_qt(${targetName})
 
 
 # Copy resource directory to the output
-add_custom_target(${targetName}_resources ALL
+add_custom_target(${targetName}_resource ALL
     COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
-            "${CMAKE_CURRENT_LIST_DIR}/resources"
-            "$<GENEX_EVAL:$<TARGET_PROPERTY:${targetName},RUNTIME_OUTPUT_DIRECTORY>>/resources"
+            "${CMAKE_CURRENT_LIST_DIR}/resource"
+            "$<GENEX_EVAL:$<TARGET_PROPERTY:${targetName},RUNTIME_OUTPUT_DIRECTORY>>/resource"
 )
-add_dependencies(${targetName} ${targetName}_resources)
-set_target_properties(${targetName}_resources
+add_dependencies(${targetName} ${targetName}_resource)
+set_target_properties(${targetName}_resource
 	PROPERTIES
 		FOLDER "${IDE_FOLDER_SOURCE}/apps"
 )
@@ -72,7 +85,7 @@ set_target_properties(${targetName}_resources
 
 # ----- Installation -----
 install(TARGETS ${targetName} RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
-install(DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/resources/" DESTINATION "${CMAKE_INSTALL_BINDIR}/resources")
+install(DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/resource/" DESTINATION "${CMAKE_INSTALL_BINDIR}/resource")
 
 # Windows: ship the Qt DLLs and plugins, and the MSVC runtime, so it runs on machines without Qt or Visual Studio.
 if(WIN32)

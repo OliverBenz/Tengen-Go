@@ -7,7 +7,7 @@
 
 //! Label photos with their geometry .json by clicking: open a folder, click the corners of every photo that has no
 //! .json yet, submit. Then "Board layout..." writes the folder's board.txt from the stones clicked on one photo.
-//! The file formats are described in tests/vision/resources/README.md.
+//! The file formats are described in tests/vision/resource/README.md.
 int main(int argc, char** argv) {
 	QApplication application(argc, argv);
 

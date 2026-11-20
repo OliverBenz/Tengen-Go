@@ -3,7 +3,7 @@ include_guard(GLOBAL)
 set(targetName server)
 
 add_executable(${targetName}
-    "${CMAKE_CURRENT_LIST_DIR}/main.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/src/main.cpp"
 )
 
 target_link_libraries(${targetName}

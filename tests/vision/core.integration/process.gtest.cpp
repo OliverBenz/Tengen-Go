@@ -9,7 +9,7 @@
 // The process tests verify the whole vision pipeline at once: board detection, grid detection and stone detection.
 // Nothing is prepared, so an image enters the pipeline exactly as the application would hand it over. The outcome is
 // checked against the labelled geometry (.json) and the stone layout (.txt) of each image.
-// These test sets require a triple: (<image>.jpeg, <image>.json, <layout>.txt) as documented in resources/README.md.
+// These test sets require a triple: (<image>.jpeg, <image>.json, <layout>.txt) as documented in resource/README.md.
 namespace tengen::vision::core {
 namespace gtest {
 
@@ -25,6 +25,7 @@ static void runTest(const std::string& testSetName, unsigned imageCount) {
 	ensureJsonExists(images);
 
 	// Checks below are non-fatal so one bad image does not hide the results of the remaining ones.
+	StoneClassifier classifier;
 	for (const auto& imagePath: images) {
 		// Load image
 		const cv::Mat image = cv::imread(imagePath.string());
@@ -33,7 +34,7 @@ static void runTest(const std::string& testSetName, unsigned imageCount) {
 			continue;
 		}
 
-		const PipelineResult result = runPipeline(image);
+		const PipelineResult result = runPipeline(image, classifier);
 		if (!isValidPipelineResult(result)) {
 			ADD_FAILURE() << "Pipeline produced no usable result for " << imagePath << "\n";
 			continue;

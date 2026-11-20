@@ -73,6 +73,6 @@ All handler calls run one at a time: on the IO thread, or `onDisconnected` on th
 ## Where To Look
 
 - `src/net/network/include/network/nwEvents.hpp` for the protocol types.
-- `src/net/network/nwEvents.cpp` for serialization/parsing.
+- `src/net/network/src/nwEvents.cpp` for serialization/parsing.
 - `src/net/network/server.*` for the server wrapper and event forwarding.
 - `src/net/network/client.*` for the client wrapper and the handshake.

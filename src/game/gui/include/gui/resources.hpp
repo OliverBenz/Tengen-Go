@@ -38,15 +38,19 @@ namespace stoneStyle {
 //! Stone image of a player at full resolution. Callers scale it to their size. Null if unreadable.
 QImage loadTexture(Player player);
 
+
+//! Stone placement sounds the application ships.
+enum class Sound {
+	One,
+	Two,
+};
+
+QList<Sound> sounds();            //!< All stone sounds in display order.
+Sound defaultSound();             //!< Sound a new board starts with.
+QString soundFile(Sound sound);   //!< Path to the given stone placement sound effect.
+QString displayName(Sound sound); //!< Name to show the user.
+
 } // namespace stoneStyle
-
-
-namespace sound {
-
-//! Path to the stone placement sound effect, for gui::SoundPlayer to load.
-QString stonePlace();
-
-} // namespace sound
 
 
 namespace gameRules {

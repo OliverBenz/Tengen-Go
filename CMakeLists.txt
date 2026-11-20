@@ -66,7 +66,7 @@ endif()
 # ----- Installation -----
 
 # Licenses, laid out as NOTICES.md describes
-# The resources folders bring the licenses of their third-party files along.
+# The resource folders bring the licenses of their third-party files along.
 install(DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/LICENSES/" DESTINATION "${TENGEN_INSTALL_LICENSEDIR}")
 install(FILES "${CMAKE_CURRENT_LIST_DIR}/NOTICES.md" DESTINATION "${TENGEN_INSTALL_LICENSEDIR}")
 install(DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/3rdparty/licenses/" DESTINATION "${TENGEN_INSTALL_LICENSEDIR}/3rdparty")

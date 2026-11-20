@@ -12,7 +12,7 @@ struct Pixel {
 	int y;
 };
 
-//! The labelled geometry of one photo, see tests/vision/resources/README.md.
+//! The labelled geometry of one photo, see tests/vision/resource/README.md.
 struct Geometry {
 	unsigned boardSize{0};
 	std::array<Pixel, 4> boardCorners{};

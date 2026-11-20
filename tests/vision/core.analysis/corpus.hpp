@@ -9,7 +9,7 @@
 
 namespace tengen::vision::analysis {
 
-//! Four corners of an outline in original image space, stored unordered (see resources/README.md).
+//! Four corners of an outline in original image space, stored unordered (see resource/README.md).
 using Corners = std::array<cv::Point2f, 4>;
 
 //! Manually labelled geometry for one image.
