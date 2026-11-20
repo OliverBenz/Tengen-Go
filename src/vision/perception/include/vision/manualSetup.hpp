@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -20,6 +21,15 @@ struct BoardSnapshot {
 	Image rectified;    //!< The rectified board with its grid points and the stones found marked.
 	unsigned boardSize; //!< Lines per side of the grid found. 0 if none was found, and rectified stays empty.
 };
+
+//! A point in frame coordinates.
+struct Point {
+	float x{0.f};
+	float y{0.f};
+};
+
+//! The board within the 4 picked corners, warped square. The first corner ends up at the top left, where the game has Coord{0, 0}. Empty for an empty frame.
+Image warpToBoard(const Image& frame, const std::array<Point, 4>& corners);
 
 //! Set the board up by hand: the user picks the 4 board corners on the camera image instead of the board finder.
 class ManualSetup {

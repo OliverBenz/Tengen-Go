@@ -14,8 +14,8 @@ namespace tengen::vision::gui {
 
 static constexpr int IMAGE_SIZE = 960; //!< [px] Longer side of the shown image.
 
-CameraPreviewView::CameraPreviewView(QWidget* parent)
-    : QWidget(parent) {
+CameraPreviewView::CameraPreviewView(QWidget* parent, const Qt::WindowFlags flags)
+    : QWidget(parent, flags) {
 	m_devices     = new QComboBox(this);
 	m_preview     = new QWidget(this);
 	m_image       = new ImageView(m_preview);
@@ -42,7 +42,7 @@ CameraPreviewView::CameraPreviewView(QWidget* parent)
 	previewLayout->addLayout(bottomRow);
 
 	auto* layout = new QVBoxLayout(this);
-	layout->setContentsMargins(0, 0, 0, 0);
+	layout->setSizeConstraint(QLayout::SetFixedSize); // Follow the image size, also as a window.
 	layout->addLayout(topRow);
 	layout->addWidget(m_preview);
 

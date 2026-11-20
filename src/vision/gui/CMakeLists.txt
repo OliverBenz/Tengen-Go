@@ -36,6 +36,12 @@ target_link_libraries(${targetName}
 		Qt6::Multimedia # cameraSource.hpp holds the camera.
 )
 
+# Debug builds offer this photo as a camera in the preview, to play without a webcam.
+target_compile_definitions(${targetName}
+	PRIVATE
+		TENGEN_TEST_IMAGE="${CMAKE_SOURCE_DIR}/tests/vision/resource/angled_easy/angle_1.jpeg"
+)
+
 set_target_properties(${targetName}
 	PROPERTIES
 		FOLDER  "${IDE_FOLDER_SOURCE}/vision"

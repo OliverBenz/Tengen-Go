@@ -8,10 +8,8 @@
 #include "vision/gui/cameraSource.hpp"
 
 #include <QCoreApplication>
-#include <QDialog>
 #include <QObject>
 #include <QStandardPaths>
-#include <QVBoxLayout>
 #include <cassert>
 #include <filesystem>
 #include <memory>
@@ -87,16 +85,17 @@ void MainWindowPresenter::onBotDialogRequested() {
 }
 
 void MainWindowPresenter::onCameraPreviewRequested() {
-	QDialog window(&m_mainWindow);
-	window.setWindowTitle(tr("Camera Preview"));
-	auto* view   = new vision::gui::CameraPreviewView(&window);
-	auto* layout = new QVBoxLayout(&window);
-	layout->setSizeConstraint(QLayout::SetFixedSize); // Follow the image size.
-	layout->addWidget(view);
-
-	vision::gui::CameraSource camera; // Runs only while the window is open.
-	const vision::gui::CameraPreviewPresenter presenter(*view, camera);
-	window.exec();
+	if (!m_cameraPreview) { // Else it is open already.
+		m_cameraPreview = new vision::gui::CameraPreviewView(&m_mainWindow, Qt::Window);
+		m_cameraPreview->setAttribute(Qt::WA_DeleteOnClose); // With the camera and presenter in it.
+		m_cameraPreview->setWindowTitle(tr("Camera Preview"));
+		auto* camera    = new vision::gui::CameraSource(m_cameraPreview);
+		auto* presenter = new vision::gui::CameraPreviewPresenter(*m_cameraPreview, *camera);
+		presenter->setParent(m_cameraPreview);
+	}
+	m_cameraPreview->show();
+	m_cameraPreview->raise();
+	m_cameraPreview->activateWindow();
 }
 
 void MainWindowPresenter::onNewBotGameRequested(const GameConfig& config, const engine::EngineConfig& engineConfig, const bool humanPlaysBlack) {
