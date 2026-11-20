@@ -17,7 +17,7 @@ class CameraPreviewView : public QWidget {
 	Q_OBJECT
 
 public:
-	explicit CameraPreviewView(QWidget* parent = nullptr);
+	explicit CameraPreviewView(QWidget* parent = nullptr, Qt::WindowFlags flags = {}); //!< Pass Qt::Window to show it as its own window.
 
 	void showDevices(const QStringList& names, int selected); //!< No names greys the choice out and hides the rest.
 	void showFrame(const QImage& frame);
