@@ -35,13 +35,14 @@ int run(int argc, char** argv) {
 	MainWindow window;
 	window.resize(1400, 900);
 
+	vision::core::StoneClassifier classifier;
 	PipelineStep currentStep{PipelineStep::FindBoard};
 	cv::Mat currentImage = loadFallbackImage(argc, argv);
 
 	// Re-run the selected pipeline step on whatever image is currently loaded (webcam frame or file).
 	const auto refresh = [&] {
 		if (!currentImage.empty()) {
-			window.setImage(vision::analyse(currentImage, currentStep));
+			window.setImage(vision::analyse(currentImage, currentStep, classifier));
 		}
 	};
 

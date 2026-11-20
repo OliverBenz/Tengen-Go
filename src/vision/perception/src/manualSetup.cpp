@@ -47,7 +47,7 @@ static cv::Mat markDetections(const core::RectifiedBoard& board, const core::Sto
 }
 
 //! Run the pipeline from H_0 on: warp, find the grid, find the stones.
-static BoardSnapshot analyse(const cv::Mat& frame, const std::array<cv::Point2f, CORNER_COUNT>& corners) {
+static BoardSnapshot analyse(const cv::Mat& frame, const std::array<cv::Point2f, CORNER_COUNT>& corners, core::StoneClassifier& classifier) {
 	const core::WarpResult warped      = core::warpToCorners(frame, corners);
 	const core::BoardGeometry geometry = core::analyseGeometry(warped);
 	if (!core::isValidGeometry(geometry)) {
@@ -55,7 +55,7 @@ static BoardSnapshot analyse(const cv::Mat& frame, const std::array<cv::Point2f,
 	}
 
 	const core::RectifiedBoard board = core::transformImage(frame, geometry);
-	return {.warped = toImage(warped.imageB0), .rectified = toImage(markDetections(board, core::analyseBoard(board))), .boardSize = geometry.boardSize};
+	return {.warped = toImage(warped.imageB0), .rectified = toImage(markDetections(board, core::analyseBoard(board, classifier))), .boardSize = geometry.boardSize};
 }
 
 //! warpToCorners puts the corners at the top left, top right, bottom right and bottom left. Turns the first one picked to the top left.
@@ -93,7 +93,8 @@ struct ManualSetup::State {
 	std::array<cv::Point2f, CORNER_COUNT> corners{};
 	std::size_t picked{0}; //!< Corners picked so far.
 	bool applied{false};
-	Camera camera; //!< Last: starts after and stops before the members it reports to.
+	core::StoneClassifier classifier; //!< Camera thread only.
+	Camera camera;                    //!< Last: starts after and stops before the members it reports to.
 };
 
 ManualSetup::State::State(const int cameraIndex, Callbacks callbacks)
@@ -112,7 +113,7 @@ void ManualSetup::State::onFrame(const cv::Mat& frame) {
 
 	// Analysing on the camera thread is fine: the camera drains its buffer again until the next period is due.
 	if (analysing) {
-		report.onAnalysed(analyse(frame, quad));
+		report.onAnalysed(analyse(frame, quad, classifier));
 	} else {
 		report.onFrame(toImage(frame));
 	}

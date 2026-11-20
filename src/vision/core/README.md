@@ -49,7 +49,8 @@ This might be deemed to be redundant and ugly naming but any user adapting sourc
 We move along with slightly more noisy naming to ensure perfect alignment with the foundational design described above.
 
 ## Models
-`resource/models/stoneNet.onnx` is a small CNN classifying one intersection as empty, black or white; not used by the pipeline yet.
+`resource/models/stoneNet.onnx` is a small CNN classifying one intersection as empty, black or white. **StoneFinder** runs it on a patch around every intersection.
+The build compiles it into the library (`cmake/embedFile.cmake`), and `StoneClassifier` (`stoneClassifier.hpp`) loads it through OpenCV's `dnn` module. A new model only needs a rebuild.
 `resource/models/stoneNet.json` describes how to prepare its input (warp, patch size, colour, scale) and where it came from.
 It is trained and exported with [`tools/stoneClassifier`](../../../tools/stoneClassifier/README.md).
 
