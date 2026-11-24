@@ -1,7 +1,6 @@
 #pragma once
 
 #include "gui/boardWidget.hpp"
-#include "gui/soundPlayer.hpp"
 #include "tengen/IGameSession.hpp"
 
 #include <QObject>
@@ -28,7 +27,6 @@ private:
 private:
 	app::IGameSession& m_game;
 	gui::BoardWidget& m_boardWidget;
-	gui::SoundPlayer m_soundPlayer;
 };
 
 } // namespace tengen

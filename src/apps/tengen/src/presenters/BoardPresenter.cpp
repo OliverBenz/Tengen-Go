@@ -48,7 +48,7 @@ void BoardPresenter::showCurrentPlayer() {
 }
 
 void BoardPresenter::playStonePlaceSound() {
-	m_soundPlayer.playStonePlace();
+	m_boardWidget.playStonePlaceSound();
 }
 
 void BoardPresenter::onBoardEvent(const gui::BoardWidgetEvent& event) {

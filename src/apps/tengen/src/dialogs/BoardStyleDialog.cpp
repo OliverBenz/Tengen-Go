@@ -28,7 +28,7 @@ static boardStyle::Texture textureOf(const QListWidgetItem& item) {
 	return static_cast<boardStyle::Texture>(item.data(Qt::UserRole).toInt());
 }
 
-BoardStyleDialog::BoardStyleDialog(const boardStyle::Texture currentTexture, const bool showCoordinates, QWidget* parent)
+BoardStyleDialog::BoardStyleDialog(const boardStyle::Texture currentTexture, const bool showCoordinates, const stoneStyle::Sound currentSound, QWidget* parent)
     : QDialog(parent) {
 	setWindowTitle(tr("Board Style"));
 	resize(900, 620);
@@ -64,7 +64,7 @@ BoardStyleDialog::BoardStyleDialog(const boardStyle::Texture currentTexture, con
 	for (const stoneStyle::Sound sound: stoneStyle::sounds()) {
 		m_sounds->addItem(stoneStyle::displayName(sound), static_cast<int>(sound));
 	}
-	m_sounds->setCurrentIndex(m_sounds->findData(static_cast<int>(stoneStyle::defaultSound())));
+	m_sounds->setCurrentIndex(m_sounds->findData(static_cast<int>(currentSound)));
 
 	auto* options = new QFormLayout();
 	options->setFieldGrowthPolicy(QFormLayout::FieldsStayAtSizeHint); // Keep the dropdown from stretching over the window.
@@ -92,6 +92,10 @@ boardStyle::Texture BoardStyleDialog::texture() const {
 
 bool BoardStyleDialog::showCoordinates() const {
 	return m_coordinates->isChecked();
+}
+
+stoneStyle::Sound BoardStyleDialog::stoneSound() const {
+	return static_cast<stoneStyle::Sound>(m_sounds->currentData().toInt());
 }
 
 bool BoardStyleDialog::eventFilter(QObject* watched, QEvent* event) {

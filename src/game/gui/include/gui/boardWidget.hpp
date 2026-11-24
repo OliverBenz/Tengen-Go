@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gui/resources.hpp"
+#include "gui/soundPlayer.hpp"
 #include "model/board.hpp"
 
 #include <QWidget>
@@ -46,6 +47,10 @@ public:
 	bool showCoordinates() const;       //!< Are the coordinates enabled or not.
 	void setShowCoordinates(bool show); //!< Coordinates in standard format on the board's border.
 
+	stoneStyle::Sound stoneSound() const;
+	void setStoneSound(stoneStyle::Sound sound); //!< Sound to play on stone placement.
+	void playStonePlaceSound();
+
 signals:
 	void boardEvent(const BoardWidgetEvent& event);
 
@@ -70,6 +75,7 @@ private:
 	Board::Stone m_currentPlayer{Board::Stone::Black};
 	std::unique_ptr<BoardRenderer> m_boardRenderer;
 	boardStyle::Texture m_backgroundTexture{boardStyle::Texture::Plain};
+	SoundPlayer m_soundPlayer;
 
 	// Ghost stone: A translucent stone on mouse position to show where the placement is done.
 	Coord m_ghostStone{0u, 0u};

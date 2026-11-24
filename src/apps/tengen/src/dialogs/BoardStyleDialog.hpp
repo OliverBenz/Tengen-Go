@@ -19,11 +19,12 @@ class BoardStyleDialog : public QDialog {
 	Q_OBJECT
 
 public:
-	BoardStyleDialog(boardStyle::Texture currentTexture, bool showCoordinates, QWidget* parent = nullptr);
+	BoardStyleDialog(boardStyle::Texture currentTexture, bool showCoordinates, stoneStyle::Sound currentSound, QWidget* parent = nullptr);
 	~BoardStyleDialog() override;
 
-	boardStyle::Texture texture() const; //!< Selected texture.
-	bool showCoordinates() const;        //!< Whether the board labels its lines.
+	boardStyle::Texture texture() const;  //!< Selected texture.
+	bool showCoordinates() const;         //!< Whether the board labels its lines.
+	stoneStyle::Sound stoneSound() const; //!< Selected stone placement sound.
 
 protected:
 	bool eventFilter(QObject* watched, QEvent* event) override;
