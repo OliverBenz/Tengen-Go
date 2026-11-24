@@ -117,11 +117,12 @@ void MainWindow::openHostDialog() {
 
 void MainWindow::openSettingsStyle() {
 	auto& board = m_gameWidget->boardWidget();
-	BoardStyleDialog dialog(board.backgroundTexture(), board.showCoordinates(), this);
+	BoardStyleDialog dialog(board.backgroundTexture(), board.showCoordinates(), board.stoneSound(), this);
 
 	if (dialog.exec() == QDialog::Accepted) {
 		board.setBackgroundTexture(dialog.texture());
 		board.setShowCoordinates(dialog.showCoordinates());
+		board.setStoneSound(dialog.stoneSound());
 	}
 }
 

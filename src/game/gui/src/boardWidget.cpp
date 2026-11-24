@@ -77,6 +77,18 @@ void BoardWidget::setShowCoordinates(const bool show) {
 	update();
 }
 
+stoneStyle::Sound BoardWidget::stoneSound() const {
+	return m_soundPlayer.stoneSound();
+}
+
+void BoardWidget::setStoneSound(const stoneStyle::Sound sound) {
+	m_soundPlayer.setStoneSound(sound);
+}
+
+void BoardWidget::playStonePlaceSound() {
+	m_soundPlayer.playStonePlace();
+}
+
 void BoardWidget::resizeEvent(QResizeEvent* event) {
 	QWidget::resizeEvent(event);
 
