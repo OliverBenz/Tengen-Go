@@ -1,7 +1,7 @@
 #pragma once
 
 #include "engine/engineCatalog.hpp"
-#include "gui/styleStore.hpp"
+#include "gui/resources.hpp"
 #include "model/gameUpdates.hpp"
 #include "model/player.hpp"
 
@@ -18,7 +18,7 @@ class MainWindow : public QMainWindow {
 	Q_OBJECT
 
 public:
-	explicit MainWindow(QWidget* parent = nullptr);
+	explicit MainWindow(const Style& initialStyle, QWidget* parent = nullptr);
 	~MainWindow() override;
 
 	GameWidget& gameWidget();
@@ -26,10 +26,19 @@ public:
 	//! Let the user set a bot game up against one of the engines. Answers with gameBotRequested() once accepted.
 	void openBotDialog(const engine::InstalledEngines& engines);
 
+	//! Let the user pick a board style, starting from currentStyle. Answers with styleChangeRequested() once accepted.
+	void openStyleDialog(const Style& currentStyle);
+
+public slots:
+	void applyStyle(const Style& style); //!< Apply the style to every widget that draws it.
+
 signals:
 	void botDialogRequested();                    //!< The presenter will look for engines before opening the dialog.
 	void connectRequested(const QString& hostIp); //!< Join the game hosted at this address.
 	void shutdownRequested();                     //!< The window closes. End the current game.
+
+	void styleDialogRequested();                   //!< The presenter opens the dialog with the style in use.
+	void styleChangeRequested(const Style& style); //!< Use this style from now on.
 
 	void gameLocalRequested(const GameConfig& config);                                                               //!< Start a local game for two players on this machine.
 	void gameBotRequested(const GameConfig& config, const engine::EngineConfig& engineConfig, bool humanPlaysBlack); //!< Start a game against this engine.
@@ -37,13 +46,12 @@ signals:
 
 private:
 	//! Initial setup constructing the layout of the window.
-	void buildLayout();
+	void buildLayout(const Style& initialStyle);
 
 private:
 	void openLocalGameDialog();
 	void openConnectDialog();
 	void openHostDialog();
-	void openSettingsStyle();
 	void openHelp(HelpPage page);
 	void openAbout();
 
@@ -51,7 +59,6 @@ protected:
 	void closeEvent(QCloseEvent* event) override;
 
 private:
-	StyleStore m_styleStore; //!< Single source of truth for the board/stone style, shared with the game widget and style dialog.
 	GameWidget* m_gameWidget = nullptr;
 };
 

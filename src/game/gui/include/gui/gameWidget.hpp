@@ -14,13 +14,12 @@ namespace tengen::gui {
 
 class ChatWidget;
 class PlayerCard;
-class StyleStore;
 
 class GameWidget : public QWidget {
 	Q_OBJECT
 
 public:
-	explicit GameWidget(StyleStore& styleStore, QWidget* parent = nullptr);
+	explicit GameWidget(const Style& initialStyle, QWidget* parent = nullptr);
 	~GameWidget() override;
 
 	BoardWidget& boardWidget();
@@ -37,12 +36,15 @@ signals:
 	void passEvent();
 	void resignEvent();
 
+public slots:
+	void applyStyle(const Style& style); //!< Apply the style to the board and the player cards.
+
 protected:
 	void resizeEvent(QResizeEvent* event) override;
 
 private:
 	//! Initial setup constructing the layout of the window.
-	void buildNetworkLayout(StyleStore& styleStore);
+	void buildNetworkLayout(const Style& initialStyle);
 
 private:
 	QTabWidget* m_sideTabs   = nullptr; //!< Moves and chat, right of the board.

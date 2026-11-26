@@ -14,12 +14,12 @@
 
 namespace tengen::gui {
 
-MainWindow::MainWindow(QWidget* parent)
+MainWindow::MainWindow(const Style& initialStyle, QWidget* parent)
     : QMainWindow(parent) {
 	// Setup Window
 	setWindowTitle("Tengen Go");
 	setAttribute(Qt::WA_QuitOnClose, true);
-	buildLayout();
+	buildLayout(initialStyle);
 }
 
 MainWindow::~MainWindow() = default;
@@ -29,7 +29,7 @@ GameWidget& MainWindow::gameWidget() {
 	return *m_gameWidget;
 }
 
-void MainWindow::buildLayout() {
+void MainWindow::buildLayout(const Style& initialStyle) {
 	// Menu Bar
 	auto* game            = menuBar()->addMenu(tr("&Game"));
 	auto* actNewLocalGame = new QAction("&New Local Game", this);
@@ -64,7 +64,7 @@ void MainWindow::buildLayout() {
 	auto* settings = menuBar()->addMenu(tr("&Settings"));
 	auto* actStyle = new QAction("&Style", this);
 	settings->addAction(actStyle);
-	connect(actStyle, &QAction::triggered, this, &MainWindow::openSettingsStyle);
+	connect(actStyle, &QAction::triggered, this, &MainWindow::styleDialogRequested);
 
 	auto* help      = menuBar()->addMenu(tr("&Help"));
 	auto* actRules  = new QAction("&Rules", this);
@@ -77,7 +77,7 @@ void MainWindow::buildLayout() {
 	connect(actEngine, &QAction::triggered, this, [this] { openHelp(HelpPage::Engine); });
 	connect(actAbout, &QAction::triggered, this, &MainWindow::openAbout);
 
-	m_gameWidget = new GameWidget(m_styleStore);
+	m_gameWidget = new GameWidget(initialStyle);
 	setCentralWidget(m_gameWidget);
 }
 
@@ -113,12 +113,16 @@ void MainWindow::openHostDialog() {
 	}
 }
 
-void MainWindow::openSettingsStyle() {
-	BoardStyleDialog dialog(m_styleStore.style(), this);
+void MainWindow::openStyleDialog(const Style& currentStyle) {
+	BoardStyleDialog dialog(currentStyle, this);
 
 	if (dialog.exec() == QDialog::Accepted) {
-		m_styleStore.setStyle(dialog.currentStyle());
+		emit styleChangeRequested(dialog.currentStyle());
 	}
+}
+
+void MainWindow::applyStyle(const Style& style) {
+	m_gameWidget->applyStyle(style);
 }
 
 void MainWindow::openHelp(const HelpPage page) {

@@ -1,5 +1,6 @@
 #include "MainWindow.hpp"
 #include "MainWindowPresenter.hpp"
+#include "gui/styleStore.hpp"
 
 #include <QApplication>
 
@@ -9,8 +10,9 @@ int main(int argc, char* argv[]) {
 	QApplication::setApplicationVersion(TENGEN_VERSION);
 
 	// Setup and show UI
-	tengen::gui::MainWindow window;
-	tengen::MainWindowPresenter presenter(window);
+	tengen::gui::StyleStore styleStore;
+	tengen::gui::MainWindow window(styleStore.style());
+	tengen::MainWindowPresenter presenter(window, styleStore);
 	window.resize(1200, 900);
 	window.show();
 
