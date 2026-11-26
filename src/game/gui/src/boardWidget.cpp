@@ -58,11 +58,11 @@ void BoardWidget::setCurrentPlayer(const Player player) {
 	}
 }
 
-boardStyle::Texture BoardWidget::backgroundTexture() const {
+BoardTexture BoardWidget::backgroundTexture() const {
 	return m_backgroundTexture;
 }
 
-void BoardWidget::setBackgroundTexture(const boardStyle::Texture texture) {
+void BoardWidget::setBackgroundTexture(const BoardTexture texture) {
 	m_backgroundTexture = texture;
 	m_boardRenderer->setBackgroundTexture(texture);
 	update();
@@ -77,11 +77,11 @@ void BoardWidget::setShowCoordinates(const bool show) {
 	update();
 }
 
-stoneStyle::Sound BoardWidget::stoneSound() const {
+StoneSound BoardWidget::stoneSound() const {
 	return m_soundPlayer.stoneSound();
 }
 
-void BoardWidget::setStoneSound(const stoneStyle::Sound sound) {
+void BoardWidget::setStoneSound(const StoneSound sound) {
 	m_soundPlayer.setStoneSound(sound);
 }
 

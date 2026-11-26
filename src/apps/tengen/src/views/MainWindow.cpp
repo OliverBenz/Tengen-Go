@@ -80,7 +80,7 @@ void MainWindow::buildLayout() {
 
 	m_gameWidget = new GameWidget();
 	setCentralWidget(m_gameWidget);
-	m_gameWidget->boardWidget().setBackgroundTexture(boardStyle::defaultTexture());
+	m_gameWidget->boardWidget().setBackgroundTexture(defaultBoardTexture());
 }
 
 void MainWindow::openLocalGameDialog() {

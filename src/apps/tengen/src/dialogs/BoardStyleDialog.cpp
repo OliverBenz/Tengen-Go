@@ -24,11 +24,11 @@ static QIcon untintedIcon(const QPixmap& pixmap) {
 	return icon;
 }
 
-static boardStyle::Texture textureOf(const QListWidgetItem& item) {
-	return static_cast<boardStyle::Texture>(item.data(Qt::UserRole).toInt());
+static BoardTexture textureOf(const QListWidgetItem& item) {
+	return static_cast<BoardTexture>(item.data(Qt::UserRole).toInt());
 }
 
-BoardStyleDialog::BoardStyleDialog(const boardStyle::Texture currentTexture, const bool showCoordinates, const stoneStyle::Sound currentSound, QWidget* parent)
+BoardStyleDialog::BoardStyleDialog(const BoardTexture currentTexture, const bool showCoordinates, const StoneSound currentSound, QWidget* parent)
     : QDialog(parent) {
 	setWindowTitle(tr("Board Style"));
 	resize(900, 620);
@@ -61,8 +61,8 @@ BoardStyleDialog::BoardStyleDialog(const boardStyle::Texture currentTexture, con
 	connect(m_coordinates, &QCheckBox::toggled, m_board, &BoardWidget::setShowCoordinates);
 
 	m_sounds = new QComboBox(this);
-	for (const stoneStyle::Sound sound: stoneStyle::sounds()) {
-		m_sounds->addItem(stoneStyle::displayName(sound), static_cast<int>(sound));
+	for (const StoneSound sound: stoneSounds()) {
+		m_sounds->addItem(displayName(sound), static_cast<int>(sound));
 	}
 	m_sounds->setCurrentIndex(m_sounds->findData(static_cast<int>(currentSound)));
 
@@ -85,17 +85,17 @@ BoardStyleDialog::~BoardStyleDialog() {
 	m_previewLoader.cancel(); // Closed before all previews loaded: skip the rest.
 }
 
-boardStyle::Texture BoardStyleDialog::texture() const {
+BoardTexture BoardStyleDialog::texture() const {
 	const auto* item = m_textures->currentItem();
-	return item ? textureOf(*item) : boardStyle::Texture::Plain;
+	return item ? textureOf(*item) : BoardTexture::Plain;
 }
 
 bool BoardStyleDialog::showCoordinates() const {
 	return m_coordinates->isChecked();
 }
 
-stoneStyle::Sound BoardStyleDialog::stoneSound() const {
-	return static_cast<stoneStyle::Sound>(m_sounds->currentData().toInt());
+StoneSound BoardStyleDialog::stoneSound() const {
+	return static_cast<StoneSound>(m_sounds->currentData().toInt());
 }
 
 bool BoardStyleDialog::eventFilter(QObject* watched, QEvent* event) {
@@ -129,11 +129,11 @@ void BoardStyleDialog::addTexturePreviews() {
 	};
 
 	// The plain board shows its colour right away. Images stay blank until loaded, which keeps the item size stable.
-	QList<boardStyle::Texture> images;
+	QList<BoardTexture> images;
 	QList<QListWidgetItem*> items;
-	for (const boardStyle::Texture texture: boardStyle::textures()) {
-		const bool plain = texture == boardStyle::Texture::Plain;
-		auto* item       = new QListWidgetItem(filled(plain ? boardStyle::PLAIN_COLOUR : Qt::transparent), boardStyle::displayName(texture), m_textures);
+	for (const BoardTexture texture: boardTextures()) {
+		const bool plain = texture == BoardTexture::Plain;
+		auto* item       = new QListWidgetItem(filled(plain ? PLAIN_BOARD_COLOUR : Qt::transparent), displayName(texture), m_textures);
 		item->setData(Qt::UserRole, static_cast<int>(texture));
 		if (!plain) {
 			images.append(texture);
@@ -148,28 +148,28 @@ void BoardStyleDialog::addTexturePreviews() {
 			const bool wasCurrent = m_textures->currentItem() == items[index];
 			delete items[index]; // Unreadable file: nothing to preview.
 			if (wasCurrent) {
-				selectTexture(boardStyle::Texture::Plain); // Qt would select the neighbour instead.
+				selectTexture(BoardTexture::Plain); // Qt would select the neighbour instead.
 			}
 			return;
 		}
 		items[index]->setIcon(untintedIcon(QPixmap::fromImage(preview)));
 	});
-	m_previewLoader.setFuture(QtConcurrent::mapped(images, [side, ratio](const boardStyle::Texture texture) {
-		QImage preview = boardStyle::loadTexture(texture).scaled(side, side, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+	m_previewLoader.setFuture(QtConcurrent::mapped(images, [side, ratio](const BoardTexture texture) {
+		QImage preview = loadBoardTexture(texture).scaled(side, side, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 		preview.setDevicePixelRatio(ratio);
 		return preview;
 	}));
 }
 
-void BoardStyleDialog::selectTexture(const boardStyle::Texture texture) {
+void BoardStyleDialog::selectTexture(const BoardTexture texture) {
 	for (int row = 0; row != m_textures->count(); ++row) {
 		if (textureOf(*m_textures->item(row)) == texture) {
 			m_textures->setCurrentRow(row);
 			return;
 		}
 	}
-	if (texture != boardStyle::Texture::Plain) {
-		selectTexture(boardStyle::Texture::Plain); // Removed as unreadable: fall back to plain.
+	if (texture != BoardTexture::Plain) {
+		selectTexture(BoardTexture::Plain); // Removed as unreadable: fall back to plain.
 	}
 }
 

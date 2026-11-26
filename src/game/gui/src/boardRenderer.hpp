@@ -27,7 +27,7 @@ public:
 	void setNodes(unsigned nodes);                          //!< Set the board size in lines.
 	void setBoardSizePx(unsigned boardSizePx);              //!< Set the available board size [px].
 	void setDevicePixelRatio(qreal ratio);                  //!< Set the display scaling. Keeps textures sharp.
-	void setBackgroundTexture(boardStyle::Texture texture); //!< Set the board image.
+	void setBackgroundTexture(BoardTexture texture); //!< Set the board image.
 	void setShowCoordinates(bool show);                     //!< Add a border with standard coordinates.
 
 	void draw(QPainter& painter, const Board& board, const Ghost& ghost) const; //!< Draw board, ghost stone and stones.
