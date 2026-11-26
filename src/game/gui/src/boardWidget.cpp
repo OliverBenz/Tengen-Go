@@ -59,6 +59,13 @@ void BoardWidget::setGhostColour(const Player player) {
 	}
 }
 
+void BoardWidget::setKeyboardShortcutsEnabled(const bool enabled) {
+	setFocusPolicy(enabled ? Qt::StrongFocus : Qt::NoFocus); // Key events only reach the widget with focus.
+	if (!enabled) {
+		clearFocus();
+	}
+}
+
 void BoardWidget::applyStyle(const Style& style) {
 	const bool first = !m_appliedStyle.has_value(); // First call (from the constructor): apply every field unconditionally.
 	if (first || style.boardTexture != m_appliedStyle->boardTexture) {

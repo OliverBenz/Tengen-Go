@@ -34,6 +34,7 @@ BoardStyleDialog::BoardStyleDialog(const Style& currentStyle, QWidget* parent)
 	resize(900, 620);
 
 	m_board = new BoardWidget(m_previewStyle, this);
+	m_board->setKeyboardShortcutsEnabled(false);
 
 	m_textures = new QListWidget(this);
 	m_textures->setViewMode(QListView::IconMode);
