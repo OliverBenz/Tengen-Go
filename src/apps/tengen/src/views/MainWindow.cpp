@@ -115,6 +115,7 @@ void MainWindow::openHostDialog() {
 
 void MainWindow::openStyleDialog(const Style& currentStyle) {
 	BoardStyleDialog dialog(currentStyle, this);
+	emit styleDialogOpened(dialog.boardWidget());
 
 	if (dialog.exec() == QDialog::Accepted) {
 		emit styleChangeRequested(dialog.currentStyle());

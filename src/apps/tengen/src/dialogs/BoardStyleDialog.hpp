@@ -23,6 +23,7 @@ public:
 	~BoardStyleDialog() override;
 
 	Style currentStyle() const; //!< Style selected in the dialog.
+	BoardWidget& boardWidget(); //!< The board preview. Shows whatever board it is given.
 
 protected:
 	bool eventFilter(QObject* watched, QEvent* event) override;

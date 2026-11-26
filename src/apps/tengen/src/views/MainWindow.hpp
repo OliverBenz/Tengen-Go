@@ -11,6 +11,7 @@
 
 namespace tengen::gui {
 
+class BoardWidget;
 class GameWidget;
 enum class HelpPage;
 
@@ -27,6 +28,7 @@ public:
 	void openBotDialog(const engine::InstalledEngines& engines);
 
 	//! Let the user pick a board style, starting from currentStyle. Answers with styleChangeRequested() once accepted.
+	//! Emits styleDialogOpened() right before showing the dialog. Blocks until the dialog is closed.
 	void openStyleDialog(const Style& currentStyle);
 
 public slots:
@@ -38,6 +40,7 @@ signals:
 	void shutdownRequested();                     //!< The window closes. End the current game.
 
 	void styleDialogRequested();                   //!< The presenter opens the dialog with the style in use.
+	void styleDialogOpened(BoardWidget& preview);  //!< The dialog is about to show. Its preview board stays valid until openStyleDialog() returns.
 	void styleChangeRequested(const Style& style); //!< Use this style from now on.
 
 	void gameLocalRequested(const GameConfig& config);                                                               //!< Start a local game for two players on this machine.

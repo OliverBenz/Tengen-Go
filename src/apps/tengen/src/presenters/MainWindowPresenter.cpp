@@ -107,7 +107,16 @@ void MainWindowPresenter::onHostRequested(const GameConfig& config, const Player
 }
 
 void MainWindowPresenter::onStyleDialogRequested() {
-	m_mainWindow.openStyleDialog(m_styleStore.style());
+	// The preview is a game of its own, so the running one stays untouched. It lives as long as the dialog is open.
+	app::SessionManager previewSession;
+	std::unique_ptr<BoardPresenter> previewPresenter;
+
+	const auto opened = QObject::connect(&m_mainWindow, &gui::MainWindow::styleDialogOpened, this, [&](gui::BoardWidget& preview) {
+		previewSession.startOpen(GameConfig{.boardSize = 19u, .rules = fromRuleSet(RuleSet::Japanese)});
+		previewPresenter = std::make_unique<BoardPresenter>(*previewSession.game(), preview);
+	});
+	m_mainWindow.openStyleDialog(m_styleStore.style()); // Blocks until the dialog closes.
+	QObject::disconnect(opened);
 }
 
 void MainWindowPresenter::onShutdownRequested() {
