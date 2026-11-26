@@ -8,7 +8,6 @@
 #include "HostDialog.hpp"
 #include "LocalGameDialog.hpp"
 #include "gui/gameWidget.hpp"
-#include "gui/resources.hpp"
 
 #include <QMenuBar>
 #include <cassert>
@@ -78,9 +77,8 @@ void MainWindow::buildLayout() {
 	connect(actEngine, &QAction::triggered, this, [this] { openHelp(HelpPage::Engine); });
 	connect(actAbout, &QAction::triggered, this, &MainWindow::openAbout);
 
-	m_gameWidget = new GameWidget();
+	m_gameWidget = new GameWidget(m_styleStore);
 	setCentralWidget(m_gameWidget);
-	m_gameWidget->boardWidget().setBackgroundTexture(defaultBoardTexture());
 }
 
 void MainWindow::openLocalGameDialog() {
@@ -116,13 +114,10 @@ void MainWindow::openHostDialog() {
 }
 
 void MainWindow::openSettingsStyle() {
-	auto& board = m_gameWidget->boardWidget();
-	BoardStyleDialog dialog(board.backgroundTexture(), board.showCoordinates(), board.stoneSound(), this);
+	BoardStyleDialog dialog(m_styleStore.style(), this);
 
 	if (dialog.exec() == QDialog::Accepted) {
-		board.setBackgroundTexture(dialog.texture());
-		board.setShowCoordinates(dialog.showCoordinates());
-		board.setStoneSound(dialog.stoneSound());
+		m_styleStore.setStyle(dialog.currentStyle());
 	}
 }
 

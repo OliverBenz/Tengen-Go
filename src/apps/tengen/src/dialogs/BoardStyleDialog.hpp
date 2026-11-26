@@ -19,12 +19,10 @@ class BoardStyleDialog : public QDialog {
 	Q_OBJECT
 
 public:
-	BoardStyleDialog(BoardTexture currentTexture, bool showCoordinates, StoneSound currentSound, QWidget* parent = nullptr);
+	explicit BoardStyleDialog(const Style& currentStyle, QWidget* parent = nullptr);
 	~BoardStyleDialog() override;
 
-	BoardTexture texture() const;  //!< Selected texture.
-	bool showCoordinates() const;  //!< Whether the board labels its lines.
-	StoneSound stoneSound() const; //!< Selected stone placement sound.
+	Style currentStyle() const; //!< Style selected in the dialog.
 
 protected:
 	bool eventFilter(QObject* watched, QEvent* event) override;
@@ -40,6 +38,7 @@ private:
 	QComboBox* m_sounds{nullptr};           //!< Selection of the stone placement sound.
 	BoardWidget* m_board{nullptr};          //!< The board preview.
 	QFutureWatcher<QImage> m_previewLoader; //!< Loads the texture previews in the background.
+	Style m_previewStyle;                   //!< Holds the style being edited; only reaches the app once accepted.
 };
 
 } // namespace tengen::gui

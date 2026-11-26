@@ -11,13 +11,12 @@ class SoundPlayer {
 public:
 	SoundPlayer();
 
-	StoneSound stoneSound() const;
 	void setStoneSound(StoneSound sound); //!< Sound played on stone placement.
 
 	void playStonePlace();
 
 private:
-	StoneSound m_stoneSound{defaultStoneSound()};
+	StoneSound m_stoneSound{StoneSound::One};
 	QSoundEffect m_stonePlace;
 };
 

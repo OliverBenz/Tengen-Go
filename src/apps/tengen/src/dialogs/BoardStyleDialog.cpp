@@ -28,14 +28,13 @@ static BoardTexture textureOf(const QListWidgetItem& item) {
 	return static_cast<BoardTexture>(item.data(Qt::UserRole).toInt());
 }
 
-BoardStyleDialog::BoardStyleDialog(const BoardTexture currentTexture, const bool showCoordinates, const StoneSound currentSound, QWidget* parent)
-    : QDialog(parent) {
+BoardStyleDialog::BoardStyleDialog(const Style& currentStyle, QWidget* parent)
+    : QDialog(parent), m_previewStyle(currentStyle) {
 	setWindowTitle(tr("Board Style"));
 	resize(900, 620);
 
-	m_board = new BoardWidget(this);
+	m_board = new BoardWidget(m_previewStyle, this);
 	m_board->setBoard(Board(19u));
-	m_board->setShowCoordinates(showCoordinates);
 
 	m_textures = new QListWidget(this);
 	m_textures->setViewMode(QListView::IconMode);
@@ -48,23 +47,43 @@ BoardStyleDialog::BoardStyleDialog(const BoardTexture currentTexture, const bool
 	m_textures->setFixedWidth(PREVIEW_SIZE + 60);
 	m_textures->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 	m_textures->viewport()->installEventFilter(this); // The width shrinks while the scroll bar shows.
-	connect(m_textures, &QListWidget::currentItemChanged, this, [this] { m_board->setBackgroundTexture(texture()); });
+	connect(m_textures, &QListWidget::currentItemChanged, this, [this] {
+		const auto* item = m_textures->currentItem();
+		if (!item) {
+			return; // Current item cleared transiently, e.g. while an unreadable preview is being removed.
+		}
+		Style style        = m_previewStyle;
+		style.boardTexture = textureOf(*item);
+		m_previewStyle     = style;
+		m_board->applyStyle(style);
+	});
 	addTexturePreviews();
-	selectTexture(currentTexture);
+	selectTexture(currentStyle.boardTexture);
 
 	auto* content = new QHBoxLayout();
 	content->addWidget(m_textures);
 	content->addWidget(m_board, 1);
 
 	m_coordinates = new QCheckBox(this);
-	m_coordinates->setChecked(showCoordinates);
-	connect(m_coordinates, &QCheckBox::toggled, m_board, &BoardWidget::setShowCoordinates);
+	m_coordinates->setChecked(currentStyle.showCoordinates);
+	connect(m_coordinates, &QCheckBox::toggled, this, [this](const bool checked) {
+		Style style           = m_previewStyle;
+		style.showCoordinates = checked;
+		m_previewStyle        = style;
+		m_board->applyStyle(style);
+	});
 
 	m_sounds = new QComboBox(this);
 	for (const StoneSound sound: stoneSounds()) {
 		m_sounds->addItem(displayName(sound), static_cast<int>(sound));
 	}
-	m_sounds->setCurrentIndex(m_sounds->findData(static_cast<int>(currentSound)));
+	m_sounds->setCurrentIndex(m_sounds->findData(static_cast<int>(currentStyle.stoneSound)));
+	connect(m_sounds, &QComboBox::currentIndexChanged, this, [this](const int index) {
+		Style style      = m_previewStyle;
+		style.stoneSound = static_cast<StoneSound>(m_sounds->itemData(index).toInt());
+		m_previewStyle   = style;
+		m_board->applyStyle(style);
+	});
 
 	auto* options = new QFormLayout();
 	options->setFieldGrowthPolicy(QFormLayout::FieldsStayAtSizeHint); // Keep the dropdown from stretching over the window.
@@ -85,17 +104,8 @@ BoardStyleDialog::~BoardStyleDialog() {
 	m_previewLoader.cancel(); // Closed before all previews loaded: skip the rest.
 }
 
-BoardTexture BoardStyleDialog::texture() const {
-	const auto* item = m_textures->currentItem();
-	return item ? textureOf(*item) : BoardTexture::Plain;
-}
-
-bool BoardStyleDialog::showCoordinates() const {
-	return m_coordinates->isChecked();
-}
-
-StoneSound BoardStyleDialog::stoneSound() const {
-	return static_cast<StoneSound>(m_sounds->currentData().toInt());
+Style BoardStyleDialog::currentStyle() const {
+	return m_previewStyle;
 }
 
 bool BoardStyleDialog::eventFilter(QObject* watched, QEvent* event) {

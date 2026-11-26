@@ -96,10 +96,6 @@ QList<BoardTexture> boardTextures() {
 	return result;
 }
 
-BoardTexture defaultBoardTexture() {
-	return BoardTexture::HoneyWood;
-}
-
 QString displayName(const BoardTexture texture) {
 	return QCoreApplication::translate("Style", textureFile(texture).name);
 }
@@ -124,10 +120,6 @@ QList<StoneTexture> stoneTextures() {
 	return result;
 }
 
-StoneTexture defaultStoneTexture() {
-	return StoneTexture::Anime;
-}
-
 QString displayName(const StoneTexture texture) {
 	return QCoreApplication::translate("Style", stoneTextureFile(texture).name);
 }
@@ -143,10 +135,6 @@ QList<StoneSound> stoneSounds() {
 		result.append(entry.sound);
 	}
 	return result;
-}
-
-StoneSound defaultStoneSound() {
-	return StoneSound::One;
 }
 
 QString soundFile(const StoneSound sound) {

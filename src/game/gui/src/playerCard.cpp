@@ -12,8 +12,8 @@ namespace tengen::gui {
 
 static constexpr int STONE_SIZE = 28; //!< Stone image edge [px].
 
-PlayerCard::PlayerCard(const bool mirrored, QWidget* parent)
-    : QFrame(parent) {
+PlayerCard::PlayerCard(const Style& initialStyle, const bool mirrored, QWidget* parent)
+    : QFrame(parent), m_stoneTexture(initialStyle.stoneTexture) {
 	setObjectName("playerCard"); // Keeps the style sheet on the frame, off its labels.
 	setMinimumWidth(140);
 
@@ -54,14 +54,7 @@ PlayerCard::PlayerCard(const bool mirrored, QWidget* parent)
 void PlayerCard::setPlayer(const Player colour, const QString& name) {
 	m_colour = colour;
 	m_name->setText(name);
-
-	const qreal ratio = devicePixelRatioF();
-	QPixmap stone     = QPixmap::fromImage(loadStoneTexture(defaultStoneTexture(), colour));
-	if (!stone.isNull()) {
-		stone = stone.scaled(QSize(STONE_SIZE, STONE_SIZE) * ratio, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-		stone.setDevicePixelRatio(ratio);
-	}
-	m_stone->setPixmap(stone);
+	updateStoneIcon();
 }
 
 Player PlayerCard::colour() const {
@@ -74,6 +67,24 @@ void PlayerCard::setActive(const bool active) {
 	}
 	m_active = active;
 	updateStyle();
+}
+
+void PlayerCard::applyStyle(const Style& style) {
+	if (style.stoneTexture == m_stoneTexture) {
+		return;
+	}
+	m_stoneTexture = style.stoneTexture;
+	updateStoneIcon();
+}
+
+void PlayerCard::updateStoneIcon() {
+	const qreal ratio = devicePixelRatioF();
+	QPixmap stone     = QPixmap::fromImage(loadStoneTexture(m_stoneTexture, m_colour));
+	if (!stone.isNull()) {
+		stone = stone.scaled(QSize(STONE_SIZE, STONE_SIZE) * ratio, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+		stone.setDevicePixelRatio(ratio);
+	}
+	m_stone->setPixmap(stone);
 }
 
 void PlayerCard::updateStyle() {
