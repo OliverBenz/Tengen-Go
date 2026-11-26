@@ -1,7 +1,6 @@
 #include "gui/gameWidget.hpp"
 
 #include "gui/chatWidget.hpp"
-#include "gui/styleStore.hpp"
 #include "playerCard.hpp"
 
 #include <QHBoxLayout>
@@ -13,10 +12,10 @@
 
 namespace tengen::gui {
 
-GameWidget::GameWidget(StyleStore& styleStore, QWidget* parent)
+GameWidget::GameWidget(const Style& initialStyle, QWidget* parent)
     : QWidget(parent) {
 	setWindowTitle("Go Game");
-	buildNetworkLayout(styleStore);
+	buildNetworkLayout(initialStyle);
 
 	connect(m_passButton, &QPushButton::clicked, this, &GameWidget::passEvent);
 	connect(m_resignButton, &QPushButton::clicked, this, &GameWidget::resignEvent);
@@ -46,6 +45,12 @@ void GameWidget::setGameStateText(const QString& text) {
 	m_statusLabel->setText(text);
 }
 
+void GameWidget::applyStyle(const Style& style) {
+	m_opponentCard->applyStyle(style);
+	m_ownCard->applyStyle(style);
+	m_boardWidget->applyStyle(style);
+}
+
 void GameWidget::resizeEvent(QResizeEvent* event) {
 	QWidget::resizeEvent(event); // The layout already placed everything for the new size.
 
@@ -68,7 +73,7 @@ void GameWidget::setChatEnabled(const bool enabled) {
 	m_chatWidget->setEnabled(enabled);
 }
 
-void GameWidget::buildNetworkLayout(StyleStore& styleStore) {
+void GameWidget::buildNetworkLayout(const Style& initialStyle) {
 	static constexpr qreal STATUS_TEXT_SIZE_FACTOR = 1.2; //!< Scale up the status text to make more visible.
 
 	auto* mainLayout = new QVBoxLayout(this);
@@ -87,10 +92,8 @@ void GameWidget::buildNetworkLayout(StyleStore& styleStore) {
 	auto* headerLayout = new QHBoxLayout(m_header);
 	headerLayout->setContentsMargins(BoardWidget::BOARD_MARGIN, 4, BoardWidget::BOARD_MARGIN, 6); // Room for the cards' shadows.
 
-	m_opponentCard = new PlayerCard(styleStore.style(), false, m_header);
-	m_ownCard      = new PlayerCard(styleStore.style(), true, m_header);
-	connect(&styleStore, &StyleStore::styleChanged, m_opponentCard, &PlayerCard::applyStyle);
-	connect(&styleStore, &StyleStore::styleChanged, m_ownCard, &PlayerCard::applyStyle);
+	m_opponentCard = new PlayerCard(initialStyle, false, m_header);
+	m_ownCard      = new PlayerCard(initialStyle, true, m_header);
 
 	m_statusLabel = new QLabel("", m_header);
 	m_statusLabel->setAlignment(Qt::AlignCenter);
@@ -103,8 +106,7 @@ void GameWidget::buildNetworkLayout(StyleStore& styleStore) {
 	headerLayout->addWidget(m_ownCard);
 	boardColumn->addWidget(m_header);
 
-	m_boardWidget = new BoardWidget(styleStore.style(), m_boardArea);
-	connect(&styleStore, &StyleStore::styleChanged, m_boardWidget, &BoardWidget::applyStyle);
+	m_boardWidget = new BoardWidget(initialStyle, m_boardArea);
 	m_boardWidget->setMinimumSize(640, 640);
 	boardColumn->addWidget(m_boardWidget, 1);
 

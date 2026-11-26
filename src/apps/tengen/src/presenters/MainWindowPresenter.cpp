@@ -14,8 +14,8 @@
 
 namespace tengen {
 
-MainWindowPresenter::MainWindowPresenter(gui::MainWindow& mainWindow)
-    : QObject(nullptr), m_mainWindow(mainWindow) {
+MainWindowPresenter::MainWindowPresenter(gui::MainWindow& mainWindow, gui::StyleStore& styleStore)
+    : QObject(nullptr), m_mainWindow(mainWindow), m_styleStore(styleStore) {
 	QObject::connect(&m_mainWindow, &gui::MainWindow::gameLocalRequested, this, &MainWindowPresenter::onNewLocalGameRequested);
 	QObject::connect(&m_mainWindow, &gui::MainWindow::gameBotRequested, this, &MainWindowPresenter::onNewBotGameRequested);
 	QObject::connect(&m_mainWindow, &gui::MainWindow::gameHostRequested, this, &MainWindowPresenter::onHostRequested);
@@ -23,6 +23,10 @@ MainWindowPresenter::MainWindowPresenter(gui::MainWindow& mainWindow)
 	QObject::connect(&m_mainWindow, &gui::MainWindow::botDialogRequested, this, &MainWindowPresenter::onBotDialogRequested);
 	QObject::connect(&m_mainWindow, &gui::MainWindow::connectRequested, this, &MainWindowPresenter::onConnectRequested);
 	QObject::connect(&m_mainWindow, &gui::MainWindow::shutdownRequested, this, &MainWindowPresenter::onShutdownRequested);
+
+	QObject::connect(&m_mainWindow, &gui::MainWindow::styleDialogRequested, this, &MainWindowPresenter::onStyleDialogRequested);
+	QObject::connect(&m_mainWindow, &gui::MainWindow::styleChangeRequested, &m_styleStore, &gui::StyleStore::setStyle);
+	QObject::connect(&m_styleStore, &gui::StyleStore::styleChanged, &m_mainWindow, &gui::MainWindow::applyStyle);
 
 	startOpenPlay(GameConfig{.boardSize = 9u, .rules = fromRuleSet(RuleSet::Japanese)});
 }
@@ -100,6 +104,10 @@ void MainWindowPresenter::onHostRequested(const GameConfig& config, const Player
 		// TODO: Signal to the user that host failed.
 		onShutdownRequested();
 	}
+}
+
+void MainWindowPresenter::onStyleDialogRequested() {
+	m_mainWindow.openStyleDialog(m_styleStore.style());
 }
 
 void MainWindowPresenter::onShutdownRequested() {

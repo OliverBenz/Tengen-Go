@@ -4,6 +4,7 @@
 #include "MainWindow.hpp"
 #include "NetworkPresenter.hpp"
 #include "engine/engineCatalog.hpp"
+#include "gui/styleStore.hpp"
 #include "model/gameUpdates.hpp"
 #include "tengen/sessionManager.hpp"
 
@@ -16,7 +17,7 @@ class MainWindowPresenter : public QObject {
 	Q_OBJECT
 
 public:
-	explicit MainWindowPresenter(gui::MainWindow& mainWindow);
+	MainWindowPresenter(gui::MainWindow& mainWindow, gui::StyleStore& styleStore);
 	~MainWindowPresenter() override;
 
 private slots:
@@ -25,6 +26,7 @@ private slots:
 	void onNewBotGameRequested(const GameConfig& config, const engine::EngineConfig& engineConfig, bool humanPlaysBlack);
 	void onConnectRequested(const QString& hostIp);
 	void onHostRequested(const GameConfig& config, Player hostColour);
+	void onStyleDialogRequested();
 	void onShutdownRequested();
 
 private:
@@ -37,6 +39,7 @@ private:
 
 private:
 	gui::MainWindow& m_mainWindow;                                 //!< The main window.
+	gui::StyleStore& m_styleStore;                                 //!< The style in use, shared with every widget that draws it.
 	app::SessionManager m_sessions;                                //!< Owns the actual game. Declared first, so it outlives the presenters.
 	std::unique_ptr<GamePresenter> m_gamePresenter{nullptr};       //!< The 'drawer' of the game.
 	std::unique_ptr<NetworkPresenter> m_networkPresenter{nullptr}; //!< Network games only: our seat, why the connection ended.
