@@ -112,6 +112,10 @@ Player NetworkSession::currentPlayer() const {
 	std::lock_guard<std::mutex> lock(m_stateMutex);
 	return m_gameInfo.getPlayer();
 }
+std::optional<Player> NetworkSession::localPlayer() const {
+	std::lock_guard<std::mutex> lock(m_stateMutex);
+	return m_networkInfo.state().localPlayer;
+}
 std::vector<ChatMessage> NetworkSession::getChatSince(const unsigned messageId) const {
 	std::lock_guard<std::mutex> lock(m_stateMutex);
 	return m_chatInfo.getSince(messageId);

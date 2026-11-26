@@ -40,7 +40,7 @@ public:
 
 	const Board& board() const;
 	void setBoard(const Board& board);
-	void setCurrentPlayer(Player player);
+	void setGhostColour(Player player);
 
 	void playStonePlaceSound();
 
@@ -68,7 +68,7 @@ private:
 
 private:
 	Board m_board;
-	Board::Stone m_currentPlayer{Board::Stone::Black};
+	Board::Stone m_ghostColour{Board::Stone::Black};
 	std::unique_ptr<BoardRenderer> m_boardRenderer;
 	SoundPlayer m_soundPlayer;
 	std::optional<Style> m_appliedStyle; //!< Previous style to only reload the fields that actually changed. (optional to handle first load)

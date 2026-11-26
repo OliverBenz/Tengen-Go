@@ -21,7 +21,7 @@ private slots:
 
 private:
 	void showBoard();           //!< Draw the session's board.
-	void showCurrentPlayer();   //!< Show whose stone the next click places.
+	void showGhostColour();     //!< Show the stone our next click places.
 	void playStonePlaceSound(); //!< Play a sound when a stone is placed.
 
 private:

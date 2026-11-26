@@ -38,6 +38,10 @@ Player BotSession::currentPlayer() const {
 	return m_gameInfo.getPlayer();
 }
 
+std::optional<Player> BotSession::localPlayer() const {
+	return opponent(m_botColour);
+}
+
 void BotSession::tryPlace(const unsigned x, const unsigned y) {
 	if (m_status != Status::PlayerMove) {
 		return; // Only the user's own turn is his to play.
