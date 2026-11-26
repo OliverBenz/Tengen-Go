@@ -18,9 +18,6 @@ static constexpr qreal LABEL_SIZE                = 0.4;                    //!< 
 
 BoardRenderer::BoardRenderer(const unsigned nodes)
     : m_nodes(nodes) {
-	m_textureBlack = loadStoneTexture(defaultStoneTexture(), Player::Black);
-	m_textureWhite = loadStoneTexture(defaultStoneTexture(), Player::White);
-	m_ready        = m_nodes > 0 && !m_textureBlack.isNull() && !m_textureWhite.isNull();
 }
 
 unsigned BoardRenderer::nodes() const {
@@ -62,8 +59,11 @@ void BoardRenderer::setBackgroundTexture(const BoardTexture texture) {
 	updateBackgroundTexture();
 }
 
-bool BoardRenderer::showCoordinates() const {
-	return m_showCoordinates;
+void BoardRenderer::setStoneTexture(const StoneTexture texture) {
+	m_textureBlack = loadStoneTexture(texture, Player::Black);
+	m_textureWhite = loadStoneTexture(texture, Player::White);
+	m_ready        = m_nodes > 0 && !m_textureBlack.isNull() && !m_textureWhite.isNull();
+	updateStoneTextures();
 }
 
 void BoardRenderer::setShowCoordinates(const bool show) {

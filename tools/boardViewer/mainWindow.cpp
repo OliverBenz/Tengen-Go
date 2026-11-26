@@ -154,7 +154,7 @@ void MainWindow::buildLayout() {
 	leftLayout->addWidget(m_openButton);
 	leftLayout->addWidget(m_imageLabel, 1);
 
-	m_boardWidget = new gui::BoardWidget(rootWidget);
+	m_boardWidget = new gui::BoardWidget(gui::Style{}, rootWidget);
 
 	rootLayout->addLayout(leftLayout, 1);
 	rootLayout->addWidget(m_boardWidget, 1);

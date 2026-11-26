@@ -22,13 +22,13 @@ public:
 	unsigned nodes() const;       //!< Board size in lines.
 	unsigned boardSizePx() const; //!< Drawn board size [px]. Snapped to a multiple of the nodes.
 	bool isReady() const;         //!< Textures loaded and size set.
-	bool showCoordinates() const; //!< Coordinates are enabled or not.
 
 	void setNodes(unsigned nodes);                          //!< Set the board size in lines.
 	void setBoardSizePx(unsigned boardSizePx);              //!< Set the available board size [px].
 	void setDevicePixelRatio(qreal ratio);                  //!< Set the display scaling. Keeps textures sharp.
 	void setBackgroundTexture(BoardTexture texture); //!< Set the board image.
-	void setShowCoordinates(bool show);                     //!< Add a border with standard coordinates.
+	void setShowCoordinates(bool show);              //!< Add a border with standard coordinates.
+	void setStoneTexture(StoneTexture texture);      //!< Set the stone images for both players.
 
 	void draw(QPainter& painter, const Board& board, const Ghost& ghost) const; //!< Draw board, ghost stone and stones.
 	QRect stoneRect(Coord coord) const;                                         //!< Area of a stone [px].

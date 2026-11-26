@@ -1,6 +1,7 @@
 #pragma once
 
 #include "engine/engineCatalog.hpp"
+#include "gui/styleStore.hpp"
 #include "model/gameUpdates.hpp"
 #include "model/player.hpp"
 
@@ -50,6 +51,7 @@ protected:
 	void closeEvent(QCloseEvent* event) override;
 
 private:
+	StyleStore m_styleStore; //!< Single source of truth for the board/stone style, shared with the game widget and style dialog.
 	GameWidget* m_gameWidget = nullptr;
 };
 

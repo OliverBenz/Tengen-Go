@@ -8,6 +8,7 @@
 #include <cstdint>
 
 #include <memory>
+#include <optional>
 
 namespace tengen::gui {
 
@@ -34,25 +35,20 @@ class BoardWidget : public QWidget {
 public:
 	static constexpr int BOARD_MARGIN = 14; //!< Space around the board for its shadow [px].
 
-	explicit BoardWidget(QWidget* parent = nullptr);
+	explicit BoardWidget(const Style& initialStyle, QWidget* parent = nullptr);
 	~BoardWidget();
 
 	const Board& board() const;
 	void setBoard(const Board& board);
 	void setCurrentPlayer(Player player);
 
-	BoardTexture backgroundTexture() const;
-	void setBackgroundTexture(BoardTexture texture); //!< Image to draw the board on.
-
-	bool showCoordinates() const;       //!< Are the coordinates enabled or not.
-	void setShowCoordinates(bool show); //!< Coordinates in standard format on the board's border.
-
-	StoneSound stoneSound() const;
-	void setStoneSound(StoneSound sound); //!< Sound to play on stone placement.
 	void playStonePlaceSound();
 
 signals:
 	void boardEvent(const BoardWidgetEvent& event);
+
+public slots:
+	void applyStyle(const Style& style); //!< Apply every style value to the renderer and sound player.
 
 protected:
 	void resizeEvent(QResizeEvent* event) override;
@@ -74,8 +70,8 @@ private:
 	Board m_board;
 	Board::Stone m_currentPlayer{Board::Stone::Black};
 	std::unique_ptr<BoardRenderer> m_boardRenderer;
-	BoardTexture m_backgroundTexture{BoardTexture::Plain};
 	SoundPlayer m_soundPlayer;
+	std::optional<Style> m_appliedStyle; //!< Previous style to only reload the fields that actually changed. (optional to handle first load)
 
 	// Ghost stone: A translucent stone on mouse position to show where the placement is done.
 	Coord m_ghostStone{0u, 0u};

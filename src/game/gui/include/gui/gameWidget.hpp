@@ -14,12 +14,13 @@ namespace tengen::gui {
 
 class ChatWidget;
 class PlayerCard;
+class StyleStore;
 
 class GameWidget : public QWidget {
 	Q_OBJECT
 
 public:
-	explicit GameWidget(QWidget* parent = nullptr);
+	explicit GameWidget(StyleStore& styleStore, QWidget* parent = nullptr);
 	~GameWidget() override;
 
 	BoardWidget& boardWidget();
@@ -41,7 +42,7 @@ protected:
 
 private:
 	//! Initial setup constructing the layout of the window.
-	void buildNetworkLayout();
+	void buildNetworkLayout(StyleStore& styleStore);
 
 private:
 	QTabWidget* m_sideTabs   = nullptr; //!< Moves and chat, right of the board.

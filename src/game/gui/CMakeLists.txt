@@ -11,6 +11,7 @@ set(headers
 	"${CMAKE_CURRENT_LIST_DIR}/include/gui/chatWidget.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/gui/gameWidget.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/include/gui/soundPlayer.hpp"
+	"${CMAKE_CURRENT_LIST_DIR}/include/gui/styleStore.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/src/boardRenderer.hpp"
 	"${CMAKE_CURRENT_LIST_DIR}/src/playerCard.hpp"
 )
@@ -21,6 +22,7 @@ set(sources
 	"${CMAKE_CURRENT_LIST_DIR}/src/chatWidget.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/src/gameWidget.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/src/soundPlayer.cpp"
+	"${CMAKE_CURRENT_LIST_DIR}/src/styleStore.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/src/boardRenderer.cpp"
 	"${CMAKE_CURRENT_LIST_DIR}/src/playerCard.cpp"
 )

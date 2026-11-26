@@ -25,10 +25,11 @@ BoardWidgetEvent BoardWidgetEvent::resign() {
 }
 
 
-BoardWidget::BoardWidget(QWidget* parent)
+BoardWidget::BoardWidget(const Style& initialStyle, QWidget* parent)
     : QWidget(parent), m_board(9u), m_boardRenderer{std::make_unique<BoardRenderer>(m_board.size())} {
 	setFocusPolicy(Qt::StrongFocus); // Required to get key events.
 	setMouseTracking(true);
+	applyStyle(initialStyle);
 }
 
 BoardWidget::~BoardWidget() = default;
@@ -58,31 +59,22 @@ void BoardWidget::setCurrentPlayer(const Player player) {
 	}
 }
 
-BoardTexture BoardWidget::backgroundTexture() const {
-	return m_backgroundTexture;
-}
-
-void BoardWidget::setBackgroundTexture(const BoardTexture texture) {
-	m_backgroundTexture = texture;
-	m_boardRenderer->setBackgroundTexture(texture);
+void BoardWidget::applyStyle(const Style& style) {
+	const bool first = !m_appliedStyle.has_value(); // First call (from the constructor): apply every field unconditionally.
+	if (first || style.boardTexture != m_appliedStyle->boardTexture) {
+		m_boardRenderer->setBackgroundTexture(style.boardTexture);
+	}
+	if (first || style.showCoordinates != m_appliedStyle->showCoordinates) {
+		m_boardRenderer->setShowCoordinates(style.showCoordinates);
+	}
+	if (first || style.stoneTexture != m_appliedStyle->stoneTexture) {
+		m_boardRenderer->setStoneTexture(style.stoneTexture);
+	}
+	if (first || style.stoneSound != m_appliedStyle->stoneSound) {
+		m_soundPlayer.setStoneSound(style.stoneSound);
+	}
+	m_appliedStyle = style;
 	update();
-}
-
-bool BoardWidget::showCoordinates() const {
-	return m_boardRenderer->showCoordinates();
-}
-
-void BoardWidget::setShowCoordinates(const bool show) {
-	m_boardRenderer->setShowCoordinates(show);
-	update();
-}
-
-StoneSound BoardWidget::stoneSound() const {
-	return m_soundPlayer.stoneSound();
-}
-
-void BoardWidget::setStoneSound(const StoneSound sound) {
-	m_soundPlayer.setStoneSound(sound);
 }
 
 void BoardWidget::playStonePlaceSound() {
