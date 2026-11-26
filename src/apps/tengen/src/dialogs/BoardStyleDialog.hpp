@@ -19,20 +19,20 @@ class BoardStyleDialog : public QDialog {
 	Q_OBJECT
 
 public:
-	BoardStyleDialog(boardStyle::Texture currentTexture, bool showCoordinates, stoneStyle::Sound currentSound, QWidget* parent = nullptr);
+	BoardStyleDialog(BoardTexture currentTexture, bool showCoordinates, StoneSound currentSound, QWidget* parent = nullptr);
 	~BoardStyleDialog() override;
 
-	boardStyle::Texture texture() const;  //!< Selected texture.
-	bool showCoordinates() const;         //!< Whether the board labels its lines.
-	stoneStyle::Sound stoneSound() const; //!< Selected stone placement sound.
+	BoardTexture texture() const;  //!< Selected texture.
+	bool showCoordinates() const;  //!< Whether the board labels its lines.
+	StoneSound stoneSound() const; //!< Selected stone placement sound.
 
 protected:
 	bool eventFilter(QObject* watched, QEvent* event) override;
 
 private:
 	void addTexturePreviews();
-	void selectTexture(boardStyle::Texture texture); //!< Falls back to plain if the texture is not listed.
-	void fitPreviewCells();                          //!< Stretch the preview cells over the whole list width.
+	void selectTexture(BoardTexture texture); //!< Falls back to plain if the texture is not listed.
+	void fitPreviewCells();                   //!< Stretch the preview cells over the whole list width.
 
 private:
 	QListWidget* m_textures{nullptr};       //!< List of texture preview and names.

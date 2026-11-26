@@ -5,16 +5,16 @@
 namespace tengen::gui {
 
 SoundPlayer::SoundPlayer() {
-	m_stonePlace.setSource(QUrl::fromLocalFile(stoneStyle::soundFile(m_stoneSound)));
+	m_stonePlace.setSource(QUrl::fromLocalFile(soundFile(m_stoneSound)));
 }
 
-stoneStyle::Sound SoundPlayer::stoneSound() const {
+StoneSound SoundPlayer::stoneSound() const {
 	return m_stoneSound;
 }
 
-void SoundPlayer::setStoneSound(const stoneStyle::Sound sound) {
+void SoundPlayer::setStoneSound(const StoneSound sound) {
 	m_stoneSound = sound;
-	m_stonePlace.setSource(QUrl::fromLocalFile(stoneStyle::soundFile(sound)));
+	m_stonePlace.setSource(QUrl::fromLocalFile(soundFile(sound)));
 }
 
 void SoundPlayer::playStonePlace() {

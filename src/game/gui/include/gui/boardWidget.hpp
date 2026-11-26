@@ -41,14 +41,14 @@ public:
 	void setBoard(const Board& board);
 	void setCurrentPlayer(Player player);
 
-	boardStyle::Texture backgroundTexture() const;
-	void setBackgroundTexture(boardStyle::Texture texture); //!< Image to draw the board on.
+	BoardTexture backgroundTexture() const;
+	void setBackgroundTexture(BoardTexture texture); //!< Image to draw the board on.
 
 	bool showCoordinates() const;       //!< Are the coordinates enabled or not.
 	void setShowCoordinates(bool show); //!< Coordinates in standard format on the board's border.
 
-	stoneStyle::Sound stoneSound() const;
-	void setStoneSound(stoneStyle::Sound sound); //!< Sound to play on stone placement.
+	StoneSound stoneSound() const;
+	void setStoneSound(StoneSound sound); //!< Sound to play on stone placement.
 	void playStonePlaceSound();
 
 signals:
@@ -74,7 +74,7 @@ private:
 	Board m_board;
 	Board::Stone m_currentPlayer{Board::Stone::Black};
 	std::unique_ptr<BoardRenderer> m_boardRenderer;
-	boardStyle::Texture m_backgroundTexture{boardStyle::Texture::Plain};
+	BoardTexture m_backgroundTexture{BoardTexture::Plain};
 	SoundPlayer m_soundPlayer;
 
 	// Ghost stone: A translucent stone on mouse position to show where the placement is done.
