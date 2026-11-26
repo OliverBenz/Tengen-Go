@@ -22,7 +22,7 @@ add_executable(${targetName}
     "${CMAKE_CURRENT_LIST_DIR}/src/dialogs/HostDialog.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/src/dialogs/HelpDialog.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/src/dialogs/AboutDialog.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/src/dialogs/BoardStyleDialog.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/src/dialogs/StyleDialog.cpp"
 
     "${CMAKE_CURRENT_LIST_DIR}/src/controls/BoardSizeWidget.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/src/controls/PlayerColourWidget.cpp"

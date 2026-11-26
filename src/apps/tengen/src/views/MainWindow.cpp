@@ -1,7 +1,7 @@
 #include "MainWindow.hpp"
 
 #include "AboutDialog.hpp"
-#include "BoardStyleDialog.hpp"
+#include "StyleDialog.hpp"
 #include "BotDialog.hpp"
 #include "ConnectDialog.hpp"
 #include "HelpDialog.hpp"
@@ -114,7 +114,7 @@ void MainWindow::openHostDialog() {
 }
 
 void MainWindow::openStyleDialog(const Style& currentStyle) {
-	BoardStyleDialog dialog(currentStyle, this);
+	StyleDialog dialog(currentStyle, this);
 	emit styleDialogOpened(dialog.boardWidget());
 
 	if (dialog.exec() == QDialog::Accepted) {
