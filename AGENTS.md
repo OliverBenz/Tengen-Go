@@ -120,5 +120,11 @@ See `docs/` for deeper guidance beyond what belongs in an agent instruction file
 
 ## General rules
 
-- Only make changes when explicitly asked. Do not commit unless requested.
+- Only make changes when explicitly instructed to (e.g. "add/implement/fix/change X").
+  Treat any phrasing as discussion-only, not authorization to edit code, if it
+  asks a question or weighs options — including "do we need X?", "could we
+  just Y instead?", "what do you think about Z?", "should this be A or B?".
+  Reply in words only for these; don't let a trailing suggestion count as a
+  request to implement it.
+- Do not commit unless requested.
 - When requirements are unclear, ask the developer before deciding.
