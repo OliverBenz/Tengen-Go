@@ -1,4 +1,4 @@
-#include "BoardStyleDialog.hpp"
+#include "StyleDialog.hpp"
 
 #include "gui/boardWidget.hpp"
 
@@ -28,7 +28,7 @@ static BoardTexture textureOf(const QListWidgetItem& item) {
 	return static_cast<BoardTexture>(item.data(Qt::UserRole).toInt());
 }
 
-BoardStyleDialog::BoardStyleDialog(const Style& currentStyle, QWidget* parent)
+StyleDialog::StyleDialog(const Style& currentStyle, QWidget* parent)
     : QDialog(parent), m_previewStyle(currentStyle) {
 	setWindowTitle(tr("Board Style"));
 	resize(900, 620);
@@ -100,19 +100,19 @@ BoardStyleDialog::BoardStyleDialog(const Style& currentStyle, QWidget* parent)
 	mainLayout->addWidget(buttons);
 }
 
-BoardStyleDialog::~BoardStyleDialog() {
+StyleDialog::~StyleDialog() {
 	m_previewLoader.cancel(); // Closed before all previews loaded: skip the rest.
 }
 
-Style BoardStyleDialog::currentStyle() const {
+Style StyleDialog::currentStyle() const {
 	return m_previewStyle;
 }
 
-BoardWidget& BoardStyleDialog::boardWidget() {
+BoardWidget& StyleDialog::boardWidget() {
 	return *m_board;
 }
 
-bool BoardStyleDialog::eventFilter(QObject* watched, QEvent* event) {
+bool StyleDialog::eventFilter(QObject* watched, QEvent* event) {
 	if (watched == m_textures->viewport() && event->type() == QEvent::Resize) {
 		fitPreviewCells();
 	}
@@ -122,7 +122,7 @@ bool BoardStyleDialog::eventFilter(QObject* watched, QEvent* event) {
 //! Flowing top to bottom, Qt centres an item in its cell vertically only and shrinks it to its content.
 //! Stretching cells and items to the full list width lets the delegate centre icon and name.
 //! Items are shorter than their cell by the padding, which Qt splits above and below the item.
-void BoardStyleDialog::fitPreviewCells() {
+void StyleDialog::fitPreviewCells() {
 	const QSize cell{m_textures->viewport()->width(), m_textures->gridSize().height()};
 	const QSize item{cell.width(), cell.height() - 2 * LIST_PADDING};
 	m_textures->setGridSize(cell);
@@ -131,7 +131,7 @@ void BoardStyleDialog::fitPreviewCells() {
 	}
 }
 
-void BoardStyleDialog::addTexturePreviews() {
+void StyleDialog::addTexturePreviews() {
 	const qreal ratio = devicePixelRatioF();
 	const int side    = qRound(PREVIEW_SIZE * ratio); // Physical pixels, so previews stay sharp on scaled displays.
 
@@ -175,7 +175,7 @@ void BoardStyleDialog::addTexturePreviews() {
 	}));
 }
 
-void BoardStyleDialog::selectTexture(const BoardTexture texture) {
+void StyleDialog::selectTexture(const BoardTexture texture) {
 	for (int row = 0; row != m_textures->count(); ++row) {
 		if (textureOf(*m_textures->item(row)) == texture) {
 			m_textures->setCurrentRow(row);

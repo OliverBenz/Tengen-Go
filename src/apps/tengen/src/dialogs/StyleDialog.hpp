@@ -15,12 +15,12 @@ namespace tengen::gui {
 class BoardWidget;
 
 //! Lets the user pick one of the board textures while previewing the board next to them.
-class BoardStyleDialog : public QDialog {
+class StyleDialog : public QDialog {
 	Q_OBJECT
 
 public:
-	explicit BoardStyleDialog(const Style& currentStyle, QWidget* parent = nullptr);
-	~BoardStyleDialog() override;
+	explicit StyleDialog(const Style& currentStyle, QWidget* parent = nullptr);
+	~StyleDialog() override;
 
 	Style currentStyle() const; //!< Style selected in the dialog.
 	BoardWidget& boardWidget(); //!< The board preview. Shows whatever board it is given.
