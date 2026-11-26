@@ -34,7 +34,6 @@ BoardStyleDialog::BoardStyleDialog(const Style& currentStyle, QWidget* parent)
 	resize(900, 620);
 
 	m_board = new BoardWidget(m_previewStyle, this);
-	m_board->setBoard(Board(19u));
 
 	m_textures = new QListWidget(this);
 	m_textures->setViewMode(QListView::IconMode);
@@ -106,6 +105,10 @@ BoardStyleDialog::~BoardStyleDialog() {
 
 Style BoardStyleDialog::currentStyle() const {
 	return m_previewStyle;
+}
+
+BoardWidget& BoardStyleDialog::boardWidget() {
+	return *m_board;
 }
 
 bool BoardStyleDialog::eventFilter(QObject* watched, QEvent* event) {
