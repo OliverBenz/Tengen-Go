@@ -41,6 +41,7 @@ public:
 	const Board& board() const;
 	void setBoard(const Board& board);
 	void setGhostColour(Player player);
+	void setKeyboardShortcutsEnabled(bool enabled); //!< Pass (P) and resign (R) keys. Enabled by default.
 
 	void playStonePlaceSound();
 
