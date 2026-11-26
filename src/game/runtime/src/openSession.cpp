@@ -32,6 +32,9 @@ Player OpenSession::currentPlayer() const {
 	std::lock_guard<std::mutex> lock(m_stateMutex);
 	return m_gameInfo.getPlayer();
 }
+std::optional<Player> OpenSession::localPlayer() const {
+	return std::nullopt; // We play both sides.
+}
 
 void OpenSession::tryPlace(const unsigned x, const unsigned y) {
 	m_game.pushEvent(PutStoneEvent{currentPlayer(), Coord{x, y}});

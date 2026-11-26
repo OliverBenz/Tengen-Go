@@ -38,6 +38,7 @@ public: // IGameSession Interface
 	GameStatus status() const override;
 	Board board() const override;
 	Player currentPlayer() const override;
+	std::optional<Player> localPlayer() const override;
 
 	void tryPlace(unsigned x, unsigned y) override;
 	void tryPass() override;

@@ -4,6 +4,8 @@
 #include "model/gameStatus.hpp"
 #include "tengen/IAppSignal.hpp"
 
+#include <optional>
+
 namespace tengen::app {
 
 class IGameSession : public IAppSignalSource {
@@ -13,6 +15,9 @@ public:
 	virtual GameStatus status() const    = 0;
 	virtual Board board() const          = 0;
 	virtual Player currentPlayer() const = 0;
+
+	//! The colour this client plays. Nullopt if it plays both sides (open play) or none (watching, not welcomed yet).
+	virtual std::optional<Player> localPlayer() const = 0;
 
 	virtual void tryPlace(unsigned x, unsigned y) = 0;
 	virtual void tryPass()                        = 0;

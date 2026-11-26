@@ -13,9 +13,9 @@ BoardPresenter::BoardPresenter(app::IGameSession& game, gui::BoardWidget& boardW
 	QObject::connect(&m_boardWidget, &gui::BoardWidget::boardEvent, this, &BoardPresenter::onBoardEvent);
 
 	// Subscribe before the first read: a change in between would otherwise go unseen.
-	m_game.subscribe(this, app::AS_BoardChange | app::AS_PlayerChange | app::AS_StonePlaced);
+	m_game.subscribe(this, app::AS_BoardChange | app::AS_PlayerChange | app::AS_ConnectionChange | app::AS_StonePlaced);
 	showBoard();
-	showCurrentPlayer();
+	showGhostColour();
 }
 
 BoardPresenter::~BoardPresenter() {
@@ -29,8 +29,8 @@ void BoardPresenter::onAppEvent(const app::AppSignalMask mask) {
 		        if (mask & app::AS_BoardChange) {
 			        showBoard();
 		        }
-		        if (mask & app::AS_PlayerChange) {
-			        showCurrentPlayer();
+		        if (mask & (app::AS_PlayerChange | app::AS_ConnectionChange)) {
+			        showGhostColour();
 		        }
 		        if (mask & app::AS_StonePlaced) {
 			        playStonePlaceSound();
@@ -43,8 +43,9 @@ void BoardPresenter::showBoard() {
 	m_boardWidget.setBoard(m_game.board());
 }
 
-void BoardPresenter::showCurrentPlayer() {
-	m_boardWidget.setCurrentPlayer(m_game.currentPlayer());
+void BoardPresenter::showGhostColour() {
+	// Our own colour if we have one. Playing both sides (open play): whoever is to move.
+	m_boardWidget.setGhostColour(m_game.localPlayer().value_or(m_game.currentPlayer()));
 }
 
 void BoardPresenter::playStonePlaceSound() {

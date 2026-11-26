@@ -47,13 +47,13 @@ void BoardWidget::setBoard(const Board& board) {
 	update();
 }
 
-void BoardWidget::setCurrentPlayer(const Player player) {
-	const auto currentPlayer = toStone(player);
-	if (m_currentPlayer == currentPlayer) {
+void BoardWidget::setGhostColour(const Player player) {
+	const auto colour = toStone(player);
+	if (m_ghostColour == colour) {
 		return;
 	}
 
-	m_currentPlayer = currentPlayer;
+	m_ghostColour = colour;
 	if (m_ghostStoneDraw) {
 		update(stoneRect(m_ghostStone));
 	}
@@ -188,7 +188,7 @@ void BoardWidget::renderBoard() {
 
 	painter.save();
 	painter.translate(boardRect.topLeft());
-	m_boardRenderer->draw(painter, m_board, {m_ghostStone, m_currentPlayer, m_ghostStoneDraw});
+	m_boardRenderer->draw(painter, m_board, {m_ghostStone, m_ghostColour, m_ghostStoneDraw});
 	painter.restore();
 
 	painter.setPen(QColor(0, 0, 0, 60)); // Thin edge so light boards stand out on light themes.
