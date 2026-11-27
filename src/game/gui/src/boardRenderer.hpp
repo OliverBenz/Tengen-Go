@@ -23,9 +23,9 @@ public:
 	unsigned boardSizePx() const; //!< Drawn board size [px]. Snapped to a multiple of the nodes.
 	bool isReady() const;         //!< Textures loaded and size set.
 
-	void setNodes(unsigned nodes);                          //!< Set the board size in lines.
-	void setBoardSizePx(unsigned boardSizePx);              //!< Set the available board size [px].
-	void setDevicePixelRatio(qreal ratio);                  //!< Set the display scaling. Keeps textures sharp.
+	void setNodes(unsigned nodes);                   //!< Set the board size in lines.
+	void setBoardSizePx(unsigned boardSizePx);       //!< Set the available board size [px].
+	void setDevicePixelRatio(qreal ratio);           //!< Set the display scaling. Keeps textures sharp.
 	void setBackgroundTexture(BoardTexture texture); //!< Set the board image.
 	void setShowCoordinates(bool show);              //!< Add a border with standard coordinates.
 	void setStoneTexture(StoneTexture texture);      //!< Set the stone images for both players.
