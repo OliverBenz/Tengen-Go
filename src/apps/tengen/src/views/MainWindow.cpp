@@ -1,12 +1,12 @@
 #include "MainWindow.hpp"
 
 #include "AboutDialog.hpp"
-#include "StyleDialog.hpp"
 #include "BotDialog.hpp"
 #include "ConnectDialog.hpp"
 #include "HelpDialog.hpp"
 #include "HostDialog.hpp"
 #include "LocalGameDialog.hpp"
+#include "StyleDialog.hpp"
 #include "gui/gameWidget.hpp"
 
 #include <QMenuBar>
