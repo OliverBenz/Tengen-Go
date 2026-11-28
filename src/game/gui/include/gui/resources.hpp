@@ -26,6 +26,7 @@ enum class BoardTexture : std::uint8_t {
 
 QList<BoardTexture> boardTextures();           //!< All board textures in display order, Plain first.
 QString displayName(BoardTexture texture);     //!< Name to show the user.
+QString settingsKey(BoardTexture texture);     //!< Stable identifier to persist the choice.
 QImage loadBoardTexture(BoardTexture texture); //!< Centre square of the texture, as the board shows it. Null for Plain or if unreadable.
 
 
@@ -36,6 +37,7 @@ enum class StoneTexture : std::uint8_t {
 
 QList<StoneTexture> stoneTextures();                          //!< All stone textures in display order.
 QString displayName(StoneTexture texture);                    //!< Name to show the user.
+QString settingsKey(StoneTexture texture);                    //!< Stable identifier to persist the choice.
 QImage loadStoneTexture(StoneTexture texture, Player player); //!< Stone image of a player at full resolution. Callers scale it to their size. Null if unreadable.
 
 
@@ -48,6 +50,7 @@ enum class StoneSound {
 QList<StoneSound> stoneSounds();       //!< All stone sounds in display order.
 QString soundFile(StoneSound sound);   //!< Path to the given stone placement sound effect.
 QString displayName(StoneSound sound); //!< Name to show the user.
+QString settingsKey(StoneSound sound); //!< Stable identifier to persist the choice.
 
 //! Style choices bundled into one value, so they can be passed, stored and defaulted together.
 struct Style {
