@@ -28,18 +28,19 @@ QImage toFastFormat(const QImage& image) {
 //! A board texture and the file behind it. The only place that knows texture files.
 struct TextureFile {
 	BoardTexture texture;
+	const char* key;  //!< Stable identifier for the settings file. Never change it.
 	const char* name; //!< Display name, translated on use.
 	const char* file; //!< File in the boards folder. Null for the plain board.
 };
 
 // Display order of the style settings.
 constexpr std::array TEXTURES{
-        TextureFile{BoardTexture::Plain, QT_TRANSLATE_NOOP("Style", "Plain"), nullptr},
-        TextureFile{BoardTexture::HoneyWood, QT_TRANSLATE_NOOP("Style", "Honey Wood"), "Wood095_2K-PNG_Color.png"},
-        TextureFile{BoardTexture::LightWood, QT_TRANSLATE_NOOP("Style", "Light Wood"), "Wood094_2K-PNG_Color.png"},
-        TextureFile{BoardTexture::Afromosia, QT_TRANSLATE_NOOP("Style", "Afromosia"), "2K_afromosia_basecolor.png"},
-        TextureFile{BoardTexture::GreyWood, QT_TRANSLATE_NOOP("Style", "Grey Wood"), "1K-wood_fine_8-diffuse.jpg"},
-        TextureFile{BoardTexture::Anime, QT_TRANSLATE_NOOP("Style", "Anime"), "anime_board.svg"},
+        TextureFile{BoardTexture::Plain, "plain", QT_TRANSLATE_NOOP("Style", "Plain"), nullptr},
+        TextureFile{BoardTexture::HoneyWood, "honey_wood", QT_TRANSLATE_NOOP("Style", "Honey Wood"), "Wood095_2K-PNG_Color.png"},
+        TextureFile{BoardTexture::LightWood, "light_wood", QT_TRANSLATE_NOOP("Style", "Light Wood"), "Wood094_2K-PNG_Color.png"},
+        TextureFile{BoardTexture::Afromosia, "afromosia", QT_TRANSLATE_NOOP("Style", "Afromosia"), "2K_afromosia_basecolor.png"},
+        TextureFile{BoardTexture::GreyWood, "grey_wood", QT_TRANSLATE_NOOP("Style", "Grey Wood"), "1K-wood_fine_8-diffuse.jpg"},
+        TextureFile{BoardTexture::Anime, "anime", QT_TRANSLATE_NOOP("Style", "Anime"), "anime_board.svg"},
 };
 
 const TextureFile& textureFile(const BoardTexture texture) {
@@ -51,6 +52,7 @@ const TextureFile& textureFile(const BoardTexture texture) {
 //! A stone set and the files behind it, one per player colour. The only place that knows stone files.
 struct StoneTextureFile {
 	StoneTexture texture;
+	const char* key;   //!< Stable identifier for the settings file. Never change it.
 	const char* name;  //!< Display name, translated on use.
 	const char* black; //!< File in the stones folder for the black stone.
 	const char* white; //!< File in the stones folder for the white stone.
@@ -58,7 +60,7 @@ struct StoneTextureFile {
 
 // Display order of the style settings.
 constexpr std::array STONE_TEXTURES{
-        StoneTextureFile{StoneTexture::Anime, QT_TRANSLATE_NOOP("Style", "Anime"), "stones/anime_black.png", "stones/anime_white.png"},
+        StoneTextureFile{StoneTexture::Anime, "anime", QT_TRANSLATE_NOOP("Style", "Anime"), "stones/anime_black.png", "stones/anime_white.png"},
 };
 
 const StoneTextureFile& stoneTextureFile(const StoneTexture texture) {
@@ -70,14 +72,15 @@ const StoneTextureFile& stoneTextureFile(const StoneTexture texture) {
 //! A stone placement sound and the file behind it.
 struct SoundFile {
 	StoneSound sound;
+	const char* key;  //!< Stable identifier for the settings file. Never change it.
 	const char* name; //!< Display name, translated on use.
 	const char* file; //!< File in the audio folder.
 };
 
 //! Display order of the style settings.
 constexpr std::array SOUNDS{
-        SoundFile{StoneSound::One, QT_TRANSLATE_NOOP("Style", "Place 1"), "stone_1.wav"},
-        SoundFile{StoneSound::Two, QT_TRANSLATE_NOOP("Style", "Place 2"), "stone_2.wav"},
+        SoundFile{StoneSound::One, "one", QT_TRANSLATE_NOOP("Style", "Place 1"), "stone_1.wav"},
+        SoundFile{StoneSound::Two, "two", QT_TRANSLATE_NOOP("Style", "Place 2"), "stone_2.wav"},
 };
 
 const SoundFile& soundEntry(const StoneSound sound) {
@@ -98,6 +101,10 @@ QList<BoardTexture> boardTextures() {
 
 QString displayName(const BoardTexture texture) {
 	return QCoreApplication::translate("Style", textureFile(texture).name);
+}
+
+QString settingsKey(const BoardTexture texture) {
+	return QString::fromLatin1(textureFile(texture).key);
 }
 
 QImage loadBoardTexture(const BoardTexture texture) {
@@ -124,6 +131,10 @@ QString displayName(const StoneTexture texture) {
 	return QCoreApplication::translate("Style", stoneTextureFile(texture).name);
 }
 
+QString settingsKey(const StoneTexture texture) {
+	return QString::fromLatin1(stoneTextureFile(texture).key);
+}
+
 QImage loadStoneTexture(const StoneTexture texture, const Player player) {
 	const StoneTextureFile& entry = stoneTextureFile(texture);
 	return toFastFormat(readImage(QString::fromLatin1(player == Player::Black ? entry.black : entry.white)));
@@ -143,6 +154,10 @@ QString soundFile(const StoneSound sound) {
 
 QString displayName(const StoneSound sound) {
 	return QCoreApplication::translate("Style", soundEntry(sound).name);
+}
+
+QString settingsKey(const StoneSound sound) {
+	return QString::fromLatin1(soundEntry(sound).key);
 }
 
 
