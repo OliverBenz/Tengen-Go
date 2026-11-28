@@ -3,6 +3,9 @@
 #include "GamePresenter.hpp"
 #include "engine/engineCatalog.hpp"
 #include "model/gameUpdates.hpp"
+#include "vision/gui/cameraPreviewPresenter.hpp"
+#include "vision/gui/cameraPreviewView.hpp"
+#include "vision/gui/cameraSource.hpp"
 
 #include <QCoreApplication>
 #include <QObject>
@@ -22,6 +25,7 @@ MainWindowPresenter::MainWindowPresenter(gui::MainWindow& mainWindow, gui::Style
 
 	QObject::connect(&m_mainWindow, &gui::MainWindow::botDialogRequested, this, &MainWindowPresenter::onBotDialogRequested);
 	QObject::connect(&m_mainWindow, &gui::MainWindow::connectRequested, this, &MainWindowPresenter::onConnectRequested);
+	QObject::connect(&m_mainWindow, &gui::MainWindow::cameraPreviewRequested, this, &MainWindowPresenter::onCameraPreviewRequested);
 	QObject::connect(&m_mainWindow, &gui::MainWindow::shutdownRequested, this, &MainWindowPresenter::onShutdownRequested);
 
 	QObject::connect(&m_mainWindow, &gui::MainWindow::styleDialogRequested, this, &MainWindowPresenter::onStyleDialogRequested);
@@ -78,6 +82,20 @@ void MainWindowPresenter::onBotDialogRequested() {
 
 	// Look on every opening, so an engine installed while we run is offered right away.
 	m_mainWindow.openBotDialog(engine::findEngines(rootPaths));
+}
+
+void MainWindowPresenter::onCameraPreviewRequested() {
+	if (!m_cameraPreview) { // Else it is open already.
+		m_cameraPreview = new vision::gui::CameraPreviewView(&m_mainWindow, Qt::Window);
+		m_cameraPreview->setAttribute(Qt::WA_DeleteOnClose); // With the camera and presenter in it.
+		m_cameraPreview->setWindowTitle(tr("Camera Preview"));
+		auto* camera    = new vision::gui::CameraSource(m_cameraPreview);
+		auto* presenter = new vision::gui::CameraPreviewPresenter(*m_cameraPreview, *camera);
+		presenter->setParent(m_cameraPreview);
+	}
+	m_cameraPreview->show();
+	m_cameraPreview->raise();
+	m_cameraPreview->activateWindow();
 }
 
 void MainWindowPresenter::onNewBotGameRequested(const GameConfig& config, const engine::EngineConfig& engineConfig, const bool humanPlaysBlack) {

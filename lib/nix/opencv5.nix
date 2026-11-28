@@ -45,7 +45,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   cmakeFlags = [
     (lib.cmakeFeature "CMAKE_BUILD_TYPE" "Release")
-    (lib.cmakeFeature "BUILD_LIST" "core,imgproc,imgcodecs,videoio,highgui,geometry")
+    (lib.cmakeFeature "BUILD_LIST" "core,imgproc,imgcodecs,videoio,highgui,geometry,dnn")
 
     # Nothing but the libraries.
     (lib.cmakeBool "BUILD_TESTS" false)
@@ -68,6 +68,10 @@ stdenv.mkDerivation (finalAttrs: {
     (lib.cmakeBool "BUILD_TIFF" false)
     (lib.cmakeBool "BUILD_WEBP" false)
 
+    # Bundled protobuf for dnn's ONNX import.
+    (lib.cmakeBool "WITH_PROTOBUF" true)
+    (lib.cmakeBool "BUILD_PROTOBUF" true)
+
     (lib.cmakeBool "WITH_GTK" true)
     (lib.cmakeBool "WITH_QT" false)
     (lib.cmakeBool "WITH_FFMPEG" true)
@@ -79,7 +83,6 @@ stdenv.mkDerivation (finalAttrs: {
     (lib.cmakeBool "WITH_OPENEXR" false)
     (lib.cmakeBool "WITH_OPENJPEG" false)
     (lib.cmakeBool "WITH_JASPER" false)
-    (lib.cmakeBool "WITH_PROTOBUF" false)
     (lib.cmakeBool "WITH_EIGEN" false)
 
     # CMake finds OpenCVConfig.cmake. The generated .pc file joins the absolute Nix paths wrongly (prefix//nix/store/...).

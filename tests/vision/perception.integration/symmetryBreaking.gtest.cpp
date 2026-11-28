@@ -76,7 +76,7 @@ inline bool isStone(const core::StoneState state) {
 
 //! Run the image detection pipeline and return the 1 stone on the board.
 //! \returns Null for failure in pipeline or not exactly 1 stone found.
-std::optional<DetectedStone> detectSingleStone(const std::filesystem::path& imagePath) {
+std::optional<DetectedStone> detectSingleStone(const std::filesystem::path& imagePath, core::StoneClassifier& classifier) {
 	// Load image
 	const cv::Mat image = cv::imread(imagePath.string());
 	if (image.empty()) {
@@ -95,7 +95,7 @@ std::optional<DetectedStone> detectSingleStone(const std::filesystem::path& imag
 		return std::nullopt;
 	}
 
-	const core::StoneResult result = core::analyseBoard(rectified);
+	const core::StoneResult result = core::analyseBoard(rectified, classifier);
 	if (!result.success || result.stones.size() != rectified.geometry.intersections.size()) {
 		return std::nullopt;
 	}
@@ -180,9 +180,10 @@ TEST(Perception, Setup_SymmetryBreaking_D4Orbit) {
 	        "E3_4.png",
 	};
 
+	core::StoneClassifier classifier;
 	for (const std::string_view fileName: BLACK_CASES) {
 		const auto imagePath = setupImage(fileName);
-		const auto stone     = detectSingleStone(imagePath);
+		const auto stone     = detectSingleStone(imagePath, classifier);
 		ASSERT_TRUE(stone.has_value()) << imagePath.string();
 		ASSERT_EQ(stone->colour, core::StoneState::Black) << imagePath.string();
 

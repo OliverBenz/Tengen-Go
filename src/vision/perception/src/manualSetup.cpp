@@ -47,7 +47,7 @@ static cv::Mat markDetections(const core::RectifiedBoard& board, const core::Sto
 }
 
 //! Run the pipeline from H_0 on: warp, find the grid, find the stones.
-static BoardSnapshot analyse(const cv::Mat& frame, const std::array<cv::Point2f, CORNER_COUNT>& corners) {
+static BoardSnapshot analyse(const cv::Mat& frame, const std::array<cv::Point2f, CORNER_COUNT>& corners, core::StoneClassifier& classifier) {
 	const core::WarpResult warped      = core::warpToCorners(frame, corners);
 	const core::BoardGeometry geometry = core::analyseGeometry(warped);
 	if (!core::isValidGeometry(geometry)) {
@@ -55,7 +55,33 @@ static BoardSnapshot analyse(const cv::Mat& frame, const std::array<cv::Point2f,
 	}
 
 	const core::RectifiedBoard board = core::transformImage(frame, geometry);
-	return {.warped = toImage(warped.imageB0), .rectified = toImage(markDetections(board, core::analyseBoard(board))), .boardSize = geometry.boardSize};
+	return {.warped = toImage(warped.imageB0), .rectified = toImage(markDetections(board, core::analyseBoard(board, classifier))), .boardSize = geometry.boardSize};
+}
+
+//! warpToCorners puts the corners at the top left, top right, bottom right and bottom left. Turns the first one picked to the top left.
+static cv::Mat turnToGame(const core::WarpResult& warped, const cv::Point2f first) {
+	const auto at = std::ranges::find(warped.contourCorners, first) - warped.contourCorners.begin();
+	if (at == 0) {
+		return warped.imageB0;
+	}
+
+	static constexpr std::array<cv::RotateFlags, CORNER_COUNT - 1> TURNS{cv::ROTATE_90_COUNTERCLOCKWISE, cv::ROTATE_180, cv::ROTATE_90_CLOCKWISE};
+	cv::Mat turned;
+	cv::rotate(warped.imageB0, turned, TURNS[static_cast<std::size_t>(at - 1)]);
+	return turned;
+}
+
+Image warpToBoard(const Image& frame, const std::array<Point, CORNER_COUNT>& corners) {
+	if (frame.rgb.empty()) {
+		return {};
+	}
+	const cv::Mat rgb(frame.height, frame.width, CV_8UC3, const_cast<std::uint8_t*>(frame.rgb.data())); // Only read.
+	std::array<cv::Point2f, CORNER_COUNT> quad{};
+	std::ranges::transform(corners, quad.begin(), [](const Point corner) { return cv::Point2f(corner.x, corner.y); });
+
+	// The warp keeps the channel order: RGB in, RGB out.
+	const cv::Mat board = turnToGame(core::warpToCorners(rgb, quad), quad.front());
+	return {.width = board.cols, .height = board.rows, .rgb = std::vector<std::uint8_t>(board.data, board.data + board.total() * board.elemSize())};
 }
 
 struct ManualSetup::State {
@@ -67,7 +93,8 @@ struct ManualSetup::State {
 	std::array<cv::Point2f, CORNER_COUNT> corners{};
 	std::size_t picked{0}; //!< Corners picked so far.
 	bool applied{false};
-	Camera camera; //!< Last: starts after and stops before the members it reports to.
+	core::StoneClassifier classifier; //!< Camera thread only.
+	Camera camera;                    //!< Last: starts after and stops before the members it reports to.
 };
 
 ManualSetup::State::State(const int cameraIndex, Callbacks callbacks)
@@ -86,7 +113,7 @@ void ManualSetup::State::onFrame(const cv::Mat& frame) {
 
 	// Analysing on the camera thread is fine: the camera drains its buffer again until the next period is due.
 	if (analysing) {
-		report.onAnalysed(analyse(frame, quad));
+		report.onAnalysed(analyse(frame, quad, classifier));
 	} else {
 		report.onFrame(toImage(frame));
 	}

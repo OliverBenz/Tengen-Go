@@ -37,6 +37,7 @@ public slots:
 signals:
 	void botDialogRequested();                    //!< The presenter will look for engines before opening the dialog.
 	void connectRequested(const QString& hostIp); //!< Join the game hosted at this address.
+	void cameraPreviewRequested();                //!< Show the live camera image.
 	void shutdownRequested();                     //!< The window closes. End the current game.
 
 	void styleDialogRequested();                   //!< The presenter opens the dialog with the style in use.

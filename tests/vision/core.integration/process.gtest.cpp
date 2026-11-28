@@ -25,6 +25,7 @@ static void runTest(const std::string& testSetName, unsigned imageCount) {
 	ensureJsonExists(images);
 
 	// Checks below are non-fatal so one bad image does not hide the results of the remaining ones.
+	StoneClassifier classifier;
 	for (const auto& imagePath: images) {
 		// Load image
 		const cv::Mat image = cv::imread(imagePath.string());
@@ -33,7 +34,7 @@ static void runTest(const std::string& testSetName, unsigned imageCount) {
 			continue;
 		}
 
-		const PipelineResult result = runPipeline(image);
+		const PipelineResult result = runPipeline(image, classifier);
 		if (!isValidPipelineResult(result)) {
 			ADD_FAILURE() << "Pipeline produced no usable result for " << imagePath << "\n";
 			continue;

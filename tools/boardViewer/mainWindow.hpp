@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gui/boardWidget.hpp"
+#include "vision/core/stoneClassifier.hpp"
 
 #include <QImage>
 #include <QMainWindow>
@@ -35,6 +36,7 @@ private:
 	QLabel* m_imageLabel{nullptr};
 	QPushButton* m_openButton{nullptr};
 	gui::BoardWidget* m_boardWidget{nullptr};
+	vision::core::StoneClassifier m_classifier;
 };
 
 } // namespace tengen

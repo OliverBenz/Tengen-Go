@@ -1,18 +1,40 @@
 #include "vision/vision.hpp"
+
 #include "vision/core/boardFinder.hpp"
 #include "vision/core/gridFinder.hpp"
 #include "vision/core/stoneFinder.hpp"
-#include <algorithm>
-#include <array>
-#include <cstdlib>
+
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/videoio.hpp>
 
+#include <algorithm>
+#include <array>
+#include <atomic>
+#include <cassert>
+#include <cstdlib>
+#include <thread>
 
 namespace tengen::vision {
 
-Vision::Vision(Source source)
-    : m_source{source} {
+struct Vision::State {
+	explicit State(const Source input)
+	    : source(input) {
+	}
+	void boardLoop(); //!< Vision thread.
+
+	Source source;                        //!< Source input for the board detection.
+	core::RectifiedBoard board;           //!< Result of the setup process.
+	std::filesystem::path setupImagePath; //!< Setup image path for Source::Image.
+	core::StoneClassifier classifier;     //!< Setup, then the vision thread.
+
+	Callbacks callbacks; //!< Callback functions to signal events.
+
+	std::atomic<bool> running{false}; //!< Stone detection loop running.
+	std::thread visionThread;         //!< Thread handling the stone detection loop.
+};
+
+Vision::Vision(const Source source)
+    : m_state(std::make_unique<State>(source)) {
 }
 
 Vision::~Vision() {
@@ -29,15 +51,15 @@ bool Vision::setup(const Coord gaugeCoord) {
 
 	// Get image from source
 	cv::Mat image;
-	switch (m_source) {
+	switch (m_state->source) {
 	case Source::None:
 		return false;
 	case Source::Image:
-		if (m_setupImagePath.empty()) {
+		if (m_state->setupImagePath.empty()) {
 			assert(false); // Set the image path before calling setup.
 			return false;
 		}
-		image = cv::imread(m_setupImagePath.string(), cv::IMREAD_COLOR);
+		image = cv::imread(m_state->setupImagePath.string(), cv::IMREAD_COLOR);
 		break;
 	case Source::Video: {
 		cv::VideoCapture capture{0, cv::CAP_ANY};
@@ -64,7 +86,7 @@ bool Vision::setup(const Coord gaugeCoord) {
 		return false;
 	}
 
-	const core::StoneResult result = core::analyseBoard(board);
+	const core::StoneResult result = core::analyseBoard(board, m_state->classifier);
 	if (!result.success || stoneCount(result.stones) != 1) {
 		// TODO: Log
 		return false;
@@ -215,43 +237,43 @@ bool Vision::setup(const Coord gaugeCoord) {
 		board.geometry.intersections = std::move(intersectionsOrdered);
 	}
 
-	m_board = std::move(board);
+	m_state->board = std::move(board);
 	return true;
 }
 
 void Vision::setSetupImage(std::filesystem::path setupImagePath) {
-	m_setupImagePath = std::move(setupImagePath);
+	m_state->setupImagePath = std::move(setupImagePath);
 }
 
 void Vision::connect(Callbacks callbacks) {
-	m_callbacks = std::move(callbacks);
+	m_state->callbacks = std::move(callbacks);
 }
 
 void Vision::disconnect() {
-	m_callbacks = {nullptr, nullptr};
+	m_state->callbacks = {nullptr, nullptr};
 }
 
 void Vision::run() {
-	if (m_running.exchange(true)) {
+	if (m_state->running.exchange(true)) {
 		return;
 	}
 
-	m_visionThread = std::thread([this]() { boardLoop(); });
+	m_state->visionThread = std::thread([state = m_state.get()] { state->boardLoop(); });
 }
 
 void Vision::stop() {
-	if (!m_running.exchange(false)) {
+	if (!m_state->running.exchange(false)) {
 		return;
 	}
 
-	if (m_visionThread.joinable()) {
-		m_visionThread.join();
+	if (m_state->visionThread.joinable()) {
+		m_state->visionThread.join();
 	}
 }
 
 
-void Vision::boardLoop() {
-	while (m_running.load()) {
+void Vision::State::boardLoop() {
+	while (running.load()) {
 		assert(false); // TODO: Implement
 	}
 }

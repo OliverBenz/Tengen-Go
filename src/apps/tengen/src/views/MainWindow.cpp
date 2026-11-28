@@ -53,8 +53,11 @@ void MainWindow::buildLayout(const Style& initialStyle) {
 	connect(actConnectToServer, &QAction::triggered, this, &MainWindow::openConnectDialog);
 	connect(actHostServer, &QAction::triggered, this, &MainWindow::openHostDialog);
 
-	// auto* tools                   = menuBar()->addMenu(tr("&Tools"));
-	// auto* actImportBoardImage     = new QAction("&Import Board Image", this);
+	auto* vision          = menuBar()->addMenu(tr("&Vision"));
+	auto* actPreviewBoard = new QAction("&Preview Board", this);
+	vision->addAction(actPreviewBoard);
+	connect(actPreviewBoard, &QAction::triggered, this, &MainWindow::cameraPreviewRequested);
+
 	// auto* actStartCameraDetection = new QAction("&Start Camera Detection", this);
 	// auto* actCalibrateDetection   = new QAction("&Calibrate Detection", this);
 	// tools->addAction(actImportBoardImage);

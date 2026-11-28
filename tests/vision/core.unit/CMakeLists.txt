@@ -5,6 +5,7 @@ set(targetName visionCore.unit)
 add_executable(${targetName}
   "${CMAKE_CURRENT_LIST_DIR}/syntheticBoard.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/boardFinder.gtest.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/stoneClassifier.gtest.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/stoneFinder.gtest.cpp"
 )
 

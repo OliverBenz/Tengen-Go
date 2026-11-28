@@ -32,6 +32,7 @@ static void runTest(const std::string& testSetName, unsigned imageCount) {
 	ensureJsonExists(images);
 
 	// Checks below are non-fatal so one bad image does not hide the results of the remaining ones.
+	StoneClassifier classifier;
 	for (const auto& imagePath: images) {
 		// A) Prepare the test
 		// Load image
@@ -54,7 +55,7 @@ static void runTest(const std::string& testSetName, unsigned imageCount) {
 		}
 
 		// B) Start of the stone detection test
-		const PipelineResult result = runPipeline(image, warpResult);
+		const PipelineResult result = runPipeline(image, warpResult, classifier);
 		if (!isValidPipelineResult(result)) {
 			ADD_FAILURE() << "Stone detection produced no usable result for " << imagePath << "\n";
 			continue;
@@ -134,6 +135,7 @@ TEST(StoneFinder, Setup_SingleStone) {
 	        {"C2_4_white.png", StoneState::White},
 	}};
 
+	StoneClassifier classifier;
 	for (const auto& [fileName, expectedState]: CASES) {
 		const auto imagePath = std::filesystem::path(PATH_TEST_IMG) / "setup" / std::string(fileName);
 
@@ -143,7 +145,7 @@ TEST(StoneFinder, Setup_SingleStone) {
 			continue;
 		}
 
-		const PipelineResult result = runPipeline(image, warpSetupImage(image));
+		const PipelineResult result = runPipeline(image, warpSetupImage(image), classifier);
 		if (!isValidPipelineResult(result)) {
 			ADD_FAILURE() << "Stone detection produced no usable result for " << imagePath << "\n";
 			continue;

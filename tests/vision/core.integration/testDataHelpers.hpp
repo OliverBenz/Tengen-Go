@@ -24,9 +24,9 @@ struct PipelineResult {
 std::vector<std::filesystem::path> getImagesInDirectory(const std::filesystem::path& directory); //!< Get all image files in a directory, ordered by name.
 void ensureJsonExists(const std::vector<std::filesystem::path>& images);                         //!< Verify the json file for each image exists.
 
-PipelineResult runPipeline(const cv::Mat& image);                           //!< Run all pipeline stages: board, grid and stone detection.
-PipelineResult runPipeline(const cv::Mat& image, const WarpResult& warped); //!< Run the grid and stone detection stages on a given board warp.
-bool isValidPipelineResult(const PipelineResult& result);                   //!< True if every pipeline stage produced a usable result.
+PipelineResult runPipeline(const cv::Mat& image, StoneClassifier& classifier);                           //!< Run all pipeline stages: board, grid and stone detection.
+PipelineResult runPipeline(const cv::Mat& image, const WarpResult& warped, StoneClassifier& classifier); //!< Run the grid and stone detection stages on a given board warp.
+bool isValidPipelineResult(const PipelineResult& result);                                                //!< True if every pipeline stage produced a usable result.
 
 //! Load the dotBW stone layout of an image: "<image>.txt", or the test sets "board.txt" if all its images show one and the same board.
 Board loadExpectedBoard(const std::filesystem::path& imagePath);
